@@ -209,6 +209,63 @@ def lookup_voucher(serial: str) -> dict | None:
     }
 
 
+def get_stats() -> dict:
+    """Агрегированная статистика из БД для команды /stats."""
+    today = _today_str()
+    con = _conn()
+    cur = con.cursor()
+
+    # Общие итоги
+    total_issued   = cur.execute("SELECT COUNT(*) FROM vouchers WHERE status != 'available'").fetchone()[0]
+    total_redeemed = cur.execute("SELECT COUNT(*) FROM vouchers WHERE status = 'redeemed'").fetchone()[0]
+    total_available = cur.execute("SELECT COUNT(*) FROM vouchers WHERE status = 'available'").fetchone()[0]
+
+    # За сегодня
+    free_today = cur.execute(
+        "SELECT COUNT(*) FROM vouchers WHERE voucher_type='free' AND issued_at LIKE ?",
+        (f"{today}%",)
+    ).fetchone()[0]
+    paid_today = cur.execute(
+        "SELECT COUNT(*) FROM vouchers WHERE voucher_type='paid' AND issued_at LIKE ?",
+        (f"{today}%",)
+    ).fetchone()[0]
+    redeemed_today = cur.execute(
+        "SELECT COUNT(*) FROM vouchers WHERE status='redeemed' AND redeemed_at LIKE ?",
+        (f"{today}%",)
+    ).fetchone()[0]
+
+    # Разбивка по типу топлива (всего выданных)
+    fuel_rows = cur.execute(
+        "SELECT fuel_type, COUNT(*) FROM vouchers WHERE status != 'available' GROUP BY fuel_type"
+    ).fetchall()
+    fuel_stats = {row[0]: row[1] for row in fuel_rows}
+
+    # Разбивка по типу топлива за сегодня
+    fuel_today_rows = cur.execute(
+        "SELECT fuel_type, COUNT(*) FROM vouchers WHERE status != 'available' AND issued_at LIKE ? GROUP BY fuel_type",
+        (f"{today}%",)
+    ).fetchall()
+    fuel_today = {row[0]: row[1] for row in fuel_today_rows}
+
+    con.close()
+
+    free_remaining = max(0, DAILY_FREE_LIMIT - free_today)
+
+    return {
+        "total_issued":    total_issued,
+        "total_redeemed":  total_redeemed,
+        "total_available": total_available,
+        "free_today":      free_today,
+        "paid_today":      paid_today,
+        "redeemed_today":  redeemed_today,
+        "fuel_stats":      fuel_stats,
+        "fuel_today":      fuel_today,
+        "free_remaining":  free_remaining,
+        "daily_limit":     DAILY_FREE_LIMIT,
+        "today":           today,
+    }
+
+
 def redeem_voucher(serial: str) -> str:
     """ok / already / not_found"""
     con = _conn()
@@ -288,6 +345,61 @@ async def admin_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "🔐 *Режим контролёра АЗС*\n\nВведите пароль администратора:",
         parse_mode="Markdown",
         reply_markup=ReplyKeyboardRemove()
+    )
+
+
+async def stats_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not context.user_data.get("admin_authenticated"):
+        await update.message.reply_text(
+            "🔒 Доступ запрещён. Сначала авторизуйтесь через /admin"
+        )
+        return
+
+    s = get_stats()
+
+    fuel_label = {"95": "АИ-95", "92": "АИ-92", "diesel": "Дизель"}
+
+    def _fuel_line(mapping: dict) -> str:
+        lines = []
+        for code, label in fuel_label.items():
+            lines.append(f"   • {label}: {mapping.get(code, 0)} шт.")
+        return "\n".join(lines)
+
+    limit_bar_total = 10
+    filled = round(s["free_today"] / s["daily_limit"] * limit_bar_total)
+    bar = "🟩" * filled + "⬜" * (limit_bar_total - filled)
+    pct = round(s["free_today"] / s["daily_limit"] * 100)
+
+    text = (
+        f"📊 *Статистика системы — {s['today']}*\n"
+        f"_Департамент цифрового развития Севастополя_\n\n"
+
+        f"━━━ 🗂 ОБЩИЕ ИТОГИ ━━━\n"
+        f"📤 Всего выдано ваучеров: *{s['total_issued']}*\n"
+        f"✅ Всего погашено на АЗС: *{s['total_redeemed']}*\n"
+        f"🗃 Остаток в базе данных: *{s['total_available']}*\n\n"
+
+        f"━━━ 📅 СЕГОДНЯ ━━━\n"
+        f"🆓 Бесплатных госквот выдано: *{s['free_today']}*\n"
+        f"💰 Платных ваучеров куплено: *{s['paid_today']}*\n"
+        f"🚫 Погашено на АЗС сегодня: *{s['redeemed_today']}*\n\n"
+
+        f"━━━ ⛽ РАЗБИВКА ПО ТОПЛИВУ (всего) ━━━\n"
+        f"{_fuel_line(s['fuel_stats'])}\n\n"
+
+        f"━━━ ⛽ РАЗБИВКА ПО ТОПЛИВУ (сегодня) ━━━\n"
+        f"{_fuel_line(s['fuel_today'])}\n\n"
+
+        f"━━━ 🚦 ЛИМИТ БЕСПЛАТНЫХ КВОТ ━━━\n"
+        f"{bar} {pct}%\n"
+        f"Использовано: *{s['free_today']}* из *{s['daily_limit']}*\n"
+        f"Осталось до исчерпания: *{s['free_remaining']} шт.*"
+    )
+    await update.message.reply_text(
+        text, parse_mode="Markdown",
+        reply_markup=InlineKeyboardMarkup([[
+            InlineKeyboardButton("◀️ Меню контролёра", callback_data="admin_menu")
+        ]])
     )
 
 
@@ -749,6 +861,7 @@ async def post_init(application: Application) -> None:
         BotCommand("rules", "Актуальные правила и сводки Губернатора"),
         BotCommand("map",   "Карта остатков топлива АЗС"),
         BotCommand("admin", "Вход для контролёров АЗС"),
+        BotCommand("stats", "Статистика системы (только для контролёров)"),
     ])
     logger.info("Командное меню Telegram зарегистрировано.")
 
@@ -765,10 +878,11 @@ def main() -> None:
     app.add_handler(CommandHandler("rules", rules_cmd))
     app.add_handler(CommandHandler("map",   map_cmd))
     app.add_handler(CommandHandler("admin", admin_cmd))
+    app.add_handler(CommandHandler("stats", stats_cmd))
     app.add_handler(CallbackQueryHandler(menu_navigation))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
 
-    print("✅ Бот запущен (v4: командное меню + госквота + платная доза + контролёр).")
+    print("✅ Бот запущен (v5: госквота + платная доза + контролёр + /stats).")
     app.run_polling(drop_pending_updates=True)
 
 
