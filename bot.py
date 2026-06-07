@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 from telegram import (
     Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo,
-    KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove
+    KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove, BotCommand
 )
 from telegram.ext import (
     Application, CommandHandler, CallbackQueryHandler,
@@ -283,6 +283,38 @@ async def admin_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "🔐 *Режим контролёра АЗС*\n\nВведите пароль администратора:",
         parse_mode="Markdown",
         reply_markup=ReplyKeyboardRemove()
+    )
+
+
+async def rules_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    text = (
+        "📜 *Актуальные правила и сводки Правительства Севастополя:*\n\n"
+        "• Заправка частных лиц осуществляется только на АЗС «ТЭС» с *09:00 до 21:00*.\n\n"
+        "• С 06:00 до 09:00 заправляются исключительно *городские службы* (скорая, транспорт, ЖКХ).\n\n"
+        "• Заливать топливо в канистры *МОЖНО*, но только при предъявлении оригинала СТС, "
+        "номер в котором совпадает с QR-кодом.\n\n"
+        "• Полученный код действует до момента гашения, в том числе *на следующий день*.\n\n"
+        "• Один автомобиль может получить *один бесплатный код каждые 7 дней*.\n\n"
+        "• Один автомобиль может приобрести *один платный ваучер в неделю* (20 л).\n\n"
+        f"🗺️ Карта остатков: {MAP_URL}"
+    )
+    await update.message.reply_text(
+        text, parse_mode="Markdown",
+        reply_markup=InlineKeyboardMarkup([[
+            InlineKeyboardButton("🏠 Главное меню", callback_data="main_menu")
+        ]])
+    )
+
+
+async def map_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await update.message.reply_text(
+        f"🗺️ *Карта остатков топлива на АЗС Севастополя:*\n\n{MAP_URL}\n\n"
+        "Сверяйте наличие топлива перед выездом на заправку.",
+        parse_mode="Markdown",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("🗺️ Открыть карту", url=MAP_URL)],
+            [InlineKeyboardButton("🏠 Главное меню", callback_data="main_menu")],
+        ])
     )
 
 
@@ -682,6 +714,17 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 #  ЗАПУСК
 # ═══════════════════════════════════════════════════════════════════
 
+async def post_init(application: Application) -> None:
+    """Регистрирует командное меню (синяя кнопка «Меню» в Telegram)."""
+    await application.bot.set_my_commands([
+        BotCommand("start", "Главное меню и выбор квот"),
+        BotCommand("rules", "Актуальные правила и сводки Губернатора"),
+        BotCommand("map",   "Карта остатков топлива АЗС"),
+        BotCommand("admin", "Вход для контролёров АЗС"),
+    ])
+    logger.info("Командное меню Telegram зарегистрировано.")
+
+
 def main() -> None:
     if not BOT_TOKEN:
         print("Ошибка: токен бота не задан.")
@@ -689,13 +732,15 @@ def main() -> None:
 
     init_db()
 
-    app = Application.builder().token(BOT_TOKEN).build()
+    app = Application.builder().token(BOT_TOKEN).post_init(post_init).build()
     app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("rules", rules_cmd))
+    app.add_handler(CommandHandler("map",   map_cmd))
     app.add_handler(CommandHandler("admin", admin_cmd))
     app.add_handler(CallbackQueryHandler(menu_navigation))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
 
-    print("✅ Бот запущен (v3: госквота + платная доза + контролёр).")
+    print("✅ Бот запущен (v4: командное меню + госквота + платная доза + контролёр).")
     app.run_polling(drop_pending_updates=True)
 
 
