@@ -348,29 +348,22 @@ async def admin_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     )
 
 
-async def stats_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    if not context.user_data.get("admin_authenticated"):
-        await update.message.reply_text(
-            "🔒 Доступ запрещён. Сначала авторизуйтесь через /admin"
-        )
-        return
-
+def _build_stats_text() -> str:
+    """Формирует текст статистики из БД."""
     s = get_stats()
-
     fuel_label = {"95": "АИ-95", "92": "АИ-92", "diesel": "Дизель"}
 
     def _fuel_line(mapping: dict) -> str:
-        lines = []
-        for code, label in fuel_label.items():
-            lines.append(f"   • {label}: {mapping.get(code, 0)} шт.")
-        return "\n".join(lines)
+        return "\n".join(
+            f"   • {label}: {mapping.get(code, 0)} шт."
+            for code, label in fuel_label.items()
+        )
 
-    limit_bar_total = 10
-    filled = round(s["free_today"] / s["daily_limit"] * limit_bar_total)
-    bar = "🟩" * filled + "⬜" * (limit_bar_total - filled)
+    filled = round(s["free_today"] / s["daily_limit"] * 10)
+    bar = "🟩" * filled + "⬜" * (10 - filled)
     pct = round(s["free_today"] / s["daily_limit"] * 100)
 
-    text = (
+    return (
         f"📊 *Статистика системы — {s['today']}*\n"
         f"_Департамент цифрового развития Севастополя_\n\n"
 
@@ -395,11 +388,24 @@ async def stats_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         f"Использовано: *{s['free_today']}* из *{s['daily_limit']}*\n"
         f"Осталось до исчерпания: *{s['free_remaining']} шт.*"
     )
+
+
+def _stats_markup() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔁 Обновить статистику", callback_data="stats_refresh")],
+        [InlineKeyboardButton("◀️ Меню контролёра",     callback_data="admin_menu")],
+    ])
+
+
+async def stats_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not context.user_data.get("admin_authenticated"):
+        await update.message.reply_text(
+            "🔒 Доступ запрещён. Сначала авторизуйтесь через /admin"
+        )
+        return
+
     await update.message.reply_text(
-        text, parse_mode="Markdown",
-        reply_markup=InlineKeyboardMarkup([[
-            InlineKeyboardButton("◀️ Меню контролёра", callback_data="admin_menu")
-        ]])
+        _build_stats_text(), parse_mode="Markdown", reply_markup=_stats_markup()
     )
 
 
@@ -650,6 +656,12 @@ async def menu_navigation(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             reply_markup=InlineKeyboardMarkup([[
                 InlineKeyboardButton("◀️ Назад в меню контролёра", callback_data="admin_menu")
             ]])
+        )
+
+    elif data == "stats_refresh":
+        await query.answer("📊 Данные обновлены!", show_alert=False)
+        await query.edit_message_text(
+            _build_stats_text(), parse_mode="Markdown", reply_markup=_stats_markup()
         )
 
     elif data == "admin_exit":
