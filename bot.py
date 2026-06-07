@@ -1,7 +1,8 @@
 import os
+import io
 import logging
-import json
 import uuid
+import qrcode
 from dotenv import load_dotenv
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
@@ -41,6 +42,35 @@ FUEL_PRODUCTS = {
     }
 }
 
+STATION_PREFIX = {
+    "TES": "TES",
+    "Atan": "ATN",
+    "VTK": "VTK"
+}
+
+FUEL_PREFIX = {
+    "95": "95",
+    "92": "92",
+    "diesel": "DZ"
+}
+
+
+def generate_voucher_qr(serial: str) -> io.BytesIO:
+    qr = qrcode.QRCode(
+        version=2,
+        error_correction=qrcode.constants.ERROR_CORRECT_H,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(serial)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="black", back_color="white")
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    buf.seek(0)
+    return buf
+
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     text = (
         "⛽ *Добро пожаловать в сервис топливных ваучеров Крыма!*\n\n"
@@ -53,8 +83,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         [InlineKeyboardButton("🚗 Бензин АИ-92", callback_data="fuel_92")],
         [InlineKeyboardButton("🚜 Дизельное топливо", callback_data="fuel_diesel")]
     ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text(text, parse_mode="Markdown", reply_markup=reply_markup)
+    await update.message.reply_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(keyboard))
+
 
 async def menu_navigation(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
@@ -82,8 +112,6 @@ async def menu_navigation(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
         await query.edit_message_text("🔄 Связываюсь с платежным шлюзом Monetix. Пожалуйста, подождите...")
 
-        internal_order_id = f"VCH-{uuid.uuid4().hex[:8].upper()}"
-
         simulated_monetix_url = f"https://paymetodaygo.online/checkout/{uuid.uuid4().hex[:10]}"
 
         checkout_text = (
@@ -96,9 +124,38 @@ async def menu_navigation(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
         keyboard = [
             [InlineKeyboardButton("💳 Оплатить через СБП", web_app=WebAppInfo(url=simulated_monetix_url))],
+            [InlineKeyboardButton("🤖 Симулировать успешную оплату (Тест)", callback_data=f"sim_{fuel_type}_{station_id}")],
             [InlineKeyboardButton("❌ Отменить заказ", callback_data="main_menu")]
         ]
         await query.edit_message_text(checkout_text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(keyboard))
+
+    elif data.startswith("sim_"):
+        parts = data.split("_")
+        fuel_type = parts[1]
+        station_id = parts[2]
+        product = FUEL_PRODUCTS[fuel_type]["stations"][station_id]
+
+        await query.edit_message_text("🎉 *Оплата успешно получена!*\n\nГенерирую ваш ваучер...", parse_mode="Markdown")
+
+        station_prefix = STATION_PREFIX.get(station_id, station_id[:3].upper())
+        fuel_code = FUEL_PREFIX.get(fuel_type, fuel_type.upper())
+        serial = f"{station_prefix}-{fuel_code}-{uuid.uuid4().hex[:6].upper()}"
+
+        qr_image = generate_voucher_qr(serial)
+
+        caption = (
+            f"✅ *Ваш одноразовый ваучер на 20 литров топлива успешно активирован.*\n\n"
+            f"Покажите этот QR-код сотруднику АЗС.\n\n"
+            f"🏷 *Серийный номер:* `{serial}`\n"
+            f"⛽ *Станция:* {product['label']}\n"
+            f"📦 *Объём:* 20 литров"
+        )
+
+        await query.message.reply_photo(
+            photo=qr_image,
+            caption=caption,
+            parse_mode="Markdown"
+        )
 
     elif data == "main_menu":
         text = "⛽ Выберите тип топлива ниже для просмотра доступных ваучеров на 20 литров:"
@@ -109,15 +166,17 @@ async def menu_navigation(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         ]
         await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard))
 
+
 def main() -> None:
     if not BOT_TOKEN:
-        print("Ошибка: токен бота не задан в .env файле.")
+        print("Ошибка: токен бота не задан.")
         return
     app = Application.builder().token(BOT_TOKEN).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CallbackQueryHandler(menu_navigation))
     print("✅ Бот успешно запущен и слушает команды...")
     app.run_polling(drop_pending_updates=True)
+
 
 if __name__ == "__main__":
     main()
