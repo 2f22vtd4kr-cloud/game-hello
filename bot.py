@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 
 BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 MONETIX_API_KEY = os.getenv("MONETIX_API_KEY", "")
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "crimea2026")
 DB_PATH = "vouchers.db"
 MAP_URL = "https://fuel.sevtech.org/map"
 
@@ -56,12 +57,14 @@ FUEL_PRODUCTS = {
 }
 
 DISTRICTS = ["Гагаринский район", "Ленинский/Нахимовский", "Балаклава/Северная"]
-
 FUEL_PREFIX = {"95": "95", "92": "92", "diesel": "DZ"}
 STATION_PREFIX = {"TES": "TES", "Atan": "ATN", "VTK": "VTK"}
 
+FUEL_LABELS = {"95": "АИ-95", "92": "АИ-92", "diesel": "Дизель"}
+STATION_LABELS = {"TES": "ТЭС", "Atan": "Атан", "VTK": "ВТК"}
 
-# ─── База данных ────────────────────────────────────────────────────────────
+
+# ─── База данных ─────────────────────────────────────────────────────────────
 
 def init_db() -> None:
     con = sqlite3.connect(DB_PATH)
@@ -74,9 +77,16 @@ def init_db() -> None:
             district        TEXT NOT NULL,
             qr_code_payload TEXT NOT NULL UNIQUE,
             status          TEXT NOT NULL DEFAULT 'available',
-            issued_at       TEXT
+            issued_at       TEXT,
+            redeemed_at     TEXT
         )
     """)
+    # Добавляем колонку redeemed_at если её нет (миграция старой БД)
+    try:
+        cur.execute("ALTER TABLE vouchers ADD COLUMN redeemed_at TEXT")
+    except sqlite3.OperationalError:
+        pass
+
     existing = cur.execute("SELECT COUNT(*) FROM vouchers").fetchone()[0]
     if existing == 0:
         rows = []
@@ -98,7 +108,6 @@ def init_db() -> None:
 
 
 def get_and_issue_voucher(fuel_type: str, station_brand: str, district: str):
-    """Берёт первый свободный ваучер и помечает его как выданный."""
     con = sqlite3.connect(DB_PATH)
     cur = con.cursor()
     row = cur.execute(
@@ -120,7 +129,55 @@ def get_and_issue_voucher(fuel_type: str, station_brand: str, district: str):
     return payload
 
 
-# ─── Утилиты ────────────────────────────────────────────────────────────────
+def lookup_voucher(serial: str):
+    """Возвращает dict с данными ваучера или None."""
+    con = sqlite3.connect(DB_PATH)
+    cur = con.cursor()
+    row = cur.execute(
+        "SELECT fuel_type, station_brand, district, status, issued_at, redeemed_at FROM vouchers WHERE qr_code_payload=?",
+        (serial,)
+    ).fetchone()
+    con.close()
+    if not row:
+        return None
+    return {
+        "fuel_type": row[0],
+        "station_brand": row[1],
+        "district": row[2],
+        "status": row[3],
+        "issued_at": row[4],
+        "redeemed_at": row[5],
+    }
+
+
+def redeem_voucher(serial: str) -> str:
+    """
+    Гасит ваучер. Возвращает:
+      'ok'       — успешно погашен
+      'already'  — уже погашен ранее
+      'not_found'— не найден
+    """
+    con = sqlite3.connect(DB_PATH)
+    cur = con.cursor()
+    row = cur.execute(
+        "SELECT status FROM vouchers WHERE qr_code_payload=?", (serial,)
+    ).fetchone()
+    if not row:
+        con.close()
+        return "not_found"
+    if row[0] == "redeemed":
+        con.close()
+        return "already"
+    cur.execute(
+        "UPDATE vouchers SET status='redeemed', redeemed_at=? WHERE qr_code_payload=?",
+        (datetime.utcnow().isoformat(), serial)
+    )
+    con.commit()
+    con.close()
+    return "ok"
+
+
+# ─── Утилиты ─────────────────────────────────────────────────────────────────
 
 def make_qr(data: str) -> io.BytesIO:
     qr = qrcode.QRCode(
@@ -150,7 +207,7 @@ def district_keyboard() -> ReplyKeyboardMarkup:
     )
 
 
-def station_list_message(fuel_type: str, district: str) -> tuple[str, InlineKeyboardMarkup]:
+def station_list_message(fuel_type: str, district: str):
     fuel_name = FUEL_PRODUCTS[fuel_type]["name"]
     text = (
         f"🏙 *Район: {district}*\n"
@@ -162,22 +219,24 @@ def station_list_message(fuel_type: str, district: str) -> tuple[str, InlineKeyb
     )
     keyboard = []
     for station_id, info in FUEL_PRODUCTS[fuel_type]["stations"].items():
-        keyboard.append([
-            InlineKeyboardButton(
-                f"{info['label']} — {info['price']} руб.",
-                callback_data=f"buy_{fuel_type}_{station_id}"
-            )
-        ])
-    keyboard.append([
-        InlineKeyboardButton("🗺️ Открыть карту остатков АЗС", url=MAP_URL)
-    ])
-    keyboard.append([
-        InlineKeyboardButton("⬅️ Вернуться в главное меню", callback_data="main_menu")
-    ])
+        keyboard.append([InlineKeyboardButton(
+            f"{info['label']} — {info['price']} руб.",
+            callback_data=f"buy_{fuel_type}_{station_id}"
+        )])
+    keyboard.append([InlineKeyboardButton("🗺️ Открыть карту остатков АЗС", url=MAP_URL)])
+    keyboard.append([InlineKeyboardButton("⬅️ Вернуться в главное меню", callback_data="main_menu")])
     return text, InlineKeyboardMarkup(keyboard)
 
 
-# ─── Обработчики ────────────────────────────────────────────────────────────
+def admin_menu_markup() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔍 Проверить статус ваучера", callback_data="admin_check")],
+        [InlineKeyboardButton("🚫 Погасить ваучер", callback_data="admin_redeem")],
+        [InlineKeyboardButton("🚪 Выйти из режима контролёра", callback_data="admin_exit")]
+    ])
+
+
+# ─── Обработчики — пользователь ──────────────────────────────────────────────
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     context.user_data.clear()
@@ -198,12 +257,27 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     )
 
 
+# ─── Обработчики — администратор ─────────────────────────────────────────────
+
+async def admin_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Команда /admin — запрашивает пароль."""
+    context.user_data.clear()
+    context.user_data["waiting_admin_password"] = True
+    await update.message.reply_text(
+        "🔐 *Режим контролёра АЗС*\n\nВведите пароль администратора:",
+        parse_mode="Markdown",
+        reply_markup=ReplyKeyboardRemove()
+    )
+
+
+# ─── Главный роутер callback-кнопок ──────────────────────────────────────────
+
 async def menu_navigation(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     await query.answer()
     data = query.data
 
-    # ── Шаг 1: выбор топлива → запрос геолокации/района ──────────────────
+    # ── Топливо → запрос района ───────────────────────────────────────────
     if data.startswith("fuel_"):
         fuel_type = data.split("_")[1]
         context.user_data["fuel_type"] = fuel_type
@@ -221,51 +295,40 @@ async def menu_navigation(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             reply_markup=district_keyboard()
         )
 
-    # ── Шаг 3: карточка заказа ────────────────────────────────────────────
+    # ── Карточка заказа ───────────────────────────────────────────────────
     elif data.startswith("buy_"):
         parts = data.split("_")
-        fuel_type = parts[1]
-        station_id = parts[2]
+        fuel_type, station_id = parts[1], parts[2]
         product = FUEL_PRODUCTS[fuel_type]["stations"][station_id]
-        price = product["price"]
-
         context.user_data["station_id"] = station_id
 
-        simulated_monetix_url = f"https://paymetodaygo.online/checkout/{uuid.uuid4().hex[:10]}"
-
-        checkout_text = (
+        simulated_url = f"https://paymetodaygo.online/checkout/{uuid.uuid4().hex[:10]}"
+        text = (
             f"🛒 *Подтверждение заказа:*\n\n"
             f"• *Товар:* 20 л ({product['label']})\n"
             f"• *Формат:* Одноразовый QR-ваучер\n"
-            f"• *К оплате:* `{price} RUB`\n\n"
+            f"• *К оплате:* `{product['price']} RUB`\n\n"
             "Нажмите кнопку для оплаты через СБП или используйте тестовую симуляцию."
         )
-
         keyboard = [
-            [InlineKeyboardButton("💳 Оплатить через СБП", web_app=WebAppInfo(url=simulated_monetix_url))],
+            [InlineKeyboardButton("💳 Оплатить через СБП", web_app=WebAppInfo(url=simulated_url))],
             [InlineKeyboardButton("🤖 Тестовая оплата (Симуляция)", callback_data=f"sim_{fuel_type}_{station_id}")],
             [InlineKeyboardButton("❌ Отменить заказ", callback_data="main_menu")]
         ]
-        await query.edit_message_text(
-            checkout_text, parse_mode="Markdown",
-            reply_markup=InlineKeyboardMarkup(keyboard)
-        )
+        await query.edit_message_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(keyboard))
 
-    # ── Шаг 4: симуляция оплаты → выдача ваучера из БД ───────────────────
+    # ── Симуляция оплаты → выдача ваучера ────────────────────────────────
     elif data.startswith("sim_"):
         parts = data.split("_")
-        fuel_type = parts[1]
-        station_id = parts[2]
+        fuel_type, station_id = parts[1], parts[2]
         district = context.user_data.get("district", "Гагаринский район")
 
         await query.edit_message_text("⏳ Обрабатываю платёж и формирую ваучер...")
 
         payload = get_and_issue_voucher(fuel_type, station_id, district)
-
         if not payload:
             await query.edit_message_text(
-                "⚠️ *Ваучеры для выбранной комбинации закончились.*\n\n"
-                "Попробуйте другую АЗС или район.",
+                "⚠️ *Ваучеры для выбранной комбинации закончились.*\n\nПопробуйте другую АЗС или район.",
                 parse_mode="Markdown",
                 reply_markup=InlineKeyboardMarkup([[
                     InlineKeyboardButton("⬅️ В главное меню", callback_data="main_menu")
@@ -278,9 +341,7 @@ async def menu_navigation(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             parse_mode="Markdown"
         )
 
-        qr_image = make_qr(payload)
         station_label = FUEL_PRODUCTS[fuel_type]["stations"][station_id]["label"]
-
         caption = (
             f"🎉 *Ваш персональный QR-код на 20 литров успешно сгенерирован!*\n\n"
             f"🏷 Серийный номер: `{payload}`\n"
@@ -293,11 +354,8 @@ async def menu_navigation(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             "после чего вы сможете заправиться.\n"
             "4. Повторный код для этой машины можно получить только через 7 дней."
         )
-
         await query.message.reply_photo(
-            photo=qr_image,
-            caption=caption,
-            parse_mode="Markdown"
+            photo=make_qr(payload), caption=caption, parse_mode="Markdown"
         )
 
     # ── Главное меню ──────────────────────────────────────────────────────
@@ -308,14 +366,149 @@ async def menu_navigation(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             [InlineKeyboardButton("🚗 Бензин АИ-92", callback_data="fuel_92")],
             [InlineKeyboardButton("🚜 Дизельное топливо", callback_data="fuel_diesel")]
         ]
+        await query.edit_message_text("⛽ Выберите тип топлива:", reply_markup=InlineKeyboardMarkup(keyboard))
+
+    # ── Админ: меню действий ──────────────────────────────────────────────
+    elif data == "admin_check":
+        context.user_data["admin_action"] = "check"
         await query.edit_message_text(
-            "⛽ Выберите тип топлива:",
-            reply_markup=InlineKeyboardMarkup(keyboard)
+            "🔍 *Проверка статуса ваучера*\n\nВведите серийный номер (например: `TES-95-A3F2C1`):",
+            parse_mode="Markdown"
+        )
+
+    elif data == "admin_redeem":
+        context.user_data["admin_action"] = "redeem"
+        await query.edit_message_text(
+            "🚫 *Гашение ваучера*\n\nВведите серийный номер ваучера для погашения:",
+            parse_mode="Markdown"
+        )
+
+    elif data == "admin_exit":
+        context.user_data.clear()
+        await query.edit_message_text(
+            "🚪 Вы вышли из режима контролёра.\n\nДля возврата в меню напишите /start."
+        )
+
+    elif data == "admin_menu":
+        await query.edit_message_text(
+            "🛂 *Режим контролёра АЗС* — выберите действие:",
+            parse_mode="Markdown",
+            reply_markup=admin_menu_markup()
         )
 
 
+# ─── Роутер текстовых сообщений ──────────────────────────────────────────────
+
+async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    text = update.message.text.strip()
+
+    # ── 1. Ожидаем пароль администратора ─────────────────────────────────
+    if context.user_data.get("waiting_admin_password"):
+        context.user_data.pop("waiting_admin_password")
+        if text == ADMIN_PASSWORD:
+            context.user_data["admin_authenticated"] = True
+            await update.message.reply_text(
+                "✅ *Авторизация успешна!*\n\n🛂 *Режим контролёра АЗС* — выберите действие:",
+                parse_mode="Markdown",
+                reply_markup=admin_menu_markup()
+            )
+        else:
+            await update.message.reply_text(
+                "❌ Неверный пароль. Доступ запрещён.\n\nПопробуйте снова: /admin"
+            )
+        return
+
+    # ── 2. Ожидаем серийный номер от авторизованного контролёра ──────────
+    admin_action = context.user_data.get("admin_action")
+    if context.user_data.get("admin_authenticated") and admin_action:
+        serial = text.upper()
+        context.user_data.pop("admin_action")
+
+        if admin_action == "check":
+            voucher = lookup_voucher(serial)
+            if not voucher:
+                reply = (
+                    f"❓ *Ваучер не найден*\n\n"
+                    f"Серийный номер `{serial}` отсутствует в базе данных."
+                )
+            else:
+                fuel_label = FUEL_LABELS.get(voucher["fuel_type"], voucher["fuel_type"])
+                station_label = STATION_LABELS.get(voucher["station_brand"], voucher["station_brand"])
+                status_map = {
+                    "available": "🟡 ДОСТУПЕН (ещё не оплачен)",
+                    "issued":    "🟢 ВЫДАН (оплачен, ожидает гашения)",
+                    "redeemed":  "🔴 ПОГАШЕН (использован)"
+                }
+                status_text = status_map.get(voucher["status"], voucher["status"])
+                issued = voucher["issued_at"][:19].replace("T", " ") if voucher["issued_at"] else "—"
+                redeemed = voucher["redeemed_at"][:19].replace("T", " ") if voucher["redeemed_at"] else "—"
+
+                reply = (
+                    f"📋 *Информация о ваучере:*\n\n"
+                    f"🏷 Серийный номер: `{serial}`\n"
+                    f"⛽ Топливо: {fuel_label}\n"
+                    f"🏢 Сеть АЗС: {station_label}\n"
+                    f"🏙 Район: {voucher['district']}\n\n"
+                    f"*Статус: {status_text}*\n"
+                    f"📅 Дата выдачи: {issued}\n"
+                    f"🚫 Дата гашения: {redeemed}"
+                )
+            await update.message.reply_text(
+                reply, parse_mode="Markdown",
+                reply_markup=InlineKeyboardMarkup([[
+                    InlineKeyboardButton("◀️ Назад в меню контролёра", callback_data="admin_menu")
+                ]])
+            )
+
+        elif admin_action == "redeem":
+            result = redeem_voucher(serial)
+            if result == "ok":
+                reply = (
+                    f"✅ *Ваучер успешно погашен.*\n\n"
+                    f"Серийный номер: `{serial}`\n\n"
+                    "Разрешите заправку автомобиля на 20 литров."
+                )
+            elif result == "already":
+                reply = (
+                    f"❌ *ОШИБКА! Данный QR-код уже был активирован ранее!*\n\n"
+                    f"Серийный номер: `{serial}`\n\n"
+                    "⛔ *Откажите в заправке.*\n"
+                    "Зафиксируйте попытку повторного использования ваучера."
+                )
+            else:
+                reply = (
+                    f"❓ *Ваучер не найден*\n\n"
+                    f"Серийный номер `{serial}` отсутствует в базе данных.\n\n"
+                    "⛔ *Откажите в заправке.*"
+                )
+            await update.message.reply_text(
+                reply, parse_mode="Markdown",
+                reply_markup=InlineKeyboardMarkup([[
+                    InlineKeyboardButton("◀️ Назад в меню контролёра", callback_data="admin_menu")
+                ]])
+            )
+        return
+
+    # ── 3. Выбор района (обычный пользователь) ───────────────────────────
+    if text in DISTRICTS:
+        fuel_type = context.user_data.get("fuel_type")
+        if not fuel_type:
+            await update.message.reply_text(
+                "Пожалуйста, начните с команды /start.",
+                reply_markup=ReplyKeyboardRemove()
+            )
+            return
+        context.user_data["district"] = text
+        await update.message.reply_text(
+            f"📍 Выбран район: *{text}*",
+            parse_mode="Markdown",
+            reply_markup=ReplyKeyboardRemove()
+        )
+        msg_text, markup = station_list_message(fuel_type, text)
+        await update.message.reply_text(msg_text, parse_mode="Markdown", reply_markup=markup)
+
+
 async def handle_location(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Обрабатывает геолокацию пользователя."""
     fuel_type = context.user_data.get("fuel_type")
     if not fuel_type:
         await update.message.reply_text(
@@ -325,52 +518,24 @@ async def handle_location(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         return
 
     loc = update.message.location
-    lat, lon = loc.latitude, loc.longitude
-
-    # Простая классификация по координатам Севастополя
-    if lat < 44.55:
+    if loc.latitude < 44.55:
         district = "Балаклава/Северная"
-    elif lon < 33.52:
+    elif loc.longitude < 33.52:
         district = "Гагаринский район"
     else:
         district = "Ленинский/Нахимовский"
 
     context.user_data["district"] = district
-
     await update.message.reply_text(
         f"📍 Определён район: *{district}*",
         parse_mode="Markdown",
         reply_markup=ReplyKeyboardRemove()
     )
-
-    text, markup = station_list_message(fuel_type, district)
-    await update.message.reply_text(text, parse_mode="Markdown", reply_markup=markup)
-
-
-async def handle_district_choice(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Обрабатывает ручной выбор района."""
-    fuel_type = context.user_data.get("fuel_type")
-    if not fuel_type:
-        await update.message.reply_text(
-            "Пожалуйста, начните с команды /start.",
-            reply_markup=ReplyKeyboardRemove()
-        )
-        return
-
-    district = update.message.text
-    context.user_data["district"] = district
-
-    await update.message.reply_text(
-        f"📍 Выбран район: *{district}*",
-        parse_mode="Markdown",
-        reply_markup=ReplyKeyboardRemove()
-    )
-
-    text, markup = station_list_message(fuel_type, district)
-    await update.message.reply_text(text, parse_mode="Markdown", reply_markup=markup)
+    msg_text, markup = station_list_message(fuel_type, district)
+    await update.message.reply_text(msg_text, parse_mode="Markdown", reply_markup=markup)
 
 
-# ─── Запуск ─────────────────────────────────────────────────────────────────
+# ─── Запуск ──────────────────────────────────────────────────────────────────
 
 def main() -> None:
     if not BOT_TOKEN:
@@ -382,14 +547,12 @@ def main() -> None:
     app = Application.builder().token(BOT_TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("admin", admin_cmd))
     app.add_handler(CallbackQueryHandler(menu_navigation))
     app.add_handler(MessageHandler(filters.LOCATION, handle_location))
-    app.add_handler(MessageHandler(
-        filters.Text(DISTRICTS),
-        handle_district_choice
-    ))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
 
-    print("✅ Бот запущен (режим: Севастополь + SQLite ваучеры).")
+    print("✅ Бот запущен (Севастополь + SQLite + Админ-панель).")
     app.run_polling(drop_pending_updates=True)
 
 
