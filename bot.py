@@ -218,6 +218,54 @@ def pop_expired_pending() -> list[dict]:
     return [{"order_id": r[0], "chat_id": r[1]} for r in rows]
 
 
+def cancel_pending_payments(chat_id: int) -> list[dict]:
+    """Удаляет все pending-платежи пользователя, возвращает invoice_id + plate."""
+    con = _conn()
+    rows = con.execute(
+        "SELECT order_id, invoice_id, plate FROM pending_payments WHERE chat_id = ?",
+        (chat_id,),
+    ).fetchall()
+    if rows:
+        placeholders = ",".join("?" * len(rows))
+        con.execute(
+            f"DELETE FROM pending_payments WHERE order_id IN ({placeholders})",
+            [r[0] for r in rows],
+        )
+        con.commit()
+    con.close()
+    return [{"order_id": r[0], "invoice_id": r[1], "plate": r[2]} for r in rows]
+
+
+def cancel_single_pending(order_id: str, chat_id: int) -> dict | None:
+    """Удаляет конкретный pending-платёж (проверяет chat_id для защиты от чужих)."""
+    con = _conn()
+    row = con.execute(
+        "SELECT invoice_id, plate FROM pending_payments WHERE order_id = ? AND chat_id = ?",
+        (order_id, chat_id),
+    ).fetchone()
+    if row:
+        con.execute("DELETE FROM pending_payments WHERE order_id = ?", (order_id,))
+        con.commit()
+    con.close()
+    return {"invoice_id": row[0], "plate": row[1]} if row else None
+
+
+async def _delete_cryptopay_invoice(invoice_id: int) -> bool:
+    """Аннулирует инвойс в CryptoBot через deleteInvoice API."""
+    try:
+        async with aiohttp.ClientSession() as session:
+            resp = await session.post(
+                f"{CRYPTO_PAY_API}deleteInvoice",
+                headers={"Crypto-Pay-API-Token": CRYPTO_BOT_TOKEN},
+                json={"invoice_id": invoice_id},
+            )
+            result = await resp.json()
+            return bool(result.get("ok"))
+    except Exception as exc:
+        logger.warning(f"deleteInvoice error (invoice_id={invoice_id}): {exc}")
+        return False
+
+
 async def _invoice_cleanup_loop(bot) -> None:
     """Фоновый цикл: каждые 2 минуты чистит просроченные инвойсы."""
     while True:
@@ -524,6 +572,35 @@ def _stats_markup() -> InlineKeyboardMarkup:
     ])
 
 
+async def cancel_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    chat_id = update.effective_user.id
+    cancelled = cancel_pending_payments(chat_id)
+
+    if not cancelled:
+        await update.message.reply_text(
+            "❌ У вас нет активных заказов, ожидающих оплаты.",
+            reply_markup=InlineKeyboardMarkup([[
+                InlineKeyboardButton("🏠 Главное меню", callback_data="main_menu")
+            ]]),
+        )
+        return
+
+    for rec in cancelled:
+        if rec["invoice_id"]:
+            await _delete_cryptopay_invoice(rec["invoice_id"])
+
+    plates = ", ".join({r["plate"] for r in cancelled})
+    await update.message.reply_text(
+        f"✅ *Ваш заказ успешно отменён.*\n\n"
+        f"🚗 Госномер: `{plates}`\n\n"
+        "Недельный лимит освобождён — вы можете оформить новый заказ при необходимости.",
+        parse_mode="Markdown",
+        reply_markup=InlineKeyboardMarkup([[
+            InlineKeyboardButton("🏠 Главное меню", callback_data="main_menu")
+        ]]),
+    )
+
+
 async def myorders_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     chat_id = update.effective_user.id
     orders = get_user_orders(chat_id)
@@ -550,10 +627,16 @@ async def myorders_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
             f"   ⛽ {fuel}, 20 л\n"
             f"   ⏱ Действует 30 мин с момента создания\n"
         )
+        row_btns: list[InlineKeyboardButton] = []
         if p["pay_url"]:
-            buttons.append([InlineKeyboardButton(
+            row_btns.append(InlineKeyboardButton(
                 f"💳 Оплатить (заказ {idx})", url=p["pay_url"]
-            )])
+            ))
+        row_btns.append(InlineKeyboardButton(
+            f"❌ Отменить (заказ {idx})",
+            callback_data=f"cancel_order_{p['order_id']}",
+        ))
+        buttons.append(row_btns)
 
     for v in orders["issued"]:
         idx += 1
@@ -849,6 +932,24 @@ async def menu_navigation(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             ]])
         )
 
+    elif data.startswith("cancel_order_"):
+        order_id = data[len("cancel_order_"):]
+        rec = cancel_single_pending(order_id, query.from_user.id)
+        if not rec:
+            await query.answer("⚠️ Заказ не найден или уже отменён.", show_alert=True)
+            return
+        if rec["invoice_id"]:
+            await _delete_cryptopay_invoice(rec["invoice_id"])
+        await query.edit_message_text(
+            f"✅ *Заказ отменён.*\n\n"
+            f"Недельный лимит для госномера `{rec['plate']}` освобождён.\n"
+            "Оформите новый заказ при необходимости.",
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup([[
+                InlineKeyboardButton("🏠 Главное меню", callback_data="main_menu")
+            ]]),
+        )
+
     elif data.startswith("show_qr_"):
         qr_payload = data[len("show_qr_"):]
         qr_img = make_qr(qr_payload)
@@ -1081,6 +1182,7 @@ async def post_init(application: Application) -> None:
         BotCommand("admin", "Вход для контролёров АЗС"),
         BotCommand("stats",    "Статистика системы (только для контролёров)"),
         BotCommand("myorders", "Мои заказы и ваучеры"),
+        BotCommand("cancel",   "Отменить активный счёт на оплату"),
     ])
     logger.info("Командное меню Telegram зарегистрировано.")
     asyncio.create_task(_invoice_cleanup_loop(application.bot))
@@ -1101,6 +1203,7 @@ def main() -> None:
     app.add_handler(CommandHandler("admin", admin_cmd))
     app.add_handler(CommandHandler("stats",    stats_cmd))
     app.add_handler(CommandHandler("myorders", myorders_cmd))
+    app.add_handler(CommandHandler("cancel",   cancel_cmd))
     app.add_handler(CallbackQueryHandler(menu_navigation))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
 
