@@ -5,10 +5,11 @@ import logging
 import uuid
 import sqlite3
 import qrcode
+import aiohttp
 from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 from telegram import (
-    Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo,
+    Update, InlineKeyboardButton, InlineKeyboardMarkup,
     KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove, BotCommand
 )
 from telegram.ext import (
@@ -24,9 +25,12 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-BOT_TOKEN       = os.getenv("TELEGRAM_BOT_TOKEN", "")
-ADMIN_PASSWORD  = os.getenv("ADMIN_PASSWORD", "crimea2026")
-DB_PATH         = "vouchers.db"
+BOT_TOKEN          = os.getenv("TELEGRAM_BOT_TOKEN", "")
+ADMIN_PASSWORD     = os.getenv("ADMIN_PASSWORD", "crimea2026")
+CRYPTO_BOT_TOKEN   = os.getenv("CRYPTO_BOT_TOKEN", "")
+CRYPTO_PAY_API     = "https://pay.crypt.bot/api/"
+PAID_AMOUNT_USDT   = 12          # фиксированная стоимость ваучера в USDT
+DB_PATH            = "vouchers.db"
 MAP_URL         = "https://fuel.sevtech.org/map"
 
 DAILY_FREE_LIMIT    = 50   # суточный лимит бесплатных кодов
@@ -88,6 +92,17 @@ def init_db() -> None:
         except sqlite3.OperationalError:
             pass
 
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS pending_payments (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            order_id   TEXT NOT NULL UNIQUE,
+            invoice_id INTEGER,
+            chat_id    INTEGER NOT NULL,
+            plate      TEXT NOT NULL,
+            fuel_type  TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        )
+    """)
     existing = cur.execute("SELECT COUNT(*) FROM vouchers").fetchone()[0]
     if existing == 0:
         rows = []
@@ -110,6 +125,20 @@ def init_db() -> None:
 
 def _today_str() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+
+def save_pending_payment(
+    order_id: str, invoice_id: int, chat_id: int, plate: str, fuel_type: str
+) -> None:
+    con = _conn()
+    con.execute(
+        """INSERT OR IGNORE INTO pending_payments
+           (order_id, invoice_id, chat_id, plate, fuel_type, created_at)
+           VALUES (?, ?, ?, ?, ?, ?)""",
+        (order_id, invoice_id, chat_id, plate, fuel_type, _today_str()),
+    )
+    con.commit()
+    con.close()
 
 
 def _n_days_ago_iso(n: int) -> str:
@@ -386,7 +415,10 @@ def _build_stats_text() -> str:
         f"━━━ 🚦 ЛИМИТ БЕСПЛАТНЫХ КВОТ ━━━\n"
         f"{bar} {pct}%\n"
         f"Использовано: *{s['free_today']}* из *{s['daily_limit']}*\n"
-        f"Осталось до исчерпания: *{s['free_remaining']} шт.*"
+        f"Осталось до исчерпания: *{s['free_remaining']} шт.*\n\n"
+
+        f"━━━ 📈 СТАТУС ПЛАТЁЖНОЙ СИСТЕМЫ ━━━\n"
+        f"📈 Прямой приём оплат в USDT через Crypto Pay API без задержек"
     )
 
 
@@ -537,68 +569,75 @@ async def menu_navigation(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             ] + [[InlineKeyboardButton("⬅️ Главное меню", callback_data="main_menu")]])
         )
 
-    # ── Карточка платного заказа ──────────────────────────────────
+    # ── Создание реального инвойса Crypto Pay ─────────────────────
     elif data.startswith("paid_buy_"):
         fuel_type = data.split("_")[2]
         product   = PAID_PRODUCTS[fuel_type]
         plate     = context.user_data.get("pending_plate", "")
         context.user_data["paid_fuel_type"] = fuel_type
 
-        sim_url = f"https://paymetodaygo.online/checkout/{uuid.uuid4().hex[:10]}"
-        text = (
-            f"🛒 *Подтверждение коммерческого заказа:*\n\n"
-            f"• *Товар:* {product['label']}\n"
-            f"• *Объём:* 20 литров\n"
-            f"• *К оплате:* `{product['price']} RUB`\n"
-            f"• *Госномер:* `{plate}`\n\n"
-            "Выберите способ оплаты:"
-        )
-        await query.edit_message_text(
-            text, parse_mode="Markdown",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("💳 Оплатить сервисный сбор за ваучер (СБП)", web_app=WebAppInfo(url=sim_url))],
-                [InlineKeyboardButton("🤖 Тестовая оплата (Симуляция)", callback_data=f"paid_sim_{fuel_type}")],
-                [InlineKeyboardButton("❌ Отменить", callback_data="main_menu")],
-            ])
-        )
+        await query.edit_message_text("⏳ Создаю счёт на оплату...")
 
-    # ── Симуляция платного заказа ─────────────────────────────────
-    elif data.startswith("paid_sim_"):
-        fuel_type = data.split("_")[2]
-        plate     = context.user_data.get("pending_plate", "НЕИЗВЕСТЕН")
-        product   = PAID_PRODUCTS[fuel_type]
-
-        await query.edit_message_text("⏳ Обрабатываю платёж...")
-
-        payload = issue_paid_voucher(plate, fuel_type, product["station"])
-        if not payload:
+        order_id = uuid.uuid4().hex
+        try:
+            async with aiohttp.ClientSession() as session:
+                resp = await session.post(
+                    f"{CRYPTO_PAY_API}createInvoice",
+                    headers={"Crypto-Pay-API-Token": CRYPTO_BOT_TOKEN},
+                    json={
+                        "asset": "USDT",
+                        "amount": str(PAID_AMOUNT_USDT),
+                        "payload": order_id,
+                        "description": "Оплата дополнительного ваучера на 20 литров топлива",
+                    },
+                )
+                api_result = await resp.json()
+        except Exception as exc:
+            logger.error(f"CryptoPay createInvoice error: {exc}")
             await query.edit_message_text(
-                "⚠️ Ваучеры временно недоступны. Попробуйте позже.",
+                "⚠️ Ошибка платёжного сервиса. Попробуйте позже.",
                 reply_markup=InlineKeyboardMarkup([[
                     InlineKeyboardButton("⬅️ Главное меню", callback_data="main_menu")
                 ]])
             )
             return
 
+        if not api_result.get("ok"):
+            err_msg = api_result.get("error", {}).get("name", "неизвестная ошибка")
+            logger.error(f"CryptoPay API error: {err_msg}")
+            await query.edit_message_text(
+                f"⚠️ Платёжный сервис недоступен: {err_msg}. Попробуйте позже.",
+                reply_markup=InlineKeyboardMarkup([[
+                    InlineKeyboardButton("⬅️ Главное меню", callback_data="main_menu")
+                ]])
+            )
+            return
+
+        invoice    = api_result["result"]
+        pay_url    = invoice["pay_url"]
+        invoice_id = invoice["invoice_id"]
+
+        save_pending_payment(order_id, invoice_id, query.from_user.id, plate, fuel_type)
+
+        text = (
+            f"🛒 *Счёт на оплату сформирован*\n\n"
+            f"• *Товар:* {product['label']}\n"
+            f"• *Объём:* 20 литров\n"
+            f"• *К оплате:* `{PAID_AMOUNT_USDT} USDT`\n"
+            f"• *Госномер:* `{plate}`\n\n"
+            "После оплаты QR-ваучер придёт *автоматически* в этот чат.\n"
+            "_Счёт действителен 30 минут._"
+        )
         await query.edit_message_text(
-            "🎉 *Оплата прошла успешно!* Формирую ваучер...",
-            parse_mode="Markdown"
+            text, parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton(
+                    "💳 Оплатить через CryptoBot (СБП/Карты/Крипта)",
+                    url=pay_url,
+                )],
+                [InlineKeyboardButton("❌ Отменить", callback_data="main_menu")],
+            ])
         )
-        caption = (
-            f"⚡ *Коммерческий ваучер на 20 литров*\n\n"
-            f"🏷 Выдан дополнительный коммерческий ваучер №`{payload}` на объём до *20 литров*.\n"
-            f"⛽ АЗС: {product['label']}\n"
-            f"🚗 Госномер: `{plate}`\n\n"
-            "⚠️ *Важно:* Сам бензин оплачивается отдельно на кассе АЗС «ТЭС» после гашения "
-            "QR-кода контролёром. Данный ваучер подтверждает только *право на покупку* топлива.\n\n"
-            "📋 *Инструкция:*\n"
-            "1. Код действует до момента гашения сотрудником АЗС.\n"
-            "2. Предъявите код контролёру Правительства Севастополя на АЗС ТЭС.\n"
-            "3. Контролёр сверит код с госномером вашего авто и погасит его.\n"
-            "4. После гашения оплатите топливо на кассе по тарифу АЗС.\n"
-            "5. Следующий платный ваучер — не ранее чем через *7 дней*."
-        )
-        await query.message.reply_photo(photo=make_qr(payload), caption=caption, parse_mode="Markdown")
 
     # ══ АДМИН-ПАНЕЛЬ ═════════════════════════════════════════════
 
