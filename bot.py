@@ -30,9 +30,11 @@ logger = logging.getLogger(__name__)
 
 BOT_TOKEN          = os.getenv("TELEGRAM_BOT_TOKEN", "")
 ADMIN_PASSWORD     = os.getenv("ADMIN_PASSWORD", "crimea2026")
+ADMIN_CHAT_ID      = int(os.getenv("ADMIN_CHAT_ID", "0")) or None   # chat_id администратора
 CRYPTO_BOT_TOKEN   = os.getenv("CRYPTO_BOT_TOKEN", "")
 CRYPTO_PAY_API     = "https://pay.crypt.bot/api/"
 PAID_AMOUNT_USDT   = 12          # фиксированная стоимость ваучера в USDT
+USDT_RUB_RATE      = 92          # курс конвертации для отображения суммы в рублях
 DB_PATH            = "vouchers.db"
 MAP_URL         = "https://fuel.sevtech.org/map"
 
@@ -307,6 +309,16 @@ def cancel_single_pending(order_id: str, chat_id: int) -> dict | None:
     return {"invoice_id": row[0], "plate": row[1], "fuel_type": row[2]} if row else None
 
 
+async def notify_admin(bot, text: str) -> None:
+    """Отправляет push-уведомление администратору (ADMIN_CHAT_ID)."""
+    if not ADMIN_CHAT_ID:
+        return
+    try:
+        await bot.send_message(chat_id=ADMIN_CHAT_ID, text=text, parse_mode="Markdown")
+    except Exception as exc:
+        logger.warning(f"notify_admin failed: {exc}")
+
+
 async def _delete_cryptopay_invoice(invoice_id: int) -> bool:
     """Аннулирует инвойс в CryptoBot через deleteInvoice API."""
     try:
@@ -476,14 +488,29 @@ def get_stats() -> dict:
     ).fetchall()
     fuel_today = {row[0]: row[1] for row in fuel_today_rows}
 
+    # Дополнительные агрегаты для расширенной статистики
+    free_all = cur.execute(
+        "SELECT COUNT(*) FROM vouchers WHERE voucher_type='free' AND status != 'available'"
+    ).fetchone()[0]
+    paid_all = cur.execute(
+        "SELECT COUNT(*) FROM vouchers WHERE voucher_type='paid' AND status != 'available'"
+    ).fetchone()[0]
+    total_users = cur.execute(
+        "SELECT COUNT(DISTINCT chat_id) FROM vouchers WHERE chat_id IS NOT NULL AND chat_id != 0"
+    ).fetchone()[0]
+    pending_count = cur.execute("SELECT COUNT(*) FROM pending_payments").fetchone()[0]
+
     con.close()
 
     free_remaining = max(0, DAILY_FREE_LIMIT - free_today)
+    revenue_rub = paid_all * PAID_AMOUNT_USDT * USDT_RUB_RATE
 
     return {
         "total_issued":    total_issued,
         "total_redeemed":  total_redeemed,
         "total_available": total_available,
+        "free_all":        free_all,
+        "paid_all":        paid_all,
         "free_today":      free_today,
         "paid_today":      paid_today,
         "redeemed_today":  redeemed_today,
@@ -492,6 +519,9 @@ def get_stats() -> dict:
         "free_remaining":  free_remaining,
         "daily_limit":     DAILY_FREE_LIMIT,
         "today":           today,
+        "total_users":     total_users,
+        "pending_count":   pending_count,
+        "revenue_rub":     revenue_rub,
     }
 
 
@@ -608,26 +638,32 @@ def _build_stats_text() -> str:
         f"📊 *Статистика системы — {s['today']}*\n"
         f"_Департамент цифрового развития Севастополя_\n\n"
 
-        f"━━━ 🗂 ОБЩИЕ ИТОГИ ━━━\n"
-        f"📤 Всего выдано ваучеров: *{s['total_issued']}*\n"
-        f"✅ Всего погашено на АЗС: *{s['total_redeemed']}*\n"
-        f"🗃 Остаток в базе данных: *{s['total_available']}*\n\n"
+        f"━━━ 👥 ПОЛЬЗОВАТЕЛИ ━━━\n"
+        f"👤 Уникальных пользователей в системе: *{s['total_users']}*\n"
+        f"⏳ Активных счетов (ожидают оплаты): *{s['pending_count']}*\n\n"
 
-        f"━━━ 📅 СЕГОДНЯ ━━━\n"
-        f"🆓 Бесплатных госквот выдано: *{s['free_today']}*\n"
-        f"💰 Платных ваучеров куплено: *{s['paid_today']}*\n"
-        f"🚫 Погашено на АЗС сегодня: *{s['redeemed_today']}*\n\n"
+        f"━━━ 🆓 БЕСПЛАТНЫЕ ВАУЧЕРЫ ━━━\n"
+        f"📆 За всё время: *{s['free_all']}*\n"
+        f"📅 За сегодня: *{s['free_today']}* из *{s['daily_limit']}*\n"
+        f"{bar} {pct}%  (осталось: *{s['free_remaining']} шт.*)\n\n"
+
+        f"━━━ 💰 ПЛАТНЫЕ ВАУЧЕРЫ ━━━\n"
+        f"📆 За всё время: *{s['paid_all']}*\n"
+        f"📅 За сегодня: *{s['paid_today']}*\n"
+        f"💵 Сумма сборов (расч.): *{s['paid_all'] * PAID_AMOUNT_USDT} USDT "
+        f"≈ {s['revenue_rub']:,} ₽*\n\n"
+
+        f"━━━ 🗂 ОБЩИЕ ИТОГИ ━━━\n"
+        f"📤 Всего выдано: *{s['total_issued']}*\n"
+        f"✅ Погашено на АЗС: *{s['total_redeemed']}*\n"
+        f"🗃 Остаток в базе данных: *{s['total_available']}*\n"
+        f"🚫 Погашено сегодня: *{s['redeemed_today']}*\n\n"
 
         f"━━━ ⛽ РАЗБИВКА ПО ТОПЛИВУ (всего) ━━━\n"
         f"{_fuel_line(s['fuel_stats'])}\n\n"
 
         f"━━━ ⛽ РАЗБИВКА ПО ТОПЛИВУ (сегодня) ━━━\n"
         f"{_fuel_line(s['fuel_today'])}\n\n"
-
-        f"━━━ 🚦 ЛИМИТ БЕСПЛАТНЫХ КВОТ ━━━\n"
-        f"{bar} {pct}%\n"
-        f"Использовано: *{s['free_today']}* из *{s['daily_limit']}*\n"
-        f"Осталось до исчерпания: *{s['free_remaining']} шт.*\n\n"
 
         f"━━━ 📈 СТАТУС ПЛАТЁЖНОЙ СИСТЕМЫ ━━━\n"
         f"📈 Прямой приём оплат в USDT через Crypto Pay API без задержек"
@@ -1074,6 +1110,17 @@ async def menu_navigation(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             ),
             parse_mode="Markdown",
         )
+        await notify_admin(
+            context.bot,
+            f"🔔 *РЕГИСТРАЦИЯ ТРАНЗАКЦИИ (СИМУЛЯЦИЯ ОПЛАТЫ)*\n"
+            f"• Госномер ТС: `{plate}`\n"
+            f"• Тип ваучера: Дополнительный объём (20 литров)\n"
+            f"• Платёжная система: Симуляция (тестовый режим)\n"
+            f"• Сумма: `{PAID_AMOUNT_USDT} USDT ≈ {PAID_AMOUNT_USDT * USDT_RUB_RATE} ₽`\n"
+            f"• Время фиксации: {datetime.now(timezone.utc).strftime('%d.%m.%Y %H:%M')} UTC\n"
+            f"────────────────────────\n"
+            f"Учётный QR-ваучер успешно сгенерирован и отправлен пользователю.",
+        )
 
     elif data.startswith("show_qr_"):
         qr_payload = data[len("show_qr_"):]
@@ -1270,6 +1317,13 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
                         InlineKeyboardButton("⬅️ Главное меню", callback_data="main_menu")
                     ]])
                 )
+                await notify_admin(
+                    context.bot,
+                    f"⚠️ *ФИКСАЦИЯ ОТКАЗА В ВЫДАЧЕ (ПРЕВЫШЕНИЕ ЛИМИТА)*\n"
+                    f"• Госномер ТС: `{plate}`\n"
+                    f"• Инициатор (ID): `{update.effective_user.id}`\n"
+                    f"• Причина: Попытка повторного запроса лимита до истечения 7 дней.",
+                )
                 return
 
             await update.message.reply_text("⏳ Генерирую ваш персональный QR-код...")
@@ -1297,6 +1351,14 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
                 "4. Следующий бесплатный код — не ранее чем через *7 дней*."
             )
             await update.message.reply_photo(photo=make_qr(payload), caption=caption, parse_mode="Markdown")
+            await notify_admin(
+                context.bot,
+                f"🎁 *РЕГИСТРАЦИЯ ВЫДАЧИ (БЕСПЛАТНЫЙ ОБЪЁМ)*\n"
+                f"• Госномер ТС: `{plate}`\n"
+                f"• Тип ваучера: Регламентированный объём (20 литров)\n"
+                f"• Основание: Первичная еженедельная верификация\n"
+                f"• Время фиксации: {datetime.now(timezone.utc).strftime('%d.%m.%Y %H:%M')} UTC",
+            )
 
         elif flow == "paid":
             if plate_cooldown_active(plate, "paid", PAID_COOLDOWN_DAYS):
@@ -1308,6 +1370,13 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
                     reply_markup=InlineKeyboardMarkup([[
                         InlineKeyboardButton("⬅️ Главное меню", callback_data="main_menu")
                     ]])
+                )
+                await notify_admin(
+                    context.bot,
+                    f"⚠️ *ФИКСАЦИЯ ОТКАЗА В ВЫДАЧЕ (ПРЕВЫШЕНИЕ ЛИМИТА)*\n"
+                    f"• Госномер ТС: `{plate}`\n"
+                    f"• Инициатор (ID): `{update.effective_user.id}`\n"
+                    f"• Причина: Попытка повторного запроса лимита до истечения 7 дней.",
                 )
                 return
 

@@ -9,6 +9,9 @@ const router = Router();
 
 const CRYPTO_BOT_TOKEN = process.env.CRYPTO_BOT_TOKEN ?? "";
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN ?? "";
+const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID ? Number(process.env.ADMIN_CHAT_ID) : null;
+const PAID_AMOUNT_USDT = 12;
+const USDT_RUB_RATE = 92;
 const DB_PATH = path.join(process.cwd(), "vouchers.db");
 const TG_API = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
@@ -175,6 +178,20 @@ router.post("/cryptobot", async (req: Request, res: Response) => {
 
     await sendTelegramPhoto(chat_id, qrBuffer, caption);
     logger.info({ orderId, plate, fuel_type }, "Paid voucher issued via webhook");
+
+    if (ADMIN_CHAT_ID) {
+      const now = new Date().toLocaleString("ru-RU", { timeZone: "UTC" });
+      const adminMsg =
+        `🔔 *РЕГИСТРАЦИЯ ТРАНЗАКЦИИ (УСПЕШНАЯ ОПЛАТА)*\n` +
+        `• Госномер ТС: \`${plate}\`\n` +
+        `• Тип ваучера: Дополнительный объём (20 литров)\n` +
+        `• Платёжная система: Crypto Pay API (P2P-Фиат)\n` +
+        `• Сумма: \`${PAID_AMOUNT_USDT} USDT ≈ ${PAID_AMOUNT_USDT * USDT_RUB_RATE} ₽\`\n` +
+        `• Время фиксации: ${now} UTC\n` +
+        `────────────────────────\n` +
+        `Учётный QR-ваучер успешно сгенерирован и отправлен пользователю.`;
+      await sendTelegramMessage(ADMIN_CHAT_ID, adminMsg).catch(() => {});
+    }
   } catch (err) {
     logger.error({ err, orderId }, "CryptoBot webhook processing error");
     res.status(500).json({ ok: false, error: "internal error" });
