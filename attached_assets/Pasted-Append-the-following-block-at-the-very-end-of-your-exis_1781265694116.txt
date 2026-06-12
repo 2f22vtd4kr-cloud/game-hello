@@ -1,0 +1,334 @@
+Append the following block at the very end of your existing master prompt.
+
+=======================================================
+11. MVP-FIRST EXECUTION RULE (CRITICAL)
+
+The primary objective is to generate a COMPLETE, RUNNABLE, DEPLOYABLE application on the first pass.
+
+The application must be fully usable immediately after dependency installation.
+
+The application must NOT depend on:
+
+* Paid APIs
+* External map providers
+* CryptoBot registration
+* Telegram Stars registration
+* Webhook configuration
+* Domain ownership
+* SSL certificate setup
+* Third-party dashboard configuration
+* Manual cloud service onboarding
+
+Everything must function out-of-the-box using only:
+
+* FastAPI
+* SQLite
+* React
+* Telegram WebApp SDK
+* Local application state
+
+=======================================================
+12. NO PLACEHOLDERS RULE
+
+Do not generate:
+
+* TODO comments
+* Stub functions
+* Placeholder API routes
+* “Implement later” sections
+* Empty React components
+* Empty service classes
+
+Every file must contain complete working logic.
+
+=======================================================
+13. TYPESCRIPT REQUIREMENT
+
+Use:
+
+* React
+* Vite
+* TypeScript
+
+Do NOT generate plain JavaScript.
+
+Required files:
+
+App.tsx
+main.tsx
+
+All API responses and frontend state objects must use strongly typed interfaces.
+
+=======================================================
+14. STATE MANAGEMENT REQUIREMENT
+
+Use Zustand for global state.
+
+Required stores:
+
+* useUserStore
+* useMapStore
+* useStationStore
+* useVaultStore
+* useGameStore
+
+Persist all critical state in localStorage.
+
+Map position, zoom level, filters and user progress must survive page refreshes.
+
+=======================================================
+15. MAP PERFORMANCE REQUIREMENT
+
+Use:
+
+* Leaflet
+* React Leaflet
+* Leaflet Marker Cluster
+
+Requirements:
+
+* Cluster markers automatically
+* Prevent rerendering of all markers
+* Cache viewport state
+* Never remount map when switching tabs
+* Handle 220+ stations smoothly on mobile devices
+
+=======================================================
+16. DATABASE SEEDING REQUIREMENT
+
+Do not manually write 220 station entries.
+
+Create deterministic seed generators.
+
+Required files:
+
+seed_regions.py
+seed_stations.py
+
+Generate:
+
+* 220+ stations
+* realistic coordinates
+* realistic queue counts
+* realistic station names
+* realistic fuel availability values
+
+Status distribution:
+
+Green = 55%
+Yellow = 30%
+Red = 15%
+
+=======================================================
+17. BACKGROUND AUTOMATION SYSTEM
+
+Use APScheduler.
+
+Create jobs:
+
+Every 30 minutes:
+
+* simulate availability shifts
+
+Every 10 minutes:
+
+* remove expired reports
+
+Every 1 hour:
+
+* generate analytics snapshots
+
+Every midnight:
+
+* reset daily limits
+
+Jobs must start automatically with FastAPI.
+
+=======================================================
+18. REPORTING ENGINE
+
+Create a dedicated StationReport model.
+
+Fields:
+
+id
+station_id
+user_id
+vote_type
+created_at
+expires_at
+
+User reports expire after exactly 1.5 hours.
+
+Do NOT overwrite station status directly.
+
+Calculate status dynamically using:
+
+Base Status
++
+Recent Reports
++
+Supply Drift
+
+=======================================================
+19. ANALYTICS REQUIREMENT
+
+All analytics calculations must happen on backend.
+
+Frontend only renders data.
+
+Create endpoint:
+
+GET /analytics
+
+Response:
+
+{
+regional_supply,
+availability_index,
+price_index,
+trend_data,
+station_counts
+}
+
+=======================================================
+20. PAYMENT ABSTRACTION REQUIREMENT
+
+Create PaymentProvider interface.
+
+Implement:
+
+MockPaymentProvider
+
+The entire application must function using MockPaymentProvider by default.
+
+Do NOT require:
+
+* CryptoBot account
+* Telegram Stars setup
+* External payment registration
+
+Mock provider should:
+
+* generate transaction hashes
+* generate QR passes
+* create purchase history entries
+* populate user vault
+
+without contacting external services.
+
+=======================================================
+21. OPTIONAL PAYMENT FEATURE FLAGS
+
+Create architecture for future providers:
+
+CryptoBotProvider
+TelegramStarsProvider
+
+but do NOT enable them by default.
+
+Only activate real providers when:
+
+ENABLE_REAL_PAYMENTS=true
+
+exists inside environment variables.
+
+=======================================================
+22. SECURITY REQUIREMENTS
+
+Use:
+
+* Pydantic validation
+* SQLAlchemy ORM
+* Input sanitization
+* HMAC-SHA256 signing
+
+QR passes must contain signed hashes.
+
+Never store sensitive data in plaintext.
+
+=======================================================
+23. UX POLISH REQUIREMENTS
+
+Use Framer Motion.
+
+Implement:
+
+* Skeleton loaders
+* Animated counters
+* Toast notifications
+* Smooth page transitions
+* Pulse effects
+* Neon hover states
+* Status transition animations
+
+Application should feel like a premium mobile strategy game interface.
+
+=======================================================
+24. ERROR HANDLING REQUIREMENT
+
+Create:
+
+ErrorBoundary
+GlobalToastManager
+
+Never expose stack traces to users.
+
+All user-facing errors must be professional Russian-language messages.
+
+=======================================================
+25. PRODUCTION FILE REQUIREMENT
+
+Generate all deployment files:
+
+requirements.txt
+
+package.json
+
+.env.example
+
+Dockerfile
+
+docker-compose.yml
+
+README.md
+
+replit.nix
+
+The repository must be runnable immediately after installation.
+
+=======================================================
+26. FINAL GENERATION RULE
+
+Generate COMPLETE WORKING CODE.
+
+Do not generate architectural descriptions.
+
+Do not explain how to build the application.
+
+Do not provide pseudocode.
+
+Do not omit files.
+
+If output limits are reached:
+
+continue generating remaining files automatically until the repository is complete.
+
+Priority order:
+
+1. Working backend
+2. Working database
+3. Working API
+4. Working frontend
+5. Games
+6. Analytics
+7. UI polish
+8. Optional integrations
+
+The first generated version must be fully usable without creating any additional external accounts or configuring any third-party services.
+
+One additional recommendation: before sending the combined prompt to Replit Agent, add a single line at the very top:
+
+“Generate the project incrementally. First create the backend and database, verify they are internally consistent, then create the frontend, then integrate. Do not attempt to generate the entire repository in a single reasoning step.”
+
+That instruction alone often reduces hallucinations more than adding another thousand words of specifications.

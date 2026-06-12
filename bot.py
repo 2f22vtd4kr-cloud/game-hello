@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 from telegram import (
     Update, InlineKeyboardButton, InlineKeyboardMarkup,
     KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove, BotCommand,
-    InputFile,
+    InputFile, WebAppInfo,
 )
 from telegram.ext import (
     Application, CommandHandler, CallbackQueryHandler,
@@ -37,6 +37,7 @@ PAID_AMOUNT_USDT   = 12          # фиксированная стоимость
 USDT_RUB_RATE      = 92          # курс конвертации для отображения суммы в рублях
 DB_PATH            = "vouchers.db"
 MAP_URL         = "https://fuel.sevtech.org/map"
+TMA_URL         = "https://3001-" + os.getenv("REPLIT_DEV_DOMAIN", "localhost")
 
 DAILY_FREE_LIMIT    = 50   # суточный лимит бесплатных кодов
 FREE_COOLDOWN_DAYS  = 7    # дней между бесплатными кодами на один госномер
@@ -567,6 +568,7 @@ def fmt_dt(iso: str | None) -> str:
 
 def main_menu_markup() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup([
+        [InlineKeyboardButton("🗺️⛽ Топливный Узел — Матрица Снабжения", web_app=WebAppInfo(url=TMA_URL))],
         [InlineKeyboardButton("📂 Получить бесплатный QR-код (Лимит 20л)", callback_data="free_quota")],
         [InlineKeyboardButton("⚡ Заказать дополнительный объем (Платная доза)", callback_data="paid_quota")],
         [InlineKeyboardButton("📜 Актуальные правила и сводки Правительства", callback_data="rules")],

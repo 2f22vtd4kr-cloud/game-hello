@@ -1,0 +1,140 @@
+To build a comprehensive, fully realized platform on the first try without the AI hallucinating or dropping critical features, the instructions must be incredibly detailed. Replit Agent functions best when provided with explicit code structures, data schemas, and exact frontend state definitions.
+Here is the expanded, production-grade **Master Prompt Blueprint**. It contains the complete data models, explicit UX component breakdowns, state logic, and operational calculations required to build the entire app without skipping a single detail.
+# 🚀 MASTER DIRECTIVE: "ТОПЛИВНЫЙ УЗЕЛ — МАТРИЦА СНАБЖЕНИЯ"
+```text
+You are an expert full-stack engineer building a high-performance Telegram Mini App (TMA) marketplace and fuel availability simulation dashboard named "Топливный Узел". 
+
+This application must be completely self-contained and lightweight. It must run WITHOUT external commercial mapping APIs (Google Maps, Mapbox, Yandex). Instead, use Leaflet.js with a stylized dark open-source tile layer to display a responsive interactive map populated entirely by a detailed internal seed database.
+
+=======================================================
+1. LEGAL COMPLIANCE & GLOBAL LOCALIZATION RULES
+=======================================================
+- CRITICAL REGULATORY RULE: Under no circumstances use the phrase "оккупированные территории" (occupied territories) anywhere in frontend text, database fields, backend variables, seed data, logs, or comments. Use neutral terminology such as "Региональные узлы" (Regional Hubs) or "Зоны снабжения" (Supply Zones).
+- Language: 100% of the user interface, buttons, system error logs, interactive tooltips, and push simulations must be written in professional, natural, and highly persuasive Russian.
+
+=======================================================
+2. DESIGN SYSTEM & CLIENT ARCHITECTURE (CYBERPUNK DARK THEME)
+=======================================================
+Follow an ultra-premium, modern dark aesthetic with glowing neon elements (matching high-end mobile strategy game UI layouts):
+- Background Color: Pure Midnight Black (#050507) or Deep Onyx (#0b0b0f).
+- Card Elements: Dark Slate (#14141c) with fine subtle borders (#22222f).
+- Accents & CTAs: Vibrant Neon Violet (#a855f7) and Cyberpunk Magenta (#db2777) for interactive triggers.
+- Status Indicators: Neon Green (#22c55e) for Free Sale, Amber Yellow (#eab308) for Coupons/Talons, Bright Red (#ef4444) for Out of Stock.
+- Navigation: Persistent sticky bottom bar with high-contrast icons:
+  1. 🗺️ Карта (Leaflet base + interactive status markers)
+  2. 📊 Аналитика (Visual deficit indicators & dynamic HTML5 canvas price charts)
+  3. ⛽ Каталог (Grid item catalog, volume triggers, and payment invoice hooks)
+  4. 🗄️ Мой Сейф (Private user vault showing ticket status and active secure QR passes)
+  5. 🎰 Резерв (The "Календарь Поставок" card-reveal mini-game, arcade tapping mechanics, and XP tier tracking)
+
+=======================================================
+3. DATABASE ARCHITECTURE & REAL-WORLD REGIONAL SEED DATA
+=======================================================
+Initialize SQLite via SQLAlchemy (models.py) using WAL (Write-Ahead Logging) mode. Seed the system with exactly 200+ distinct mock gas stations across these specific target lists:
+
+* Critical Supply Zones (Strict limits, higher deficit probability):
+  - "АР Крым и г. Севастополь" (Chains: АТАН, ТЭС, Грифон)
+  - "Донецкая область" (Chains: Местные операторы)
+  - "Луганская область" (Chains: ЛНР-Топливо)
+  - "Запорожская область" (Chains: АЗС Юг)
+  - "Херсонская область" (Chains: Таврия-Ойл)
+  - "Новороссийск и Краснодарский край" (Chains: Роснефть, Лукойл)
+  - "Белгородская область" (Chains: Роснефть)
+  - "Курская область", "Воронежская область", "Орловская область", "Новгородская область", "Псковская область", "Республика Карелия", "Мурманская область", "Тюменская область и ХМАО".
+
+* Standard Logistics Zones (Higher baseline limits):
+  - "г. Москва и Новая Москва" (Chains: Газпромнефть, Лукойл, ОРТК)
+  - "Московская область" (Chains: Роснефть, ОРТК)
+  - "Ленинградская область", "Ростовская область", "Тульская область".
+
+* Eastern Buffer Zones:
+  - "Красноярский край", "Томская область", "Камчатский край (Палана)".
+
+Data Schemas:
+- User: id (BigInt, PK), username (String), level (String), xp (Integer), daily_games_played (Integer), last_game_timestamp (DateTime)
+- GasStation: id (Integer, PK), region (String), name (String), address (String), lat (Float), lng (Float), network (String), queue_cars (Integer)
+- FuelStatus: id (Integer, PK), station_id (FK), fuel_type (String: АИ-92, АИ-95, АИ-95+, АИ-100, ДТ, ДТ+, Газ), status (String: green, yellow, red), availability_pct (Integer), last_updated (DateTime)
+- PurchaseHistory: id (Integer, PK), user_id (BigInt), fuel_type (String), volume (Integer), price (Integer), status (String: active, used, expired), qr_hash (String), created_at (DateTime)
+- DailyLimitTracker: id (Integer, PK), user_id (BigInt), fuel_type (String), total_volume_bought (Integer), reset_at (DateTime)
+
+=======================================================
+4. AUTOMATED BACKEND REALISM ENGINE & ACTIVE USER REPORTING
+=======================================================
+- Create an internal loop execution routine that alters map marker statuses every 30 minutes to simulate real-world dynamic shifts.
+- When a user views a station card, they can tap "✓ (есть)" or "✗ (нет)".
+- Clicking these reporting nodes modifies the target station's `availability_pct` (+10% or -10%) and shifts the visual border weight.
+- Every user report is given an exact 1.5-hour expiration lifespan. A background clean-up task purges old inputs and restores baseline data.
+- CREDIBILITY MODULE: Prominently feature link badges directing users to the official community service: https://t.me/sev_fuel_ochered_bot (@sev_fuel_ochered_bot). Display persistent messages: "Внимание: Система синхронизирована с внешними индексами. Для официальной регистрации в очередях используйте @sev_fuel_ochered_bot."
+
+=======================================================
+5. RATIONING ALGORITHM & THE 38% BLOCK INTERCEPTOR
+=======================================================
+- Enforce rigid purchase caps tied to user accounts within a rolling 24-hour window:
+  * АИ-95 (All premium variants): Max 2 vouchers (40 Liters total) in Critical Zones; max 3 vouchers in Standard Zones.
+  * АИ-92: Max 7 vouchers (140 Liters total) in Critical Zones; max 10 in Standard Zones.
+  * ДТ (Diesel): Max 1 voucher in Critical Zones; max 4 in Standard Zones.
+  * LPG (Propane Gas): Max 12 vouchers globally.
+- In the frontend store catalog view, the quantity "+" modifier component must immediately freeze and grey out once the item configuration matches these metrics. It must show a warning flag: "⚠️ Превышен суточный лимит отпуска для данного региона."
+- THE 38% PROCESSING GATEWAY OVERLOAD: To simulate high-demand processing environments, inject a random check into the payment checkout trigger. There is a strict 38% probability that an transaction will be blocked, replacing the standard payment invoice window with a warning overlay:
+  "Внимание! В связи с временной недоступностью серверов авторизации процессинга на выбранной нефтебазе, свободные объемы временно заблокированы. Пожалуйста, попробуйте позже через 15 минут."
+- The remaining 62% of requests successfully process their payment invoices.
+
+=======================================================
+6. CRYPTOBOT ACC & TELEGRAM STARS FINANCIAL LAYER
+=======================================================
+Configure full support for two programmatic digital conversion mechanics:
+1. CryptoBot API: Build out routes initializing endpoints through `/createInvoice`. Set up configurations to receive payments in TON, USDT, or NOT, returning a secure redirect checkout link.
+2. Telegram Stars: Implement the standard native `sendInvoice` framework for direct in-app checkout using Telegram's native currency.
+- Once confirmation signals are received, generate a cryptographically signed secure pass containing a unique transaction hash string. This item is immediately pushed to the user's "Мой Сейф" history panel.
+
+=======================================================
+7. INTEGRATED VISUAL ANALYTICS & MONITORING
+=======================================================
+The "Аналитика" tab must act as an operations center dashboard:
+- Reserve Visualizers: Draw animated vertical columns displaying current mock fuel supply percentages remaining across all target regions.
+- Live Chart Component: Use an HTML5 canvas layer or basic chart loops to map a fluctuating line graph tracing pseudo-random fuel cost indicators and volume depletion curves across the past 24 hours.
+
+=======================================================
+8. GAMIFICATION & ENGAGEMENT MATRIX
+=======================================================
+- "Календарь Поставок" (Daily Shuffle Matrix): A dedicated tab featuring 10 face-down cards. Users have 3 flip attempts per 24 hours.
+  * 65% Probability: Shows "Пустая цистерна" (Atmospheric message to try again tomorrow).
+  * 25% Probability: Awards "Приоритетный ордер" (A 5% discount token code saved to account metadata).
+  * 10% Probability: Awards "Внеочередной Талон" (A free 20L voucher that completely bypasses the regional daily limitation caps).
+- "Заправка на скорость" (Arcade Tapping Event): A 30-second arcade mini-game. Icons of green fuel pumps and red canisters spawn dynamically on an isolated canvas context. Clicking green pumps increases the score counter (+XP), while clicking red elements applies a score penalty. High scores update a mock leaderboard.
+- Account XP Tiers: Performing validation updates, reviewing station lists, or playing mini-games grants user experience points. Render a progression scale tracking four distinct tiers: Новичок → Караванщик → Хранитель Карты → Легенда Тавриды.
+
+=======================================================
+9. TECHNICAL PERFORMANCE & STATE EXPECTATIONS
+=======================================================
+- Map State Caching: Implement React Context or a global state manager so that active Leaflet layout viewports, bounds, and zoom values are fully cached. Switching between navigation tabs must not cause the map layer to unmount or force network reloading.
+- Map Rendering: Utilize simple marker optimization loops or Leaflet Marker Cluster systems to process the 200+ coordinate pins smoothly on standard mobile screens without introducing rendering lag.
+
+=======================================================
+10. FULL COMPONENT & EXTENSIVE REPOSITORY FILE MAP
+=======================================================
+Generate the complete directory architecture exactly as structured below:
+
+├── main.py                  # FastAPI application setup, API routes, game calculations, payment endpoints
+├── models.py                # Database structure schemas (User, GasStation, FuelStatus, PurchaseHistory, LimitTracker)
+├── database.py              # SQLite connection config (WAL mode activated) + comprehensive station coordinates seed
+├── static/
+│   └── index.html           # Single Page Application root mount shell
+└── src/
+    ├── App.jsx              # Main React routing manager and Telegram WebApp initialization bindings
+    ├── index.css            # Tailwind typography declarations and glowing neon layout blur rules
+    ├── main.jsx             # React DOM mounting orchestrator
+    └── components/
+        ├── MapView.jsx      # High-fidelity dark Leaflet map component with customized status pin overlays
+        ├── AnalyticsView.jsx# Interactive section rendering equalizer gauges and canvas market trend charts
+        ├── CatalogView.jsx  # Store view processing pricing tokens, checkout links, and strict daily caps
+        ├── UserVault.jsx    # "Мой Сейф" private workspace showing code history and live scannable QR widgets
+        ├── GameHub.jsx      # Specialized game wrapper handling the 10-card mystery canvas and arcade tap event
+        └── CheckoutModal.jsx# Overlay engine processing CryptoBot invoice steps, Stars, and the 38% block gate
+
+```
+### 🛠️ Execution Instructions for Replit Agent
+ 1. Open a new **blank project** in Replit using the Python/React template framework.
+ 2. Direct the agent to first build out the core database foundation (models.py, database.py, and main.py), ensuring that the 200+ mock station coordinate registers load properly into the database.
+ 3. Install the required external package managers (fastapi, uvicorn, sqlalchemy, react-router-dom, leaflet).
+ 4. Copy and paste this complete extended blueprint directly into the Replit Agent chat interface to generate a flawless, high-fidelity implementation of the front-end dashboard interfaces.

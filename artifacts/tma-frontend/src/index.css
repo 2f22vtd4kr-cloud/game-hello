@@ -1,0 +1,109 @@
+/* ── Reset & Base ───────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:          #050507;
+  --bg-card:     #14141c;
+  --bg-deep:     #0b0b0f;
+  --border:      #22222f;
+  --violet:      #a855f7;
+  --magenta:     #db2777;
+  --green:       #22c55e;
+  --yellow:      #eab308;
+  --red:         #ef4444;
+  --text:        #e2e8f0;
+  --text-muted:  #6b7280;
+  --text-dim:    #4b5563;
+  --font-mono:   'JetBrains Mono', 'Courier New', monospace;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+#root {
+  width: 100%;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Scrollbars ─────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* ── Leaflet overrides ──────────────────────────────────────────── */
+.leaflet-container {
+  background: var(--bg) !important;
+  font-family: inherit;
+}
+.leaflet-tile-pane { filter: brightness(0.85) saturate(0.9); }
+.leaflet-control-attribution {
+  background: rgba(5,5,7,0.7) !important;
+  color: var(--text-dim) !important;
+  font-size: 9px !important;
+}
+.leaflet-control-attribution a { color: var(--text-muted) !important; }
+.tma-popup .leaflet-popup-content-wrapper {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+  color: var(--text);
+  padding: 0;
+}
+.tma-popup .leaflet-popup-tip { background: var(--bg-card); }
+.tma-popup .leaflet-popup-content { margin: 0; }
+.leaflet-popup-close-button { color: var(--text-muted) !important; }
+
+/* ── Marker cluster ─────────────────────────────────────────────── */
+.leaflet-cluster-anim .leaflet-marker-icon,
+.leaflet-cluster-anim .leaflet-marker-shadow {
+  transition: transform 0.3s ease-out, opacity 0.3s ease-in;
+}
+
+/* ── Animations ─────────────────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 8px var(--violet); }
+  50%       { box-shadow: 0 0 20px var(--violet), 0 0 40px var(--violet)44; }
+}
+@keyframes neon-border {
+  0%, 100% { border-color: #a855f744; }
+  50%       { border-color: #a855f7cc; }
+}
+
+/* ── Utility ────────────────────────────────────────────────────── */
+.neon-text {
+  color: var(--violet);
+  text-shadow: 0 0 10px var(--violet);
+}
+.neon-glow {
+  box-shadow: 0 0 12px var(--violet)66;
+  animation: pulse-glow 2s infinite;
+}
+button:focus-visible {
+  outline: 2px solid var(--violet);
+  outline-offset: 2px;
+}
+a { color: var(--violet); }
+input::placeholder { color: var(--text-dim); }
+input:focus { border-color: var(--violet) !important; }
