@@ -1,0 +1,60 @@
+telegram-web-app.js:135 [Telegram.WebView] > postEvent web_app_set_header_color Object
+telegram-web-app.js:135 [Telegram.WebView] > postEvent web_app_set_bottom_bar_color Object
+telegram-web-app.js:135 [Telegram.WebView] > postEvent web_app_request_theme 
+telegram-web-app.js:135 [Telegram.WebView] > postEvent web_app_request_viewport 
+telegram-web-app.js:135 [Telegram.WebView] > postEvent web_app_request_safe_area 
+telegram-web-app.js:135 [Telegram.WebView] > postEvent web_app_request_content_safe_area 
+client:745 WebSocket connection to 'wss://c73dc3bb-9ea4-4cfb-9c40-8fa125971a1b-00-3hle8kslbbhes.kirk.replit.dev/?token=g3VR-DN06xEU' failed: 
+(anonymous) @ client:745
+client:772 [vite] failed to connect to websocket (Error: WebSocket closed without opened.). 
+connect @ client:772
+client:423 Uncaught (in promise) Error: WebSocket closed without opened.
+    at WebSocket.<anonymous> (client:423:30)
+react-dom_client.js?v=86cd149e:17987 Download the React DevTools for a better development experience: https://react.dev/link/react-devtools
+telegram-web-app.js:135 [Telegram.WebView] > postEvent web_app_ready 
+telegram-web-app.js:135 [Telegram.WebView] > postEvent web_app_expand 
+telegram-web-app.js:764 [Telegram.WebApp] Header color is not supported in version 6.0
+setHeaderColor @ telegram-web-app.js:764
+telegram-web-app.js:820 [Telegram.WebApp] Background color is not supported in version 6.0
+setBackgroundColor @ telegram-web-app.js:820
+telegram-web-app.js:135 [Telegram.WebView] > postEvent web_app_setup_main_button Object
+telegram-web-app.js:984 [Telegram.WebApp] BackButton is not supported in version 6.0
+buttonCheckVersion @ telegram-web-app.js:984
+telegram-web-app.js:135 [Telegram.WebView] > postEvent web_app_ready 
+telegram-web-app.js:135 [Telegram.WebView] > postEvent web_app_expand 
+telegram-web-app.js:764 [Telegram.WebApp] Header color is not supported in version 6.0
+setHeaderColor @ telegram-web-app.js:764
+telegram-web-app.js:820 [Telegram.WebApp] Background color is not supported in version 6.0
+setBackgroundColor @ telegram-web-app.js:820
+telegram-web-app.js:984 [Telegram.WebApp] BackButton is not supported in version 6.0
+buttonCheckVersion @ telegram-web-app.js:984
+react-dom_client.js?v=86cd149e:6264 Error: Map container is already initialized.
+    at NewClass._initContainer (chunk-XLMF52WQ.js?v=86cd149e:2741:19)
+    at NewClass.initialize (chunk-XLMF52WQ.js?v=86cd149e:2031:16)
+    at new NewClass (chunk-XLMF52WQ.js?v=86cd149e:185:29)
+    at react-leaflet.js?v=86cd149e:263:19
+    at commitAttachRef (react-dom_client.js?v=86cd149e:8630:63)
+    at runWithFiberInDEV (react-dom_client.js?v=86cd149e:1485:72)
+    at safelyAttachRef (react-dom_client.js?v=86cd149e:8644:11)
+    at reappearLayoutEffects (react-dom_client.js?v=86cd149e:9785:13)
+    at recursivelyTraverseReappearLayoutEffects (react-dom_client.js?v=86cd149e:9845:11)
+    at reappearLayoutEffects (react-dom_client.js?v=86cd149e:9738:13)
+
+The above error occurred in the <div> component.
+
+React will try to recreate this component tree from scratch using the error boundary you provided, ErrorBoundary.
+
+defaultOnCaughtError @ react-dom_client.js?v=86cd149e:6264
+ErrorBoundary.tsx:14 [ErrorBoundary] Error: Map container is already initialized.
+    at NewClass._initContainer (chunk-XLMF52WQ.js?v=86cd149e:2741:19)
+    at NewClass.initialize (chunk-XLMF52WQ.js?v=86cd149e:2031:16)
+    at new NewClass (chunk-XLMF52WQ.js?v=86cd149e:185:29)
+    at react-leaflet.js?v=86cd149e:263:19
+    at commitAttachRef (react-dom_client.js?v=86cd149e:8630:63)
+    at runWithFiberInDEV (react-dom_client.js?v=86cd149e:1485:72)
+    at safelyAttachRef (react-dom_client.js?v=86cd149e:8644:11)
+    at reappearLayoutEffects (react-dom_client.js?v=86cd149e:9785:13)
+    at recursivelyTraverseReappearLayoutEffects (react-dom_client.js?v=86cd149e:9845:11)
+    at reappearLayoutEffects (react-dom_client.js?v=86cd149e:9738:13) Object
+(anonymous) @ ErrorBoundary.tsx:14
+:3002/favicon.ico:1  Failed to load resource: the server responded with a status of 404 (Not Found)

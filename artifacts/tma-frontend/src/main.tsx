@@ -4,8 +4,14 @@
  * IMPORTANT — Leaflet CSS and marker icons MUST be imported here (bundled via
  * Vite) rather than loaded from a CDN.  Telegram WebView blocks external
  * requests and can be offline; CDN-loaded assets cause a blank / crash.
+ *
+ * NOTE: React.StrictMode is intentionally omitted.  StrictMode in React 18/19
+ * double-invokes ref callbacks (mount → null → mount again) so that imperative
+ * libraries like Leaflet receive the same DOM node twice and throw
+ * "Map container is already initialized".  This is a known incompatibility;
+ * the recommended workaround is to run without StrictMode in production and
+ * development when using react-leaflet.
  */
-import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
 // 1. Leaflet CSS — bundled (not CDN) so it works in offline Telegram WebView
@@ -36,8 +42,4 @@ import App from "./App";
 const root = document.getElementById("root");
 if (!root) throw new Error("Missing #root element — check index.html");
 
-createRoot(root).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-);
+createRoot(root).render(<App />);
