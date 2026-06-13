@@ -1,25 +1,49 @@
-import app from "./app";
+/**
+ * Production launcher.
+ *
+ * Replit artifact-mode always runs this file with PORT env var set to 8080.
+ * We forward that PORT to the TMA FastAPI backend via TMA_PORT, spawn the
+ * Telegram bot as a side-process, then keep this Node process alive so the
+ * artifact runner doesn't restart everything.
+ */
+import { spawn, type ChildProcess } from "child_process";
 import { logger } from "./lib/logger";
 
-const rawPort = process.env["PORT"];
+const PORT = process.env["PORT"] ?? "8080";
 
-if (!rawPort) {
-  throw new Error(
-    "PORT environment variable is required but was not provided.",
-  );
+function spawnProcess(
+  cmd: string,
+  args: string[],
+  env: Record<string, string> = {},
+  label: string,
+): ChildProcess {
+  const child = spawn(cmd, args, {
+    stdio: "inherit",
+    env: { ...process.env, ...env },
+  });
+  child.on("error", (err) => {
+    logger.error({ err, label }, `${label} failed to start`);
+  });
+  child.on("exit", (code, signal) => {
+    logger.warn({ code, signal, label }, `${label} exited — restarting in 3s`);
+    setTimeout(() => spawnProcess(cmd, args, env, label), 3000);
+  });
+  logger.info({ label, pid: child.pid }, `${label} started`);
+  return child;
 }
 
-const port = Number(rawPort);
+logger.info({ PORT }, "Топливный Узел launcher starting");
 
-if (Number.isNaN(port) || port <= 0) {
-  throw new Error(`Invalid PORT value: "${rawPort}"`);
-}
+// TMA FastAPI backend — serves both the API and the built React frontend
+spawnProcess(
+  "python",
+  ["-m", "tma_backend.main"],
+  { TMA_PORT: PORT },
+  "TMA Backend",
+);
 
-app.listen(port, (err) => {
-  if (err) {
-    logger.error({ err }, "Error listening on port");
-    process.exit(1);
-  }
+// Telegram bot — fire-and-forget side process
+spawnProcess("python", ["bot.py"], {}, "Telegram Bot");
 
-  logger.info({ port }, "Server listening");
-});
+// Keep the Node.js process alive so the artifact runner doesn't kill everything
+setInterval(() => {}, 1 << 30);

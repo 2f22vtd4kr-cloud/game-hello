@@ -438,6 +438,7 @@ async def shutdown():
 # ──────────────────────────────────────────────────────────────────
 
 @app.get("/health")
+@app.get("/api/healthz")
 def health():
     return {"status": "ok", "time": _now().isoformat()}
 
