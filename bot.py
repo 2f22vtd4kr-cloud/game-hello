@@ -16,6 +16,7 @@ from telegram import (
     InputFile, WebAppInfo, LabeledPrice,
     InlineQueryResultArticle, InputTextMessageContent,
 )
+from telegram.error import Conflict
 from telegram.ext import (
     Application, CommandHandler, CallbackQueryHandler,
     ContextTypes, MessageHandler, PreCheckoutQueryHandler, filters,
@@ -2680,6 +2681,16 @@ async def successful_payment_handler(update: Update, context: ContextTypes.DEFAU
         )
 
 
+async def conflict_error_handler(update: object, context) -> None:
+    if isinstance(context.error, Conflict):
+        logger.error(
+            "Конфликт: другой экземпляр бота уже запущен с этим токеном. "
+            "Завершение работы, чтобы уступить активному экземпляру."
+        )
+        import sys
+        sys.exit(1)
+
+
 def main() -> None:
     if not BOT_TOKEN:
         print("Ошибка: токен бота не задан.")
@@ -2688,6 +2699,7 @@ def main() -> None:
     init_db()
 
     app = Application.builder().token(BOT_TOKEN).post_init(post_init).build()
+    app.add_error_handler(conflict_error_handler)
     app.add_handler(CommandHandler("start",         start))
     app.add_handler(CommandHandler("tma",           tma_cmd))
     app.add_handler(CommandHandler("rules",         rules_cmd))
