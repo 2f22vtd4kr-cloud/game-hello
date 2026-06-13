@@ -158,9 +158,15 @@ logger.info({ hasDist, FRONTEND_DIST }, "Frontend dist status");
 server.listen(PORT, "0.0.0.0", () => {
   logger.info({ PORT }, "Server listening");
 
-  // FastAPI on port 8000 — serves /api/* routes
-  spawnProc("python", ["-m", "tma_backend.main"], { TMA_PORT: String(FASTAPI_PORT) }, "TMA Backend");
+  // In development, TMA Backend and Telegram Bot run as separate Replit workflows.
+  // Only spawn child processes in production to avoid conflicts.
+  if (process.env["NODE_ENV"] === "production") {
+    // FastAPI on port 8000 — serves /api/* routes
+    spawnProc("python", ["-m", "tma_backend.main"], { TMA_PORT: String(FASTAPI_PORT) }, "TMA Backend");
 
-  // Telegram bot
-  spawnProc("python", ["bot.py"], {}, "Telegram Bot");
+    // Telegram bot
+    spawnProc("python", ["bot.py"], {}, "Telegram Bot");
+  } else {
+    logger.info("Development mode — TMA Backend and Telegram Bot managed by Replit workflows");
+  }
 });

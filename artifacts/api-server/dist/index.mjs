@@ -4494,7 +4494,11 @@ var hasDist = fs.existsSync(path.join(FRONTEND_DIST, "index.html"));
 logger.info({ hasDist, FRONTEND_DIST }, "Frontend dist status");
 server.listen(PORT, "0.0.0.0", () => {
   logger.info({ PORT }, "Server listening");
-  spawnProc("python", ["-m", "tma_backend.main"], { TMA_PORT: String(FASTAPI_PORT) }, "TMA Backend");
-  spawnProc("python", ["bot.py"], {}, "Telegram Bot");
+  if (process.env["NODE_ENV"] === "production") {
+    spawnProc("python", ["-m", "tma_backend.main"], { TMA_PORT: String(FASTAPI_PORT) }, "TMA Backend");
+    spawnProc("python", ["bot.py"], {}, "Telegram Bot");
+  } else {
+    logger.info("Development mode \u2014 TMA Backend and Telegram Bot managed by Replit workflows");
+  }
 });
 //# sourceMappingURL=index.mjs.map
