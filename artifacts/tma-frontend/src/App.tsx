@@ -250,7 +250,7 @@ export default function App() {
 
         {activeTab === "analytics" && (
           <div style={{ position: "absolute", inset: 0, overflowY: "auto" }}>
-            <AnalyticsTab />
+            <AnalyticsTab onNavigate={handleTabChange} />
           </div>
         )}
         {activeTab === "catalog" && (

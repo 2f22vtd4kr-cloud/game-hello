@@ -24,6 +24,7 @@ from sqlalchemy.orm import Session
 
 from tma_backend.database import SessionLocal, get_db, init_db, seed_db, _generate_snapshot
 from tma_backend.models import (
+    RegionFavorite,
     AnalyticsSnapshot, DailyLimitTracker, FuelStatus, GasStation,
     PurchaseHistory, ReferralCode, StationReport, Subscription, User,
     UserCheckin, VpnSession,
@@ -187,11 +188,50 @@ def _send_fuel_notification(
         logger.warning("Fuel notification failed for chat %s: %s", telegram_chat_id, exc)
 
 
+def _fix_water_stations(db: Session) -> None:
+    """Move gas stations with coordinates inside known water zones to their region's land center."""
+    from tma_backend.seed_regions import REGIONS as _REGIONS
+    import random as _rng
+
+    WATER_ZONES = [
+        (41.5, 29.0, 44.5, 33.5),
+        (41.5, 33.5, 44.5, 36.5),
+        (44.0, 36.0, 46.2, 38.5),
+        (45.4, 34.5, 47.5, 39.5),
+        (46.0, 31.0, 47.3, 33.5),
+    ]
+
+    def in_water(lat: float, lng: float) -> bool:
+        return any(lat1 <= lat <= lat2 and lng1 <= lng <= lng2 for lat1, lng1, lat2, lng2 in WATER_ZONES)
+
+    centers = {
+        r["name"]: (
+            (r["lat_range"][0] + r["lat_range"][1]) / 2,
+            (r["lng_range"][0] + r["lng_range"][1]) / 2,
+        )
+        for r in _REGIONS
+    }
+
+    fixed = 0
+    for s in db.query(GasStation).all():
+        if in_water(s.lat, s.lng):
+            center = centers.get(s.region)
+            if center:
+                s.lat = center[0] + _rng.uniform(-0.07, 0.07)
+                s.lng = center[1] + _rng.uniform(-0.07, 0.07)
+                fixed += 1
+
+    if fixed:
+        db.commit()
+        logger.info("Fixed %d stations displaced into water zones.", fixed)
+
+
 def simulate_availability_shifts():
     """
     Drift fuel availability ±5–15% every 30 min.
     After updating statuses, detect state transitions and push Telegram
-    notifications to all subscribed users whose station improved to 'green'.
+    notifications to all subscribed users whose station improved to 'green'
+    or critically dropped to 'red'.
     """
     db = SessionLocal()
     try:
@@ -232,8 +272,10 @@ def simulate_availability_shifts():
         cooldown = timedelta(minutes=30)  # max one notification per sub per 30 min
 
         for (station_id, fuel_type), (old_s, new_s) in changed.items():
-            # Only notify when fuel *appears* (transitions to green)
-            if new_s != "green":
+            # Notify when fuel *appears* (green) or critically *runs out* (red)
+            if new_s not in ("green", "red"):
+                continue
+            if new_s == "red" and old_s == "red":
                 continue
 
             # Find all subscriptions for this station
@@ -372,6 +414,7 @@ async def startup():
     db = SessionLocal()
     try:
         seed_db(db)
+        _fix_water_stations(db)
     finally:
         db.close()
 
@@ -1321,6 +1364,29 @@ def get_analytics(db: Session = Depends(get_db)):
         trend_data=trend_data,
         station_counts=station_counts,
     )
+
+
+@app.get("/api/analytics/trend")
+def get_analytics_trend(region: Optional[str] = None, days: int = 7, db: Session = Depends(get_db)):
+    """Hourly-averaged availability trend for a given region and time window."""
+    cutoff = _now() - timedelta(days=days)
+    query = db.query(AnalyticsSnapshot).filter(AnalyticsSnapshot.created_at >= cutoff)
+    if region:
+        query = query.filter(AnalyticsSnapshot.region == region)
+    snapshots = query.order_by(AnalyticsSnapshot.created_at.asc()).all()
+
+    hourly: dict = {}
+    for s in snapshots:
+        key = s.created_at.strftime("%Y-%m-%d %H:00")
+        if key not in hourly:
+            hourly[key] = {"sum": 0.0, "count": 0}
+        hourly[key]["sum"] += s.avg_availability
+        hourly[key]["count"] += 1
+
+    return [
+        {"time": k, "availability": round(v["sum"] / v["count"], 1)}
+        for k, v in sorted(hourly.items())
+    ]
 
 
 # ──────────────────────────────────────────────────────────────────

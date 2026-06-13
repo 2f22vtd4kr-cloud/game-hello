@@ -130,6 +130,11 @@ export interface AnalyticsTrend {
   price_index: number;
 }
 
+export interface TrendPoint {
+  time: string;
+  availability: number;
+}
+
 export interface Analytics {
   regional_supply: Record<string, RegionalSupply>;
   availability_index: number;

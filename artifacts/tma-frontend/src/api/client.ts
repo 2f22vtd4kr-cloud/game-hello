@@ -62,6 +62,11 @@ export const fetchVault = (userId: number) =>
 
 // Analytics
 export const fetchAnalytics = () => req<Analytics>("/analytics");
+export const fetchTrend = (region?: string, days = 7) => {
+  const p = new URLSearchParams({ days: String(days) });
+  if (region) p.set("region", region);
+  return req<import("@/types").TrendPoint[]>(`/analytics/trend?${p}`);
+};
 
 // Subscriptions (push-notification alerts)
 export const checkSubscriptionStatus = (userId: number, stationId: number) =>

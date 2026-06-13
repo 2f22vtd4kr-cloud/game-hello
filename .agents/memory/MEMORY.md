@@ -2,3 +2,6 @@
 - [TMA SQLite DB path](tma-db-path.md) — DB lives at workspace root `/home/runner/workspace/tma.db`, NOT `tma_backend/tma.db`.
 - [Map tab never remount](map-never-remount.md) — pass `visible: boolean` prop + CSS visibility toggle; do NOT conditionally render the map component.
 - [react-leaflet React 19 peer](react-leaflet-react19.md) — react-leaflet@4.x has peer dep warnings with React 19; they are cosmetic, app works.
+- [Region favorites client-side](region-favorites.md) — stored via Zustand persist (localStorage "tma-region-favorites"); no backend needed for UI.
+- [Water zone fix at startup](water-zone-fix.md) — _fix_water_stations() runs at every startup, moves in-water coords to region center ±0.07°; idempotent.
+- [Port conflict on backend restart](port-conflict.md) — run `fuser -k 8000/tcp` before restarting TMA Backend if it fails to bind port 8000.

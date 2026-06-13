@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useVaultStore } from "@/stores/useVaultStore";
 import { useUserStore } from "@/stores/useUserStore";
+import { useFavoritesStore } from "@/stores/useFavoritesStore";
 import { fetchReferral } from "@/api/client";
 import type { Purchase, ReferralInfo } from "@/types";
 import { FUEL_LABELS, XP_TIER_THRESHOLDS } from "@/types";
@@ -192,6 +193,7 @@ export function VaultTab({ initialPurchaseId }: VaultTabProps) {
     }
   }, [user, fetch]);
 
+  const { favoriteRegions, removeFavorite: removeFav } = useFavoritesStore();
   const active = purchases.filter((p) => p.status === "active");
   const history = purchases.filter((p) => p.status !== "active");
 
@@ -235,9 +237,6 @@ export function VaultTab({ initialPurchaseId }: VaultTabProps) {
               fontSize: "1.2rem", fontWeight: 700, color: "#a855f7",
             }}>
               {user.xp.toLocaleString("ru")} XP
-            </p>
-            <p style={{ margin: "0.15rem 0 0", color: "#db2777", fontSize: "0.72rem", fontWeight: 600 }}>
-              ⚡ {(user.neurocredits ?? 0).toLocaleString("ru")} НейроКредитов
             </p>
             <p style={{ margin: 0, color: "#4b5563", fontSize: "0.68rem" }}>
               {active.length} активных ваучеров
@@ -327,7 +326,56 @@ export function VaultTab({ initialPurchaseId }: VaultTabProps) {
         </div>
       )}
 
-      {!loading && purchases.length === 0 && (
+      {/* Favorite regions */}
+      {favoriteRegions.length > 0 && (
+        <div style={{ padding: "0 1rem 0.75rem" }}>
+          <p style={{ color: "#9ca3af", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 0.5rem" }}>
+            ⭐ Избранные регионы — {favoriteRegions.length}
+          </p>
+          {favoriteRegions.map((region) => (
+            <motion.div
+              key={region}
+              layout
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              style={{
+                background: "#14141c",
+                border: "1px solid #a855f720",
+                borderRadius: "12px",
+                padding: "0.65rem 0.85rem",
+                marginBottom: "0.4rem",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: "0.5rem",
+              }}
+            >
+              <div>
+                <p style={{ margin: 0, color: "#e2e8f0", fontSize: "0.82rem", fontWeight: 600 }}>
+                  {region}
+                </p>
+                <p style={{ margin: "0.1rem 0 0", color: "#6b7280", fontSize: "0.68rem" }}>
+                  Отслеживается · Мониторинг доступности
+                </p>
+              </div>
+              <button
+                onClick={() => removeFav(region)}
+                style={{
+                  background: "none", border: "1px solid #22222f",
+                  borderRadius: "8px", color: "#6b7280",
+                  fontSize: "0.72rem", padding: "0.3rem 0.5rem",
+                  cursor: "pointer", flexShrink: 0,
+                }}
+              >
+                ✕
+              </button>
+            </motion.div>
+          ))}
+        </div>
+      )}
+
+      {!loading && purchases.length === 0 && favoriteRegions.length === 0 && (
         <div style={{ textAlign: "center", padding: "3rem 2rem", color: "#4b5563" }}>
           <div style={{ fontSize: "3rem", marginBottom: "0.75rem" }}>🗄️</div>
           <p style={{ fontSize: "0.85rem" }}>Ваш сейф пуст. Оформите первый ваучер в каталоге.</p>
