@@ -2735,7 +2735,24 @@ def main() -> None:
 
     print("✅ Бот запущен (v6: VPN + /mystats + /refer + /broadcast + daily checkin).")
 
-    app.run_polling(drop_pending_updates=True)
+    is_production = bool(os.getenv("REPLIT_DEPLOYMENT"))
+    if is_production:
+        deploy_domain = os.getenv("REPLIT_DEV_DOMAIN", "")
+        if deploy_domain:
+            webhook_url = f"https://{deploy_domain}/tg/webhook"
+            print(f"🔔 Production mode: webhook → {webhook_url}")
+            app.run_webhook(
+                listen="127.0.0.1",
+                port=8443,
+                url_path="/tg/webhook",
+                webhook_url=webhook_url,
+                drop_pending_updates=True,
+            )
+        else:
+            print("⚠️  REPLIT_DEV_DOMAIN not set — falling back to polling.")
+            app.run_polling(drop_pending_updates=True)
+    else:
+        app.run_polling(drop_pending_updates=True)
 
 
 if __name__ == "__main__":

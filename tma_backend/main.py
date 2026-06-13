@@ -17,7 +17,8 @@ import httpx
 import uvicorn
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from contextlib import asynccontextmanager
-from fastapi import Depends, FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import Depends, FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Request
+from fastapi.responses import Response
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -2619,6 +2620,31 @@ def premium_status(user_id: int, db: Session = Depends(get_db)):
 # ──────────────────────────────────────────────────────────────────
 #  Serve built frontend (production)
 # ──────────────────────────────────────────────────────────────────
+
+# ── Telegram webhook proxy (production autoscale) ─────────────────────────────
+
+@app.post("/tg/webhook")
+async def telegram_webhook_proxy(request: Request) -> Response:
+    """
+    In production the bot runs in webhook mode on localhost:8443.
+    Each autoscale replica receives Telegram updates through the load-balancer
+    at this endpoint and proxies them to *its own* local bot process —
+    so only one replica ever handles each update, eliminating 409 conflicts.
+    """
+    body = await request.body()
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            r = await client.post(
+                "http://127.0.0.1:8443/tg/webhook",
+                content=body,
+                headers={"Content-Type": "application/json"},
+            )
+        return Response(content=r.content, status_code=r.status_code)
+    except Exception as exc:
+        logger.warning("Telegram webhook proxy error: %s", exc)
+        # Always return 200 — Telegram retries on non-2xx
+        return Response(status_code=200)
+
 
 # ── WebSocket: live price feed ────────────────────────────────────────────────
 
