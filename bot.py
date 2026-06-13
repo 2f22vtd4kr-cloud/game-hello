@@ -1735,6 +1735,10 @@ async def post_init(application: Application) -> None:
         BotCommand("stats",         "Статистика системы (только для контролёров)"),
         BotCommand("cancel",        "Отменить активный счёт на оплату"),
         BotCommand("buystars",      "Купить топливный ваучер за Telegram Stars"),
+        BotCommand("vpn",           "VPN-доступ за Stars или криптовалюту"),
+        BotCommand("mystats",       "Мои XP, уровень и место в рейтинге"),
+        BotCommand("refer",         "Реферальный код — +200 XP за каждого друга"),
+        BotCommand("broadcast",     "[Admin] Рассылка сообщения всем пользователям"),
     ])
     logger.info("Командное меню Telegram зарегистрировано.")
     asyncio.create_task(_invoice_cleanup_loop(application.bot))
@@ -1811,6 +1815,232 @@ async def buystars_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     )
 
 
+# ─── /vpn ─────────────────────────────────────────────────────────
+
+_VPN_PLANS_BOT = {
+    "sprint":   {"name": "⚡️ Спринт",         "minutes": 5,  "rub": 15, "stars": 9},
+    "vzlet":    {"name": "✈️ Взлёт",           "minutes": 15, "rub": 30, "stars": 17},
+    "session":  {"name": "🎬 Сессия",          "minutes": 30, "rub": 50, "stars": 28},
+    "bezlimit": {"name": "🪐 Безлимит на час", "minutes": 60, "rub": 80, "stars": 44},
+}
+
+
+async def vpn_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Show VPN plan selector."""
+    rows = []
+    for plan_id, p in _VPN_PLANS_BOT.items():
+        rows.append([
+            InlineKeyboardButton(
+                f"{p['name']} — {p['minutes']} мин · ⭐{p['stars']}",
+                callback_data=f"vpn_stars_{plan_id}",
+            ),
+            InlineKeyboardButton(
+                f"💎 {p['rub']} ₽",
+                callback_data=f"vpn_crypto_{plan_id}",
+            ),
+        ])
+    rows.append([InlineKeyboardButton("🛡 Открыть в Матрице Снабжения", url=tma_deep_link("vault"))])
+    await update.message.reply_text(
+        "🔒 *VPN-доступ — Матрица Снабжения*\n\n"
+        "Защищённый канал для обхода блокировок.\n"
+        "Соединение активируется автоматически после оплаты.\n\n"
+        "Выберите план:",
+        parse_mode="Markdown",
+        reply_markup=InlineKeyboardMarkup(rows),
+    )
+
+
+async def vpn_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle vpn_stars_ and vpn_crypto_ callbacks."""
+    query = update.callback_query
+    await query.answer()
+    parts = query.data.split("_", 3)
+    if len(parts) != 4:
+        return
+    _, method, plan_id = parts[0], parts[1], parts[2]
+    plan = _VPN_PLANS_BOT.get(plan_id)
+    if not plan:
+        return
+
+    chat_id = query.message.chat_id
+    user_id = query.from_user.id
+
+    if method == "stars":
+        payload = f"vpn_{plan_id}_{user_id}"
+        await context.bot.send_invoice(
+            chat_id=chat_id,
+            title=f"VPN {plan['name']} ({plan['minutes']} мин)",
+            description=(
+                f"Защищённый VPN-канал на {plan['minutes']} минут.\n"
+                f"WireGuard-ключ будет выдан автоматически после оплаты."
+            ),
+            payload=payload,
+            currency="XTR",
+            prices=[LabeledPrice(label=f"VPN {plan['minutes']} мин", amount=plan["stars"])],
+        )
+    else:
+        # CryptoBot
+        if not CRYPTO_BOT_TOKEN:
+            await query.message.reply_text("❌ CryptoBot не настроен.", parse_mode="Markdown")
+            return
+        amount_usdt = round(plan["rub"] / 92, 2)
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                f"{CRYPTO_PAY_API}createInvoice",
+                headers={"Crypto-Pay-API-Token": CRYPTO_BOT_TOKEN},
+                json={
+                    "asset": "USDT",
+                    "amount": str(amount_usdt),
+                    "description": f"VPN {plan['name']} {plan['minutes']} мин",
+                    "payload": f"vpn_{plan_id}_{user_id}",
+                    "expires_in": 600,
+                },
+            ) as resp:
+                data = await resp.json()
+        if not data.get("ok"):
+            await query.message.reply_text("❌ Ошибка создания счёта.")
+            return
+        bot_url = data["result"]["bot_invoice_url"]
+        await query.message.reply_text(
+            f"💎 *Оплата VPN через CryptoBot*\n\n"
+            f"План: {plan['name']} ({plan['minutes']} мин)\n"
+            f"Сумма: {amount_usdt} USDT\n\n"
+            f"[Оплатить]({bot_url})",
+            parse_mode="Markdown",
+        )
+
+
+# ─── /mystats ─────────────────────────────────────────────────────
+
+async def mystats_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Show personal stats from TMA backend."""
+    tg_user = update.effective_user
+    if not tg_user:
+        return
+    user_id = tg_user.id
+    backend = "http://localhost:8000"
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"{backend}/api/user/{user_id}") as resp:
+                user = await resp.json() if resp.status == 200 else {}
+            async with session.get(f"{backend}/api/leaderboard?user_id={user_id}") as resp:
+                lb = await resp.json() if resp.status == 200 else {}
+            async with session.get(f"{backend}/api/referral/{user_id}") as resp:
+                ref = await resp.json() if resp.status == 200 else {}
+    except Exception:
+        await update.message.reply_text("⚠️ Не удалось получить данные. Возможно, сервер временно недоступен.")
+        return
+
+    xp = user.get("xp", 0)
+    level = user.get("level", "—")
+    rank = lb.get("user_rank", "—")
+    ref_code = ref.get("code", "—")
+    ref_uses = ref.get("uses", 0)
+
+    text = (
+        f"📊 *Ваша статистика*\n\n"
+        f"👤 Пользователь: {tg_user.first_name}\n"
+        f"⚡ XP: *{xp:,}*\n"
+        f"🎖 Уровень: {level}\n"
+        f"🏆 Место в рейтинге: #{rank}\n\n"
+        f"🔗 Реферальный код: `{ref_code}`\n"
+        f"📨 Приглашено: {ref_uses} чел.\n\n"
+        f"_Открыть полный профиль в Матрице Снабжения:_"
+    ).replace(",", " ")
+    await update.message.reply_text(
+        text,
+        parse_mode="Markdown",
+        reply_markup=InlineKeyboardMarkup([[tma_btn("🗄 Открыть Сейф", "vault")]]),
+    )
+
+
+# ─── /refer ───────────────────────────────────────────────────────
+
+async def refer_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Show user's referral code and deep link."""
+    tg_user = update.effective_user
+    if not tg_user:
+        return
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"http://localhost:8000/api/referral/{tg_user.id}") as resp:
+                ref = await resp.json()
+    except Exception:
+        await update.message.reply_text("⚠️ Не удалось получить реферальный код.")
+        return
+
+    code = ref.get("code", "—")
+    uses = ref.get("uses", 0)
+    xp_per = ref.get("xp_per_referral", 200)
+    share_link = tma_deep_link("reserve")
+
+    await update.message.reply_text(
+        f"🔗 *Реферальная программа*\n\n"
+        f"Поделитесь своим кодом с другом.\n"
+        f"Когда он его использует в Матрице Снабжения — вы оба получаете *+{xp_per} XP*.\n\n"
+        f"Ваш код: `{code}`\n"
+        f"Использований: {uses}\n\n"
+        f"[Открыть раздел «Заправочный автомат»]({share_link})",
+        parse_mode="Markdown",
+        reply_markup=InlineKeyboardMarkup([[
+            InlineKeyboardButton("📋 Скопировать код", callback_data=f"copy_ref_{code}"),
+            tma_btn("🎮 Активировать код", "reserve"),
+        ]]),
+    )
+
+
+async def copy_ref_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    query = update.callback_query
+    parts = query.data.split("_", 2)
+    code = parts[2] if len(parts) == 3 else ""
+    await query.answer(f"Код {code} — скопируйте из сообщения выше", show_alert=True)
+
+
+# ─── /broadcast (admin) ───────────────────────────────────────────
+
+async def broadcast_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Send a message to all users who have chat records in the DB."""
+    if not ADMIN_CHAT_ID or update.effective_chat.id != ADMIN_CHAT_ID:
+        await update.message.reply_text("❌ Команда доступна только администратору.")
+        return
+    if not context.args:
+        await update.message.reply_text(
+            "📢 Использование: /broadcast <текст сообщения>\n"
+            "Все пользователи, ранее запускавшие бота, получат это сообщение."
+        )
+        return
+
+    msg_text = " ".join(context.args)
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT DISTINCT chat_id FROM vouchers WHERE chat_id IS NOT NULL")
+        chat_ids = [r[0] for r in cur.fetchall()]
+    finally:
+        conn.close()
+
+    if not chat_ids:
+        await update.message.reply_text("⚠️ Нет получателей (таблица ваучеров пуста).")
+        return
+
+    sent = 0
+    failed = 0
+    for cid in chat_ids:
+        try:
+            await context.bot.send_message(
+                chat_id=cid,
+                text=f"📢 *Матрица Снабжения — оповещение*\n\n{msg_text}",
+                parse_mode="Markdown",
+            )
+            sent += 1
+        except Exception:
+            failed += 1
+
+    await update.message.reply_text(
+        f"✅ Рассылка завершена.\nОтправлено: {sent}\nОшибок: {failed}"
+    )
+
+
 async def pre_checkout_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Always approve pre-checkout queries for Stars payments."""
     query = update.pre_checkout_query
@@ -1870,14 +2100,20 @@ def main() -> None:
     app.add_handler(CommandHandler("myorders",      myorders_cmd))
     app.add_handler(CommandHandler("cancel",        cancel_cmd))
     app.add_handler(CommandHandler("subscriptions", subscriptions_cmd))
-    app.add_handler(CommandHandler("buystars", buystars_cmd))
+    app.add_handler(CommandHandler("buystars",      buystars_cmd))
+    app.add_handler(CommandHandler("vpn",           vpn_cmd))
+    app.add_handler(CommandHandler("mystats",       mystats_cmd))
+    app.add_handler(CommandHandler("refer",         refer_cmd))
+    app.add_handler(CommandHandler("broadcast",     broadcast_cmd))
+    app.add_handler(CallbackQueryHandler(vpn_callback,     pattern=r"^vpn_"))
+    app.add_handler(CallbackQueryHandler(copy_ref_callback, pattern=r"^copy_ref_"))
     app.add_handler(CallbackQueryHandler(buystars_callback, pattern=r"^buystars_"))
     app.add_handler(CallbackQueryHandler(menu_navigation))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
     app.add_handler(PreCheckoutQueryHandler(pre_checkout_handler))
     app.add_handler(MessageHandler(filters.SUCCESSFUL_PAYMENT, successful_payment_handler))
 
-    print("✅ Бот запущен (v5: госквота + платная доза + контролёр + /stats).")
+    print("✅ Бот запущен (v6: VPN + /mystats + /refer + /broadcast + daily checkin).")
     app.run_polling(drop_pending_updates=True)
 
 

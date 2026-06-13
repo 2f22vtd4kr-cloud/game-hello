@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useVaultStore } from "@/stores/useVaultStore";
 import { useUserStore } from "@/stores/useUserStore";
-import type { Purchase } from "@/types";
-import { FUEL_LABELS } from "@/types";
+import { fetchReferral } from "@/api/client";
+import type { Purchase, ReferralInfo } from "@/types";
+import { FUEL_LABELS, XP_TIER_THRESHOLDS } from "@/types";
 import QRCode from "qrcode";
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
@@ -165,7 +166,6 @@ function PurchaseCard({ purchase }: { purchase: Purchase }) {
 }
 
 interface VaultTabProps {
-  /** Purchase ID to highlight on first render (from deep-link startParam) */
   initialPurchaseId?: number;
 }
 
@@ -173,6 +173,7 @@ export function VaultTab({ initialPurchaseId }: VaultTabProps) {
   const { user } = useUserStore();
   const { purchases, loading, fetch } = useVaultStore();
   const [highlightedId, setHighlightedId] = useState<number | undefined>(initialPurchaseId);
+  const [referral, setReferral] = useState<ReferralInfo | null>(null);
 
   // Auto-clear highlight ring after 3 seconds
   const highlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -185,7 +186,10 @@ export function VaultTab({ initialPurchaseId }: VaultTabProps) {
   }, [highlightedId]);
 
   useEffect(() => {
-    if (user) fetch(user.id);
+    if (user) {
+      fetch(user.id);
+      fetchReferral(user.id).then(setReferral).catch(() => {});
+    }
   }, [user, fetch]);
 
   const active = purchases.filter((p) => p.status === "active");
@@ -209,7 +213,7 @@ export function VaultTab({ initialPurchaseId }: VaultTabProps) {
         </p>
       </div>
 
-      {/* XP bar */}
+      {/* Profile card */}
       <div style={{
         margin: "0 1rem 0.75rem",
         background: "#14141c",
@@ -230,7 +234,7 @@ export function VaultTab({ initialPurchaseId }: VaultTabProps) {
               fontFamily: "'JetBrains Mono', monospace",
               fontSize: "1.2rem", fontWeight: 700, color: "#a855f7",
             }}>
-              {user.xp} XP
+              {user.xp.toLocaleString("ru")} XP
             </p>
             <p style={{ margin: 0, color: "#4b5563", fontSize: "0.68rem" }}>
               {active.length} активных ваучеров
@@ -238,16 +242,60 @@ export function VaultTab({ initialPurchaseId }: VaultTabProps) {
           </div>
         </div>
 
-        {/* XP progress bar */}
-        <div style={{ height: "4px", borderRadius: "2px", background: "#0b0b0f", overflow: "hidden" }}>
-          <div style={{
-            height: "100%",
-            width: `${Math.min(100, (user.xp % 500) / 5)}%`,
-            background: "linear-gradient(90deg,#a855f7,#db2777)",
-            boxShadow: "0 0 8px #a855f7",
-            transition: "width 0.8s",
-          }} />
-        </div>
+        {/* XP progress bar toward next tier */}
+        {(() => {
+          const currentTier = XP_TIER_THRESHOLDS.find(
+            (t) => user.xp >= t.min && (t.max === null || user.xp <= t.max)
+          );
+          const nextTier = currentTier?.max !== null
+            ? XP_TIER_THRESHOLDS.find((t) => t.min === (currentTier!.max! + 1))
+            : null;
+          const pct = currentTier && currentTier.max !== null
+            ? Math.min(100, ((user.xp - currentTier.min) / (currentTier.max - currentTier.min)) * 100)
+            : 100;
+          return (
+            <>
+              <div style={{ height: "4px", borderRadius: "2px", background: "#0b0b0f", overflow: "hidden", marginBottom: "0.3rem" }}>
+                <div style={{
+                  height: "100%", width: `${pct}%`,
+                  background: "linear-gradient(90deg,#a855f7,#db2777)",
+                  boxShadow: "0 0 8px #a855f7", transition: "width 0.8s",
+                }} />
+              </div>
+              {nextTier && (
+                <p style={{ margin: 0, color: "#4b5563", fontSize: "0.65rem" }}>
+                  До «{nextTier.level}»: {(nextTier.min - user.xp).toLocaleString("ru")} XP
+                </p>
+              )}
+            </>
+          );
+        })()}
+
+        {/* Referral code */}
+        {referral && (
+          <div
+            onClick={() => navigator.clipboard.writeText(referral.code).catch(() => {})}
+            style={{
+              marginTop: "0.6rem",
+              background: "#050507",
+              border: "1px dashed #a855f733",
+              borderRadius: "8px",
+              padding: "0.4rem 0.6rem",
+              display: "flex", justifyContent: "space-between", alignItems: "center",
+              cursor: "pointer",
+            }}
+          >
+            <span style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              color: "#a855f7", fontSize: "0.78rem", letterSpacing: "0.06em",
+            }}>
+              {referral.code}
+            </span>
+            <span style={{ color: "#4b5563", fontSize: "0.65rem" }}>
+              реф. код · {referral.uses} приглашений
+            </span>
+          </div>
+        )}
       </div>
 
       {loading && (

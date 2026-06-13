@@ -22,14 +22,18 @@ from sqlalchemy.orm import Session
 from tma_backend.database import SessionLocal, get_db, init_db, seed_db, _generate_snapshot
 from tma_backend.models import (
     AnalyticsSnapshot, DailyLimitTracker, FuelStatus, GasStation,
-    PurchaseHistory, StationReport, Subscription, User,
+    PurchaseHistory, ReferralCode, StationReport, Subscription, User,
+    UserCheckin, VpnSession,
 )
 from tma_backend.cards import draw_cards, RARITY_COLORS
 from tma_backend.payment import provider
 from tma_backend.schemas import (
-    AnalyticsOut, CardOut, FlipResultOut, GasStationOut, PurchaseIn,
-    PurchaseResultOut, StationReportIn, SubscriptionIn, SubscriptionOut,
+    AnalyticsOut, CardOut, CheckinOut, FlipResultOut, GasStationOut,
+    LeaderboardEntry, LeaderboardOut, PurchaseIn, PurchaseResultOut,
+    ReferralOut, ReferralUseIn, ReferralUseOut,
+    StationReportIn, SubscriptionIn, SubscriptionOut,
     SubscriptionStatusOut, TapScoreIn, TapScoreOut, UserCreateIn, UserOut,
+    VpnBuyIn, VpnInvoiceOut, VpnSessionOut, VpnStatusOut,
 )
 from tma_backend.seed_regions import DAILY_LIMITS, FUEL_PRICES_RUB, XP_TIERS
 
@@ -301,6 +305,45 @@ def reset_daily_limits():
 #  Lifecycle
 # ──────────────────────────────────────────────────────────────────
 
+def expire_vpn_sessions():
+    """Deactivate VPN sessions whose expires_at has passed; notify user via Telegram."""
+    db = SessionLocal()
+    bot_token = os.getenv("TELEGRAM_BOT_TOKEN", "")
+    try:
+        expired = (
+            db.query(VpnSession)
+            .filter(VpnSession.is_active == True, VpnSession.expires_at <= _now())  # noqa: E712
+            .all()
+        )
+        for sess in expired:
+            sess.is_active = False
+            if bot_token:
+                try:
+                    with httpx.Client(timeout=5.0) as client:
+                        client.post(
+                            f"https://api.telegram.org/bot{bot_token}/sendMessage",
+                            json={
+                                "chat_id": sess.telegram_chat_id,
+                                "text": (
+                                    f"🔒 *VPN-сессия завершена*\n\n"
+                                    f"Ваш план «{sess.plan_name}» на {sess.duration_minutes} мин истёк.\n"
+                                    f"Для нового подключения откройте раздел VPN в Матрице Снабжения."
+                                ),
+                                "parse_mode": "Markdown",
+                            },
+                        )
+                except Exception:
+                    pass
+        if expired:
+            db.commit()
+            logger.info("Expired %d VPN sessions.", len(expired))
+    except Exception as e:
+        logger.error("expire_vpn_sessions error: %s", e)
+        db.rollback()
+    finally:
+        db.close()
+
+
 @app.on_event("startup")
 async def startup():
     init_db()
@@ -314,6 +357,7 @@ async def startup():
     scheduler.add_job(remove_expired_reports, "interval", minutes=10)
     scheduler.add_job(generate_analytics_snapshots, "interval", hours=1)
     scheduler.add_job(reset_daily_limits, "cron", hour=0, minute=0)
+    scheduler.add_job(expire_vpn_sessions, "interval", minutes=1)
     scheduler.start()
     logger.info("Топливный Узел API запущен.")
 
@@ -775,6 +819,301 @@ def submit_tap_score(user_id: int, body: TapScoreIn,
         total_xp=user.xp,
         level=user.level,
         new_level=user.level != old_level,
+    )
+
+
+# ──────────────────────────────────────────────────────────────────
+#  VPN
+# ──────────────────────────────────────────────────────────────────
+
+VPN_PLANS: dict[str, dict] = {
+    "sprint":   {"name": "⚡️ Спринт",         "duration_minutes": 5,  "price_rub": 15},
+    "vzlet":    {"name": "✈️ Взлёт",           "duration_minutes": 15, "price_rub": 30},
+    "session":  {"name": "🎬 Сессия",          "duration_minutes": 30, "price_rub": 50},
+    "bezlimit": {"name": "🪐 Безлимит на час", "duration_minutes": 60, "price_rub": 80},
+}
+_STAR_RUB_RATE = 1.84
+_USDT_RUB_RATE = 92.0
+
+
+def _vpn_config_key() -> str:
+    import secrets
+    return f"WG-{secrets.token_hex(4).upper()}-{secrets.token_hex(4).upper()}-{secrets.token_hex(4).upper()}"
+
+
+def _stars_for_rub(price_rub: int) -> int:
+    import math
+    return max(1, math.ceil(price_rub / _STAR_RUB_RATE))
+
+
+@app.get("/api/vpn/status/{user_id}", response_model=VpnStatusOut)
+def vpn_status(user_id: int, db: Session = Depends(get_db)):
+    sess = (
+        db.query(VpnSession)
+        .filter(VpnSession.user_id == user_id, VpnSession.is_active == True)  # noqa: E712
+        .order_by(VpnSession.expires_at.desc())
+        .first()
+    )
+    if not sess:
+        return VpnStatusOut(has_active=False)
+    if sess.expires_at.replace(tzinfo=None) < _now().replace(tzinfo=None):
+        sess.is_active = False
+        db.commit()
+        return VpnStatusOut(has_active=False)
+    return VpnStatusOut(
+        has_active=True,
+        session=VpnSessionOut(
+            id=sess.id, plan_name=sess.plan_name,
+            duration_minutes=sess.duration_minutes,
+            price_rub=sess.price_rub, payment_method=sess.payment_method,
+            config_key=sess.config_key, is_active=sess.is_active,
+            activated_at=sess.activated_at, expires_at=sess.expires_at,
+        ),
+    )
+
+
+@app.post("/api/vpn/buy-stars", response_model=VpnInvoiceOut)
+def vpn_buy_stars(body: VpnBuyIn, db: Session = Depends(get_db)):
+    plan = VPN_PLANS.get(body.plan_id)
+    if not plan:
+        raise HTTPException(400, detail="Неверный план")
+    stars = _stars_for_rub(plan["price_rub"])
+    config_key = _vpn_config_key()
+    _get_or_create_user(db, body.user_id)
+    sess = VpnSession(
+        user_id=body.user_id,
+        telegram_chat_id=body.telegram_chat_id,
+        plan_id=body.plan_id,
+        plan_name=plan["name"],
+        duration_minutes=plan["duration_minutes"],
+        price_rub=plan["price_rub"],
+        payment_method="stars",
+        config_key=config_key,
+        is_active=True,
+        expires_at=_now() + timedelta(minutes=plan["duration_minutes"]),
+    )
+    db.add(sess)
+    db.commit()
+    _notify_vpn_activated(sess)
+    return VpnInvoiceOut(
+        stars_amount=stars,
+        transaction_id=f"VPN-STARS-{sess.id}",
+        plan_name=plan["name"],
+        duration_minutes=plan["duration_minutes"],
+    )
+
+
+@app.post("/api/vpn/buy-crypto", response_model=VpnInvoiceOut)
+def vpn_buy_crypto(body: VpnBuyIn, db: Session = Depends(get_db)):
+    plan = VPN_PLANS.get(body.plan_id)
+    if not plan:
+        raise HTTPException(400, detail="Неверный план")
+    from tma_backend.payment import provider as _payment_provider, generate_qr_hash
+    amount_usdt = round(plan["price_rub"] / _USDT_RUB_RATE, 2)
+    result = _payment_provider.create_invoice(
+        user_id=body.user_id,
+        fuel_type=f"VPN {plan['name']}",
+        volume=plan["duration_minutes"],
+        price_rub=plan["price_rub"],
+    )
+    if not result.ok:
+        raise HTTPException(502, detail=result.error or "Payment provider error")
+    config_key = _vpn_config_key()
+    _get_or_create_user(db, body.user_id)
+    sess = VpnSession(
+        user_id=body.user_id,
+        telegram_chat_id=body.telegram_chat_id,
+        plan_id=body.plan_id,
+        plan_name=plan["name"],
+        duration_minutes=plan["duration_minutes"],
+        price_rub=plan["price_rub"],
+        payment_method="cryptobot",
+        transaction_id=result.transaction_id,
+        config_key=config_key,
+        is_active=True,
+        expires_at=_now() + timedelta(minutes=plan["duration_minutes"]),
+    )
+    db.add(sess)
+    db.commit()
+    _notify_vpn_activated(sess)
+    return VpnInvoiceOut(
+        checkout_url=result.checkout_url,
+        transaction_id=result.transaction_id,
+        plan_name=plan["name"],
+        duration_minutes=plan["duration_minutes"],
+    )
+
+
+def _notify_vpn_activated(sess: VpnSession) -> None:
+    bot_token = os.getenv("TELEGRAM_BOT_TOKEN", "")
+    if not bot_token:
+        return
+    expires_str = sess.expires_at.strftime("%H:%M UTC")
+    text = (
+        f"🔓 *VPN активирован!*\n\n"
+        f"📋 План: {sess.plan_name}\n"
+        f"⏱ Длительность: {sess.duration_minutes} мин\n"
+        f"⏰ Истекает в: {expires_str}\n\n"
+        f"🔑 *Ваш ключ доступа:*\n"
+        f"`{sess.config_key}`\n\n"
+        f"Используйте этот ключ в приложении *WireGuard* или *Outline*.\n"
+        f"Соединение отключится автоматически по истечении времени."
+    )
+    try:
+        with httpx.Client(timeout=5.0) as client:
+            client.post(
+                f"https://api.telegram.org/bot{bot_token}/sendMessage",
+                json={"chat_id": sess.telegram_chat_id, "text": text, "parse_mode": "Markdown"},
+            )
+    except Exception as exc:
+        logger.warning("VPN activation notify failed: %s", exc)
+
+
+# ──────────────────────────────────────────────────────────────────
+#  Daily Check-in
+# ──────────────────────────────────────────────────────────────────
+
+CHECKIN_XP = 50
+
+
+@app.post("/api/checkin/{user_id}", response_model=CheckinOut)
+def daily_checkin(user_id: int, db: Session = Depends(get_db)):
+    user = _get_or_create_user(db, user_id)
+    now = _now()
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+
+    last_checkin = (
+        db.query(UserCheckin)
+        .filter(UserCheckin.user_id == user_id)
+        .order_by(UserCheckin.checked_in_at.desc())
+        .first()
+    )
+
+    already_done = False
+    if last_checkin:
+        last_dt = last_checkin.checked_in_at
+        if last_dt.tzinfo is None:
+            last_dt = last_dt.replace(tzinfo=timezone.utc)
+        last_naive = last_dt.replace(tzinfo=None)
+        today_naive = today_start.replace(tzinfo=None)
+        if last_naive >= today_naive:
+            already_done = True
+
+    if already_done:
+        tomorrow = today_start + timedelta(days=1)
+        return CheckinOut(
+            ok=False, xp_awarded=0, total_xp=user.xp, level=user.level,
+            already_done=True,
+            message="Вы уже получили ежедневный бонус сегодня. Возвращайтесь завтра!",
+            next_checkin_at=tomorrow,
+        )
+
+    checkin = UserCheckin(user_id=user_id, xp_awarded=CHECKIN_XP)
+    db.add(checkin)
+    user.xp += CHECKIN_XP
+    user.level = _xp_to_level(user.xp)
+    db.commit()
+
+    return CheckinOut(
+        ok=True, xp_awarded=CHECKIN_XP, total_xp=user.xp, level=user.level,
+        already_done=False,
+        message=f"✅ Ежедневный бонус получен! +{CHECKIN_XP} XP",
+        next_checkin_at=today_start + timedelta(days=1),
+    )
+
+
+# ──────────────────────────────────────────────────────────────────
+#  Leaderboard
+# ──────────────────────────────────────────────────────────────────
+
+@app.get("/api/leaderboard", response_model=LeaderboardOut)
+def get_leaderboard(user_id: Optional[int] = None, db: Session = Depends(get_db)):
+    top = (
+        db.query(User)
+        .order_by(User.xp.desc())
+        .limit(20)
+        .all()
+    )
+    entries = [
+        LeaderboardEntry(
+            rank=i + 1,
+            user_id=u.id,
+            username=u.username,
+            level=u.level,
+            xp=u.xp,
+        )
+        for i, u in enumerate(top)
+    ]
+    user_rank = None
+    user_xp = None
+    if user_id:
+        for e in entries:
+            if e.user_id == user_id:
+                user_rank = e.rank
+                user_xp = e.xp
+                break
+        if user_rank is None:
+            count_above = db.query(User).filter(User.xp > (
+                db.query(User.xp).filter(User.id == user_id).scalar() or 0
+            )).count()
+            user_rank = count_above + 1
+            target = db.query(User).filter(User.id == user_id).first()
+            user_xp = target.xp if target else 0
+
+    return LeaderboardOut(entries=entries, user_rank=user_rank, user_xp=user_xp)
+
+
+# ──────────────────────────────────────────────────────────────────
+#  Referral
+# ──────────────────────────────────────────────────────────────────
+
+REFERRAL_XP = 200
+
+
+@app.get("/api/referral/{user_id}", response_model=ReferralOut)
+def get_or_create_referral(user_id: int, db: Session = Depends(get_db)):
+    _get_or_create_user(db, user_id)
+    ref = db.query(ReferralCode).filter(ReferralCode.user_id == user_id).first()
+    if not ref:
+        import secrets as _s
+        code = f"FUEL-{_s.token_hex(3).upper()}-{user_id % 1000:03d}"
+        ref = ReferralCode(user_id=user_id, code=code)
+        db.add(ref)
+        db.commit()
+        db.refresh(ref)
+    return ReferralOut(code=ref.code, uses=ref.uses, xp_per_referral=REFERRAL_XP)
+
+
+@app.post("/api/referral/use", response_model=ReferralUseOut)
+def use_referral(body: ReferralUseIn, db: Session = Depends(get_db)):
+    ref = db.query(ReferralCode).filter(ReferralCode.code == body.code).first()
+    if not ref:
+        return ReferralUseOut(ok=False, message="Реферальный код не найден.", xp_awarded=0)
+    if ref.user_id == body.user_id:
+        return ReferralUseOut(ok=False, message="Нельзя использовать собственный код.", xp_awarded=0)
+    already = db.query(UserCheckin).filter(
+        UserCheckin.user_id == body.user_id,
+        UserCheckin.xp_awarded == -1,
+    ).first()
+    if already:
+        return ReferralUseOut(ok=False, message="Вы уже использовали реферальный код.", xp_awarded=0)
+    _get_or_create_user(db, body.user_id)
+    referee = db.query(User).filter(User.id == body.user_id).first()
+    referrer = db.query(User).filter(User.id == ref.user_id).first()
+    if referee:
+        referee.xp += REFERRAL_XP
+        referee.level = _xp_to_level(referee.xp)
+    if referrer:
+        referrer.xp += REFERRAL_XP
+        referrer.level = _xp_to_level(referrer.xp)
+    ref.uses += 1
+    marker = UserCheckin(user_id=body.user_id, xp_awarded=-1)
+    db.add(marker)
+    db.commit()
+    return ReferralUseOut(
+        ok=True,
+        message=f"✅ Реферальный бонус зачислен! +{REFERRAL_XP} XP вам и пригласившему.",
+        xp_awarded=REFERRAL_XP,
     )
 
 

@@ -130,3 +130,37 @@ export const submitTapScore = (
     method: "POST",
     body: JSON.stringify({ user_id: userId, score, duration_seconds: duration }),
   });
+
+// VPN
+export const fetchVpnStatus = (userId: number) =>
+  req<import("@/types").VpnStatus>(`/vpn/status/${userId}`);
+
+export const buyVpnStars = (userId: number, chatId: number, planId: string) =>
+  req<import("@/types").VpnInvoice>("/vpn/buy-stars", {
+    method: "POST",
+    body: JSON.stringify({ user_id: userId, telegram_chat_id: chatId, plan_id: planId, payment_method: "stars" }),
+  });
+
+export const buyVpnCrypto = (userId: number, chatId: number, planId: string) =>
+  req<import("@/types").VpnInvoice>("/vpn/buy-crypto", {
+    method: "POST",
+    body: JSON.stringify({ user_id: userId, telegram_chat_id: chatId, plan_id: planId, payment_method: "cryptobot" }),
+  });
+
+// Daily check-in
+export const dailyCheckin = (userId: number) =>
+  req<import("@/types").CheckinResult>(`/checkin/${userId}`, { method: "POST" });
+
+// Leaderboard
+export const fetchLeaderboard = (userId?: number) =>
+  req<import("@/types").Leaderboard>(`/leaderboard${userId ? `?user_id=${userId}` : ""}`);
+
+// Referral
+export const fetchReferral = (userId: number) =>
+  req<import("@/types").ReferralInfo>(`/referral/${userId}`);
+
+export const useReferralCode = (userId: number, code: string) =>
+  req<{ ok: boolean; message: string; xp_awarded: number }>("/referral/use", {
+    method: "POST",
+    body: JSON.stringify({ user_id: userId, code }),
+  });

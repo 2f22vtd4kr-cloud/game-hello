@@ -169,3 +169,103 @@ class AnalyticsOut(BaseModel):
     price_index: float
     trend_data: List[dict]
     station_counts: dict
+
+
+# ── VPN ───────────────────────────────────────────────────────────
+
+class VpnPlanId(str):
+    pass
+
+
+class VpnBuyIn(BaseModel):
+    user_id: int
+    telegram_chat_id: int
+    plan_id: str            # "sprint" | "vzlet" | "session" | "bezlimit"
+    payment_method: str     # "stars" | "cryptobot"
+
+    @field_validator("plan_id")
+    @classmethod
+    def validate_plan(cls, v: str) -> str:
+        if v not in ("sprint", "vzlet", "session", "bezlimit"):
+            raise ValueError("Неверный план VPN")
+        return v
+
+    @field_validator("payment_method")
+    @classmethod
+    def validate_method(cls, v: str) -> str:
+        if v not in ("stars", "cryptobot"):
+            raise ValueError("Метод оплаты: stars или cryptobot")
+        return v
+
+
+class VpnSessionOut(BaseModel):
+    id: int
+    plan_name: str
+    duration_minutes: int
+    price_rub: int
+    payment_method: str
+    config_key: str
+    is_active: bool
+    activated_at: datetime
+    expires_at: datetime
+    model_config = {"from_attributes": True}
+
+
+class VpnStatusOut(BaseModel):
+    has_active: bool
+    session: Optional[VpnSessionOut] = None
+
+
+class VpnInvoiceOut(BaseModel):
+    stars_amount: Optional[int] = None
+    checkout_url: Optional[str] = None
+    transaction_id: str
+    plan_name: str
+    duration_minutes: int
+
+
+# ── Daily check-in ────────────────────────────────────────────────
+
+class CheckinOut(BaseModel):
+    ok: bool
+    xp_awarded: int
+    total_xp: int
+    level: str
+    already_done: bool
+    message: str
+    next_checkin_at: Optional[datetime] = None
+
+
+# ── Leaderboard ───────────────────────────────────────────────────
+
+class LeaderboardEntry(BaseModel):
+    rank: int
+    user_id: int
+    username: Optional[str]
+    level: str
+    xp: int
+
+
+class LeaderboardOut(BaseModel):
+    entries: List[LeaderboardEntry]
+    user_rank: Optional[int] = None
+    user_xp: Optional[int] = None
+
+
+# ── Referral ──────────────────────────────────────────────────────
+
+class ReferralOut(BaseModel):
+    code: str
+    uses: int
+    xp_per_referral: int = 200
+
+
+class ReferralUseIn(BaseModel):
+    user_id: int
+    code: str
+
+
+class ReferralUseOut(BaseModel):
+    ok: bool
+    message: str
+    xp_awarded: int = 0

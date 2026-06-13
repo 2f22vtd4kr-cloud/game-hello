@@ -1,5 +1,5 @@
 from sqlalchemy import (
-    Column, Integer, BigInteger, String, Float,
+    Boolean, Column, Integer, BigInteger, String, Float,
     DateTime, ForeignKey, Index, UniqueConstraint,
 )
 from sqlalchemy.orm import relationship, declarative_base
@@ -148,6 +148,51 @@ class Subscription(Base):
                          name="uq_sub_user_station_fuel"),
         Index("ix_sub_station_id", "station_id"),
     )
+
+
+class VpnSession(Base):
+    """A paid VPN session with auto-expiry."""
+    __tablename__ = "vpn_sessions"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(BigInteger, nullable=False, index=True)
+    telegram_chat_id = Column(BigInteger, nullable=False)
+    plan_id = Column(String, nullable=False)
+    plan_name = Column(String, nullable=False)
+    duration_minutes = Column(Integer, nullable=False)
+    price_rub = Column(Integer, nullable=False)
+    payment_method = Column(String, nullable=False)
+    transaction_id = Column(String, nullable=True)
+    config_key = Column(String, nullable=False)
+    is_active = Column(Boolean, default=True)
+    activated_at = Column(DateTime(timezone=True), default=_now)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+
+
+class UserCheckin(Base):
+    """Daily check-in record — one per user per UTC day."""
+    __tablename__ = "user_checkins"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(BigInteger, ForeignKey("users.id"), nullable=False)
+    checked_in_at = Column(DateTime(timezone=True), default=_now)
+    xp_awarded = Column(Integer, default=50)
+
+    user = relationship("User")
+    __table_args__ = (Index("ix_checkin_user_date", "user_id", "checked_in_at"),)
+
+
+class ReferralCode(Base):
+    """One referral code per user — +200 XP per successful use."""
+    __tablename__ = "referral_codes"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(BigInteger, ForeignKey("users.id"), nullable=False, unique=True)
+    code = Column(String, unique=True, nullable=False, index=True)
+    uses = Column(Integer, default=0)
+    created_at = Column(DateTime(timezone=True), default=_now)
+
+    user = relationship("User")
 
 
 class AnalyticsSnapshot(Base):

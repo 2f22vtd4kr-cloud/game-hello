@@ -160,6 +160,86 @@ export const STATUS_LABELS: Record<string, string> = {
   red: "Нет",
 };
 
+// ── VPN ──────────────────────────────────────────────────────────
+
+export interface VpnPlan {
+  id: "sprint" | "vzlet" | "session" | "bezlimit";
+  emoji: string;
+  name: string;
+  subtitle: string;
+  durationMin: number;
+  priceRub: number;
+  starsAmount: number;
+}
+
+export const VPN_PLANS: VpnPlan[] = [
+  { id: "sprint",   emoji: "⚡️", name: "Спринт",          subtitle: "Идеально для быстрой проверки почты или авторизации",               durationMin: 5,  priceRub: 15, starsAmount: 9  },
+  { id: "vzlet",    emoji: "✈️", name: "Взлёт",            subtitle: "Достаточно, чтобы прочитать заблокированные медиа и ответить в чатах", durationMin: 15, priceRub: 30, starsAmount: 17 },
+  { id: "session",  emoji: "🎬", name: "Сессия",           subtitle: "Оптимально для просмотра короткого видео или скачивания документа",   durationMin: 30, priceRub: 50, starsAmount: 28 },
+  { id: "bezlimit", emoji: "🪐", name: "Безлимит на час",  subtitle: "Полноценная сессия для работы или скроллинга ленты",                 durationMin: 60, priceRub: 80, starsAmount: 44 },
+];
+
+export interface VpnSession {
+  id: number;
+  plan_name: string;
+  duration_minutes: number;
+  price_rub: number;
+  payment_method: string;
+  config_key: string;
+  is_active: boolean;
+  activated_at: string;
+  expires_at: string;
+}
+
+export interface VpnStatus {
+  has_active: boolean;
+  session?: VpnSession;
+}
+
+export interface VpnInvoice {
+  stars_amount?: number;
+  checkout_url?: string;
+  transaction_id: string;
+  plan_name: string;
+  duration_minutes: number;
+}
+
+// ── Check-in ─────────────────────────────────────────────────────
+
+export interface CheckinResult {
+  ok: boolean;
+  xp_awarded: number;
+  total_xp: number;
+  level: string;
+  already_done: boolean;
+  message: string;
+  next_checkin_at?: string;
+}
+
+// ── Leaderboard ──────────────────────────────────────────────────
+
+export interface LeaderboardEntry {
+  rank: number;
+  user_id: number;
+  username: string | null;
+  level: string;
+  xp: number;
+}
+
+export interface Leaderboard {
+  entries: LeaderboardEntry[];
+  user_rank?: number;
+  user_xp?: number;
+}
+
+// ── Referral ─────────────────────────────────────────────────────
+
+export interface ReferralInfo {
+  code: string;
+  uses: number;
+  xp_per_referral: number;
+}
+
 export const XP_TIER_THRESHOLDS = [
   { min: 0,       max: 9999,   level: "🚶 Пешеход" },
   { min: 10000,   max: 49999,  level: "🚲 Самокатчик" },

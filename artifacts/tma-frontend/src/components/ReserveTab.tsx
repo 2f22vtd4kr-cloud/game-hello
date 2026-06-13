@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { flipCard, submitTapScore } from "@/api/client";
+import { flipCard, submitTapScore, dailyCheckin, fetchLeaderboard, fetchReferral, useReferralCode } from "@/api/client";
 import { useUserStore } from "@/stores/useUserStore";
 import { useGameStore } from "@/stores/useGameStore";
 import { useToast } from "@/components/Toast";
-import type { FlipResult, FlipCard } from "@/types";
+import type { FlipResult, FlipCard, Leaderboard, ReferralInfo } from "@/types";
 import { RARITY_COLORS } from "@/types";
 
 const TIER_COLORS: Record<string, string> = {
@@ -514,6 +514,298 @@ function XpTiers() {
   );
 }
 
+// ─── Daily Check-in ───────────────────────────────────────────────
+
+function DailyCheckin() {
+  const { user, refresh } = useUserStore();
+  const { add: toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const [done, setDone] = useState(false);
+  const [nextAt, setNextAt] = useState<string | null>(null);
+
+  const handleCheckin = async () => {
+    if (!user || loading || done) return;
+    setLoading(true);
+    try {
+      const res = await dailyCheckin(user.id);
+      if (res.already_done) {
+        setDone(true);
+        if (res.next_checkin_at) setNextAt(res.next_checkin_at);
+        toast("Ежедневный бонус уже получен сегодня", "error");
+      } else {
+        setDone(true);
+        if (res.next_checkin_at) setNextAt(res.next_checkin_at);
+        toast(`✅ +${res.xp_awarded} XP — ежедневный бонус получен!`, "success");
+        await refresh();
+      }
+    } catch (e: unknown) {
+      toast(String(e), "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const nextTime = nextAt
+    ? new Date(nextAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })
+    : null;
+
+  return (
+    <div style={{ padding: "0 1rem 1rem" }}>
+      <motion.div
+        whileTap={{ scale: 0.98 }}
+        style={{
+          background: done ? "#0d1f0d" : "linear-gradient(135deg,#14141c,#1a0a1f)",
+          border: `1px solid ${done ? "#22c55e44" : "#a855f744"}`,
+          borderRadius: "16px",
+          padding: "1rem",
+          display: "flex",
+          alignItems: "center",
+          gap: "1rem",
+        }}
+      >
+        <div style={{ fontSize: "2rem" }}>{done ? "✅" : "🎁"}</div>
+        <div style={{ flex: 1 }}>
+          <p style={{ margin: 0, color: "#e2e8f0", fontWeight: 700, fontSize: "0.9rem" }}>
+            Ежедневный бонус
+          </p>
+          <p style={{ margin: "0.1rem 0 0", color: "#6b7280", fontSize: "0.72rem" }}>
+            {done
+              ? `Получен. Следующий${nextTime ? ` в ${nextTime}` : " завтра"}`
+              : "+50 XP каждые 24 часа — просто загляните сюда"}
+          </p>
+        </div>
+        <button
+          onClick={handleCheckin}
+          disabled={done || loading}
+          style={{
+            background: done
+              ? "#22222f"
+              : "linear-gradient(135deg,#22c55e,#16a34a)",
+            border: "none",
+            borderRadius: "10px",
+            color: done ? "#4b5563" : "#fff",
+            padding: "0.5rem 0.9rem",
+            fontSize: "0.78rem",
+            fontWeight: 700,
+            cursor: done || loading ? "not-allowed" : "pointer",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {loading ? "…" : done ? "Готово" : "Получить"}
+        </button>
+      </motion.div>
+    </div>
+  );
+}
+
+// ─── Leaderboard ──────────────────────────────────────────────────
+
+function LeaderboardSection() {
+  const { user } = useUserStore();
+  const [board, setBoard] = useState<Leaderboard | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  const load = async () => {
+    if (board) { setOpen((v) => !v); return; }
+    setLoading(true);
+    try {
+      const data = await fetchLeaderboard(user?.id);
+      setBoard(data);
+      setOpen(true);
+    } catch {
+      // ignore
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{ padding: "0 1rem 1rem" }}>
+      <div style={{
+        background: "#14141c", border: "1px solid #22222f",
+        borderRadius: "16px", overflow: "hidden",
+      }}>
+        <button
+          onClick={load}
+          style={{
+            width: "100%", display: "flex", alignItems: "center",
+            justifyContent: "space-between",
+            padding: "0.9rem 1rem",
+            background: "none", border: "none", cursor: "pointer",
+          }}
+        >
+          <span style={{ color: "#e2e8f0", fontWeight: 700, fontSize: "0.95rem" }}>
+            🏆 Таблица лидеров
+          </span>
+          <span style={{ color: "#6b7280", fontSize: "0.8rem" }}>
+            {loading ? "…" : open ? "▲" : "▼"}
+          </span>
+        </button>
+
+        <AnimatePresence>
+          {open && board && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              style={{ overflow: "hidden" }}
+            >
+              {board.user_rank && (
+                <div style={{
+                  margin: "0 0.75rem 0.5rem",
+                  background: "#a855f711",
+                  border: "1px solid #a855f733",
+                  borderRadius: "10px",
+                  padding: "0.4rem 0.75rem",
+                  display: "flex", justifyContent: "space-between",
+                  fontSize: "0.75rem",
+                }}>
+                  <span style={{ color: "#a855f7" }}>Ваша позиция</span>
+                  <span style={{ color: "#e2e8f0", fontWeight: 700 }}>
+                    #{board.user_rank} · {(board.user_xp ?? 0).toLocaleString("ru")} XP
+                  </span>
+                </div>
+              )}
+              {board.entries.slice(0, 10).map((entry) => {
+                const isMe = entry.user_id === user?.id;
+                const medal = entry.rank === 1 ? "🥇" : entry.rank === 2 ? "🥈" : entry.rank === 3 ? "🥉" : `#${entry.rank}`;
+                return (
+                  <div key={entry.user_id} style={{
+                    display: "flex", alignItems: "center", gap: "0.6rem",
+                    padding: "0.5rem 0.75rem",
+                    background: isMe ? "#a855f711" : "none",
+                    borderBottom: "1px solid #1a1a24",
+                  }}>
+                    <span style={{ width: "2rem", textAlign: "center", fontSize: "0.8rem" }}>{medal}</span>
+                    <div style={{ flex: 1 }}>
+                      <p style={{ margin: 0, color: isMe ? "#a855f7" : "#e2e8f0", fontSize: "0.82rem", fontWeight: isMe ? 700 : 400 }}>
+                        {entry.username ? `@${entry.username}` : `User #${entry.user_id}`}
+                      </p>
+                      <p style={{ margin: 0, color: "#4b5563", fontSize: "0.65rem" }}>{entry.level}</p>
+                    </div>
+                    <span style={{
+                      fontFamily: "'JetBrains Mono', monospace",
+                      fontSize: "0.78rem", color: "#a855f7", fontWeight: 700,
+                    }}>
+                      {entry.xp.toLocaleString("ru")}
+                    </span>
+                  </div>
+                );
+              })}
+              <p style={{ textAlign: "center", color: "#4b5563", fontSize: "0.65rem", padding: "0.5rem" }}>
+                Топ-10 по XP · обновляется в реальном времени
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+}
+
+// ─── Referral ─────────────────────────────────────────────────────
+
+function ReferralSection() {
+  const { user } = useUserStore();
+  const { add: toast } = useToast();
+  const [info, setInfo] = useState<ReferralInfo | null>(null);
+  const [inputCode, setInputCode] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    fetchReferral(user.id).then(setInfo).catch(() => {});
+  }, [user]);
+
+  const handleCopy = () => {
+    if (!info) return;
+    navigator.clipboard.writeText(info.code).then(() => toast("Код скопирован!", "success")).catch(() => {});
+  };
+
+  const handleUse = async () => {
+    if (!user || !inputCode.trim()) return;
+    setSubmitting(true);
+    try {
+      const res = await useReferralCode(user.id, inputCode.trim().toUpperCase());
+      toast(res.message, res.ok ? "success" : "error");
+      if (res.ok) setInputCode("");
+    } catch (e: unknown) {
+      toast(String(e), "error");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div style={{ padding: "0 1rem 1.5rem" }}>
+      <div style={{
+        background: "#14141c", border: "1px solid #22222f",
+        borderRadius: "16px", padding: "1rem",
+      }}>
+        <h3 style={{ margin: "0 0 0.6rem", color: "#e2e8f0", fontSize: "0.95rem", fontWeight: 700 }}>
+          🔗 Реферальная программа
+        </h3>
+        <p style={{ margin: "0 0 0.75rem", color: "#6b7280", fontSize: "0.72rem", lineHeight: 1.5 }}>
+          Пригласите друга — оба получат <span style={{ color: "#a855f7", fontWeight: 700 }}>+200 XP</span> при первом использовании.
+        </p>
+
+        {info && (
+          <div
+            onClick={handleCopy}
+            style={{
+              background: "#050507",
+              border: "1px dashed #a855f744",
+              borderRadius: "10px",
+              padding: "0.6rem 0.8rem",
+              display: "flex", justifyContent: "space-between", alignItems: "center",
+              cursor: "pointer",
+              marginBottom: "0.75rem",
+            }}
+          >
+            <span style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              color: "#a855f7", fontSize: "0.88rem", fontWeight: 700, letterSpacing: "0.08em",
+            }}>
+              {info.code}
+            </span>
+            <span style={{ color: "#4b5563", fontSize: "0.7rem" }}>
+              {info.uses} использ. · нажмите чтобы скопировать
+            </span>
+          </div>
+        )}
+
+        <div style={{ display: "flex", gap: "0.4rem" }}>
+          <input
+            value={inputCode}
+            onChange={(e) => setInputCode(e.target.value.toUpperCase())}
+            placeholder="Введите чужой код FUEL-XXXXXX-XXX"
+            style={{
+              flex: 1, background: "#0b0b0f", border: "1px solid #22222f",
+              borderRadius: "8px", color: "#e2e8f0", padding: "0.5rem 0.65rem",
+              fontSize: "0.75rem", outline: "none", fontFamily: "monospace",
+            }}
+          />
+          <button
+            onClick={handleUse}
+            disabled={submitting || !inputCode.trim()}
+            style={{
+              background: "linear-gradient(135deg,#a855f7,#db2777)",
+              border: "none", borderRadius: "8px",
+              color: "#fff", padding: "0.5rem 0.8rem",
+              fontSize: "0.75rem", fontWeight: 700,
+              cursor: submitting || !inputCode.trim() ? "not-allowed" : "pointer",
+              opacity: submitting || !inputCode.trim() ? 0.5 : 1,
+            }}
+          >
+            Активировать
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Fortune Tab ──────────────────────────────────────────────────
 
 export function ReserveTab() {
@@ -547,8 +839,11 @@ export function ReserveTab() {
         )}
       </div>
 
+      <DailyCheckin />
       <FlipGame />
       <TapGame />
+      <LeaderboardSection />
+      <ReferralSection />
       <XpTiers />
     </div>
   );

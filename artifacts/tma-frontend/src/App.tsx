@@ -9,6 +9,7 @@
  *  - Fetch baseline data (user profile, station list) on boot
  */
 import { useEffect, useRef, useState } from "react";
+import { AnimatePresence } from "framer-motion";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ToastContainer } from "@/components/Toast";
 import { BottomNav } from "@/components/BottomNav";
@@ -17,6 +18,7 @@ import { AnalyticsTab } from "@/components/AnalyticsTab";
 import { CatalogTab } from "@/components/CatalogTab";
 import { VaultTab } from "@/components/VaultTab";
 import { ReserveTab } from "@/components/ReserveTab";
+import { VpnModal } from "@/components/VpnModal";
 import { useUserStore } from "@/stores/useUserStore";
 import { useStationStore } from "@/stores/useStationStore";
 import { useMapStore } from "@/stores/useMapStore";
@@ -80,6 +82,9 @@ export default function App() {
   const [initialStationId, setInitialStationId] = useState<number | undefined>();
   const [initialPurchaseId, setInitialPurchaseId] = useState<number | undefined>();
   const [navVisible, setNavVisible] = useState(true);
+  const [showVpn, setShowVpn] = useState(false);
+  const [vpnTroubleshooter, setVpnTroubleshooter] = useState(false);
+  const vpnSuggested = useRef(false);
 
   const { init: initUser } = useUserStore();
   const { fetch: fetchStations } = useStationStore();
@@ -128,7 +133,24 @@ export default function App() {
     // ── User + stations ─────────────────────────────────────────
     const tgUser = tg?.initDataUnsafe?.user;
     initUser(tgUser?.id ?? 0, tgUser?.username ?? tgUser?.first_name ?? undefined);
-    fetchStations();
+
+    // Detect slow/failed loads and suggest VPN after 8 seconds
+    const vpnTimer = setTimeout(() => {
+      if (!vpnSuggested.current) {
+        vpnSuggested.current = true;
+        setVpnTroubleshooter(true);
+        setShowVpn(true);
+      }
+    }, 8000);
+
+    fetchStations().then(() => clearTimeout(vpnTimer)).catch(() => {
+      clearTimeout(vpnTimer);
+      if (!vpnSuggested.current) {
+        vpnSuggested.current = true;
+        setVpnTroubleshooter(true);
+        setShowVpn(true);
+      }
+    });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -164,6 +186,35 @@ export default function App() {
   return (
     <ErrorBoundary>
       <ToastContainer />
+
+      <AnimatePresence>
+        {showVpn && (
+          <VpnModal
+            isTroubleshooter={vpnTroubleshooter}
+            onClose={() => { setShowVpn(false); setVpnTroubleshooter(false); }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* VPN floating button */}
+      <button
+        onClick={() => { setVpnTroubleshooter(false); setShowVpn(true); }}
+        title="VPN-доступ"
+        style={{
+          position: "fixed", bottom: "72px", right: "12px",
+          zIndex: 9500,
+          width: "40px", height: "40px",
+          borderRadius: "50%",
+          background: "linear-gradient(135deg,#a855f7,#db2777)",
+          border: "none",
+          boxShadow: "0 0 14px #a855f755",
+          cursor: "pointer",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: "1.1rem",
+        }}
+      >
+        🔒
+      </button>
 
       {/*
         Content area:
