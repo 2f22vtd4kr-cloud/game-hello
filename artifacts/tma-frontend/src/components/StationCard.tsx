@@ -1,10 +1,17 @@
+import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
-import type { GasStation } from "@/types";
+import type { GasStation, SubscriptionStatus } from "@/types";
 import { FUEL_LABELS, STATUS_COLORS, STATUS_LABELS } from "@/types";
-import { reportStation } from "@/api/client";
+import {
+  reportStation,
+  checkSubscriptionStatus,
+  subscribeToStation,
+  unsubscribeFromStation,
+} from "@/api/client";
 import { useUserStore } from "@/stores/useUserStore";
 import { useStationStore } from "@/stores/useStationStore";
 import { useToast } from "@/components/Toast";
+import { impact, notify } from "@/lib/haptic";
 
 interface Props {
   station: GasStation;
@@ -25,16 +32,63 @@ export function StationCard({ station, onClose }: Props) {
 
   const handleReport = async (vote: "available" | "unavailable") => {
     if (!user) return;
+    impact("light");
     try {
       await reportStation(station.id, user.id, vote);
       updateReport(station.id, vote === "available" ? 10 : -10);
+      notify("success");
       toast(
         vote === "available"
           ? "✓ Отчёт принят. Спасибо! +5 XP" : "✕ Отчёт принят. Спасибо! +5 XP",
         "success",
       );
     } catch {
+      notify("error");
       toast("Не удалось отправить отчёт", "error");
+    }
+  };
+
+  // ── Subscription (push-notification bell) ───────────────────────
+  const [subStatus, setSubStatus] = useState<SubscriptionStatus | null>(null);
+  const [subLoading, setSubLoading] = useState(false);
+
+  const refreshSubStatus = useCallback(async () => {
+    if (!user) return;
+    try {
+      const status = await checkSubscriptionStatus(user.id, station.id);
+      setSubStatus(status);
+    } catch {
+      // Silent — station card still works without subscription status
+    }
+  }, [user, station.id]);
+
+  useEffect(() => {
+    refreshSubStatus();
+  }, [refreshSubStatus]);
+
+  const handleToggleSubscription = async () => {
+    if (!user || subLoading) return;
+    impact("medium");
+    setSubLoading(true);
+    try {
+      if (subStatus?.subscribed && subStatus.subscription_id) {
+        await unsubscribeFromStation(subStatus.subscription_id, user.id);
+        setSubStatus({ subscribed: false });
+        notify("success");
+        toast("🔕 Подписка отменена", "success");
+      } else {
+        // telegram_chat_id == user.id for private bot chats
+        await subscribeToStation(user.id, user.id, station.id);
+        setSubStatus({ subscribed: true });
+        notify("success");
+        toast("🔔 Подписка оформлена! Вы получите уведомление, когда топливо появится.", "success");
+      }
+      await refreshSubStatus();
+    } catch {
+      notify("error");
+      toast("Не удалось изменить подписку", "error");
+    } finally {
+      setSubLoading(false);
     }
   };
 
@@ -75,10 +129,31 @@ export function StationCard({ station, onClose }: Props) {
             {station.region}
           </p>
         </div>
+        {/* Bell subscription button */}
+        <button
+          onClick={handleToggleSubscription}
+          disabled={subLoading}
+          title={subStatus?.subscribed ? "Отписаться" : "Подписаться на уведомления"}
+          style={{
+            background: "none",
+            border: "none",
+            cursor: subLoading ? "wait" : "pointer",
+            fontSize: "1.15rem",
+            padding: "0 0.25rem",
+            transition: "transform 0.15s",
+            opacity: subLoading ? 0.5 : 1,
+            filter: subStatus?.subscribed
+              ? "drop-shadow(0 0 6px #eab308)"
+              : "none",
+          }}
+        >
+          {subStatus?.subscribed ? "🔔" : "🔕"}
+        </button>
+
         {onClose && (
           <button onClick={onClose} style={{
             background: "none", border: "none", color: "#6b7280",
-            cursor: "pointer", fontSize: "1.2rem", padding: "0 0 0 0.5rem",
+            cursor: "pointer", fontSize: "1.2rem", padding: "0 0 0 0.25rem",
           }}>✕</button>
         )}
       </div>

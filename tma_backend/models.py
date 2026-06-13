@@ -1,6 +1,6 @@
 from sqlalchemy import (
     Column, Integer, BigInteger, String, Float,
-    DateTime, ForeignKey, Index,
+    DateTime, ForeignKey, Index, UniqueConstraint,
 )
 from sqlalchemy.orm import relationship, declarative_base
 from datetime import datetime, timezone
@@ -27,6 +27,8 @@ class User(Base):
     purchases = relationship("PurchaseHistory", back_populates="user", lazy="dynamic")
     limits = relationship("DailyLimitTracker", back_populates="user", lazy="dynamic")
     reports = relationship("StationReport", back_populates="user", lazy="dynamic")
+    subscriptions = relationship("Subscription", back_populates="user",
+                                 cascade="all, delete-orphan", lazy="dynamic")
 
 
 class GasStation(Base):
@@ -46,6 +48,8 @@ class GasStation(Base):
                                  cascade="all, delete-orphan")
     reports = relationship("StationReport", back_populates="station",
                            cascade="all, delete-orphan")
+    subscriptions = relationship("Subscription", back_populates="station",
+                                 cascade="all, delete-orphan")
 
     __table_args__ = (Index("ix_station_lat_lng", "lat", "lng"),)
 
@@ -110,6 +114,40 @@ class StationReport(Base):
 
     station = relationship("GasStation", back_populates="reports")
     user = relationship("User", back_populates="reports")
+
+
+class Subscription(Base):
+    """
+    A user subscribing to fuel-availability alerts for a specific station
+    (optionally for a specific fuel type).
+
+    When the station's dominant status changes to "green" (fuel appears),
+    the background scheduler sends a Telegram notification to telegram_chat_id.
+    """
+    __tablename__ = "subscriptions"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    # TMA user id (matches the users table)
+    user_id = Column(BigInteger, ForeignKey("users.id"), nullable=False)
+    # Telegram chat_id for sending push notifications (= user_id for private chats)
+    telegram_chat_id = Column(BigInteger, nullable=False)
+    station_id = Column(Integer, ForeignKey("gas_stations.id"), nullable=False)
+    # None = subscribe to overall station status; a fuel type = subscribe to that fuel only
+    fuel_type = Column(String, nullable=True)
+    # Status we last notified the user about — prevents duplicate alerts
+    last_notified_status = Column(String, nullable=True)
+    last_notified_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=_now)
+
+    user = relationship("User", back_populates="subscriptions")
+    station = relationship("GasStation", back_populates="subscriptions")
+
+    __table_args__ = (
+        # One subscription per (user, station, fuel_type) combination
+        UniqueConstraint("user_id", "station_id", "fuel_type",
+                         name="uq_sub_user_station_fuel"),
+        Index("ix_sub_station_id", "station_id"),
+    )
 
 
 class AnalyticsSnapshot(Base):

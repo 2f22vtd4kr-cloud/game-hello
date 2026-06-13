@@ -117,6 +117,43 @@ class TapScoreOut(BaseModel):
     new_level: bool
 
 
+class SubscriptionIn(BaseModel):
+    """Payload for creating a new fuel-alert subscription."""
+    user_id: int
+    telegram_chat_id: int
+    station_id: int
+    # If None, subscribe to overall station status (any fuel change)
+    fuel_type: Optional[str] = None
+
+    @field_validator("fuel_type")
+    @classmethod
+    def validate_fuel(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        allowed = {"АИ-92", "АИ-95", "АИ-95+", "АИ-100", "ДТ", "ДТ+", "Газ"}
+        if v not in allowed:
+            raise ValueError(f"Тип топлива должен быть одним из {allowed}")
+        return v
+
+
+class SubscriptionOut(BaseModel):
+    """Subscription returned to the client or bot."""
+    id: int
+    user_id: int
+    station_id: int
+    station_name: str
+    station_region: str
+    fuel_type: Optional[str]
+    created_at: datetime
+    model_config = {"from_attributes": True}
+
+
+class SubscriptionStatusOut(BaseModel):
+    """Whether the user is subscribed to a station (for the bell icon)."""
+    subscribed: bool
+    subscription_id: Optional[int] = None
+
+
 class AnalyticsOut(BaseModel):
     regional_supply: dict
     availability_index: float

@@ -1,0 +1,67 @@
+✅ FINAL REPLIT DEPLOYMENT FIX PROMPT (Copy-paste this exactly as your next prompt — it’s laser-focused on the “Could not find run command” issue)
+**URGENT DEPLOYMENT FIX ONLY** — Solve the "Could not find run command" error for publishing this Telegram Mini App.
+
+Project: fuel-tickets-ru (pnpm workspace with frontend in artifacts/tma-frontend)
+
+The frontend is a Vite + React + TypeScript app. We need it published as a **Static App** so it can be used as Telegram Mini App.
+
+### Step 1: Fix .replit file (Critical)
+Create or completely replace `.replit` in the root with this exact content:
+
+```ini
+# Replit Configuration for Static Vite Deployment
+run = "pnpm --filter @workspace/tma-frontend run build"
+
+[deploy]
+startCommand = "npx serve -s artifacts/tma-frontend/dist -l 3000"
+
+[[ports]]
+port = 3000
+onStart = "Ignore"
+
+[static]
+root = "artifacts/tma-frontend/dist"
+Step 2: Update root package.json scripts
+Replace or add these scripts in root package.json:
+{
+  "name": "fuel-tickets-ru",
+  "scripts": {
+    "dev": "pnpm --filter @workspace/tma-frontend dev",
+    "build": "pnpm --filter @workspace/tma-frontend build",
+    "preview": "pnpm --filter @workspace/tma-frontend preview",
+    "deploy": "pnpm build && echo '✅ Build complete - ready for static deployment'"
+  }
+}
+Step 3: Ensure frontend build config
+Make sure artifacts/tma-frontend/vite.config.ts has this:
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+
+export default defineConfig({
+  plugins: [react()],
+  base: './',
+  build: {
+    outDir: 'dist',
+    emptyOutDir: true
+  }
+});
+Step 4: Execute these commands in Shell (in order)
+pnpm install
+pnpm run build
+ls -la artifacts/tma-frontend/dist   # Verify dist folder exists
+Step 5: Publishing Instructions
+After running the above:
+	1	Go to Deploy tab in Replit
+	2	Choose Static Deployment
+	3	Set output directory to: artifacts/tma-frontend/dist
+	4	Deploy
+Once deployed, copy the public URL and set it in BotFather as your Mini App URL.
+Goal: Make the app publishable as static hosting so Telegram WebView can load it without backend runtime. Generate any missing files and fix configuration so publishing works immediately.
+---
+
+**After you paste this prompt, do the following manually if AI doesn't:**
+
+1. Run the shell commands it suggests.
+2. If it still complains, go to **Tools → Static Deployments** and manually point to the `dist` folder.
+
+This should finally solve the publishing issue. Let me know the exact error after this attempt.

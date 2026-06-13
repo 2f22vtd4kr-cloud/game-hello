@@ -10,6 +10,8 @@ import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
+import httpx
+
 import uvicorn
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import Depends, FastAPI, HTTPException
@@ -20,13 +22,13 @@ from sqlalchemy.orm import Session
 from tma_backend.database import SessionLocal, get_db, init_db, seed_db, _generate_snapshot
 from tma_backend.models import (
     AnalyticsSnapshot, DailyLimitTracker, FuelStatus, GasStation,
-    PurchaseHistory, StationReport, User,
+    PurchaseHistory, StationReport, Subscription, User,
 )
 from tma_backend.payment import provider
 from tma_backend.schemas import (
     AnalyticsOut, FlipResultOut, GasStationOut, PurchaseIn,
-    PurchaseResultOut, StationReportIn, TapScoreIn, TapScoreOut,
-    UserCreateIn, UserOut,
+    PurchaseResultOut, StationReportIn, SubscriptionIn, SubscriptionOut,
+    SubscriptionStatusOut, TapScoreIn, TapScoreOut, UserCreateIn, UserOut,
 )
 from tma_backend.seed_regions import DAILY_LIMITS, FUEL_PRICES_RUB, XP_TIERS
 
@@ -124,13 +126,56 @@ def _effective_availability(db: Session, station_id: int,
 #  Scheduler jobs
 # ──────────────────────────────────────────────────────────────────
 
+def _send_fuel_notification(
+    telegram_chat_id: int,
+    station_name: str,
+    fuel_type: Optional[str],
+    new_status: str,
+) -> None:
+    """
+    Fire-and-forget Telegram push notification sent via Bot API.
+    Called synchronously from the APScheduler job thread.
+    Only sends when status becomes "green" (fuel appeared).
+    """
+    bot_token = os.getenv("TELEGRAM_BOT_TOKEN", "")
+    if not bot_token:
+        return
+
+    emoji = {"green": "🟢", "yellow": "🟡", "red": "🔴"}.get(new_status, "⚪")
+    label = {"green": "появилось", "yellow": "ограничено", "red": "закончилось"}.get(new_status, new_status)
+    fuel_part = f" · {fuel_type}" if fuel_type else ""
+    text = (
+        f"⛽ *{station_name}*{fuel_part}\n"
+        f"{emoji} Топливо {label}!\n\n"
+        "Откройте Матрицу Снабжения, чтобы увидеть актуальные остатки и занять очередь."
+    )
+
+    try:
+        with httpx.Client(timeout=6.0) as client:
+            client.post(
+                f"https://api.telegram.org/bot{bot_token}/sendMessage",
+                json={"chat_id": telegram_chat_id, "text": text, "parse_mode": "Markdown"},
+            )
+    except Exception as exc:
+        logger.warning("Fuel notification failed for chat %s: %s", telegram_chat_id, exc)
+
+
 def simulate_availability_shifts():
-    """Drift fuel availability ±5–15% every 30 min."""
+    """
+    Drift fuel availability ±5–15% every 30 min.
+    After updating statuses, detect state transitions and push Telegram
+    notifications to all subscribed users whose station improved to 'green'.
+    """
     db = SessionLocal()
     try:
         statuses = db.query(FuelStatus).all()
         rng = random.Random()
+
+        # Track (station_id, fuel_type) → (old_status, new_status) for notification
+        changed: dict[tuple[int, Optional[str]], tuple[str, str]] = {}
+
         for fs in statuses:
+            old_status = fs.status
             delta = rng.randint(-15, 15)
             new_pct = max(0, min(100, fs.availability_pct + delta))
             if new_pct >= 60:
@@ -142,15 +187,55 @@ def simulate_availability_shifts():
             fs.availability_pct = new_pct
             fs.last_updated = _now()
 
+            if fs.status != old_status:
+                changed[(fs.station_id, fs.fuel_type)] = (old_status, fs.status)
+
         # Drift queue counts
-        stations = db.query(GasStation).all()
-        for s in stations:
+        for s in db.query(GasStation).all():
             s.queue_cars = max(0, s.queue_cars + rng.randint(-3, 5))
 
         db.commit()
-        logger.info("Availability simulation tick complete.")
+        logger.info("Availability simulation tick complete (%d changes).", len(changed))
+
+        # ── Push notifications ─────────────────────────────────────
+        if not changed:
+            return
+
+        now = _now()
+        cooldown = timedelta(minutes=30)  # max one notification per sub per 30 min
+
+        for (station_id, fuel_type), (old_s, new_s) in changed.items():
+            # Only notify when fuel *appears* (transitions to green)
+            if new_s != "green":
+                continue
+
+            # Find all subscriptions for this station
+            subs = (
+                db.query(Subscription)
+                .filter(Subscription.station_id == station_id)
+                .filter(
+                    (Subscription.fuel_type == fuel_type) |
+                    (Subscription.fuel_type == None)  # noqa: E711
+                )
+                .all()
+            )
+
+            for sub in subs:
+                # Respect cooldown — don't spam within 30 min
+                if sub.last_notified_at and (now - sub.last_notified_at) < cooldown:
+                    continue
+
+                station_name = sub.station.name if sub.station else f"АЗС #{station_id}"
+                _send_fuel_notification(
+                    sub.telegram_chat_id, station_name, sub.fuel_type, new_s
+                )
+                sub.last_notified_status = new_s
+                sub.last_notified_at = now
+
+        db.commit()
+
     except Exception as e:
-        logger.error(f"simulate_availability_shifts error: {e}")
+        logger.error("simulate_availability_shifts error: %s", e)
         db.rollback()
     finally:
         db.close()
@@ -622,6 +707,116 @@ def submit_tap_score(user_id: int, body: TapScoreIn,
 # ──────────────────────────────────────────────────────────────────
 #  Analytics
 # ──────────────────────────────────────────────────────────────────
+
+# ──────────────────────────────────────────────────────────────────
+#  Subscriptions (push-notification alerts)
+# ──────────────────────────────────────────────────────────────────
+
+@app.post("/api/subscribe", response_model=SubscriptionOut)
+def create_subscription(body: SubscriptionIn, db: Session = Depends(get_db)):
+    """Subscribe a user to fuel-availability alerts for a station."""
+    # Ensure the station exists
+    station = db.query(GasStation).filter(GasStation.id == body.station_id).first()
+    if not station:
+        raise HTTPException(status_code=404, detail="Станция не найдена")
+
+    # Ensure the user record exists (create if first-time TMA user)
+    user = db.query(User).filter(User.id == body.user_id).first()
+    if not user:
+        user = User(id=body.user_id)
+        db.add(user)
+        db.flush()
+
+    # Upsert: return existing subscription instead of raising a duplicate error
+    existing = (
+        db.query(Subscription)
+        .filter(
+            Subscription.user_id == body.user_id,
+            Subscription.station_id == body.station_id,
+            Subscription.fuel_type == body.fuel_type,
+        )
+        .first()
+    )
+    if existing:
+        return SubscriptionOut(
+            id=existing.id,
+            user_id=existing.user_id,
+            station_id=existing.station_id,
+            station_name=station.name,
+            station_region=station.region,
+            fuel_type=existing.fuel_type,
+            created_at=existing.created_at,
+        )
+
+    sub = Subscription(
+        user_id=body.user_id,
+        telegram_chat_id=body.telegram_chat_id,
+        station_id=body.station_id,
+        fuel_type=body.fuel_type,
+    )
+    db.add(sub)
+    db.commit()
+    db.refresh(sub)
+
+    return SubscriptionOut(
+        id=sub.id,
+        user_id=sub.user_id,
+        station_id=sub.station_id,
+        station_name=station.name,
+        station_region=station.region,
+        fuel_type=sub.fuel_type,
+        created_at=sub.created_at,
+    )
+
+
+@app.delete("/api/subscribe/{subscription_id}")
+def delete_subscription(subscription_id: int, user_id: int,
+                         db: Session = Depends(get_db)):
+    """Unsubscribe — only the owning user can delete their own subscription."""
+    sub = db.query(Subscription).filter(
+        Subscription.id == subscription_id,
+        Subscription.user_id == user_id,
+    ).first()
+    if not sub:
+        raise HTTPException(status_code=404, detail="Подписка не найдена")
+    db.delete(sub)
+    db.commit()
+    return {"ok": True}
+
+
+@app.get("/api/subscriptions/{user_id}")
+def get_user_subscriptions(user_id: int, db: Session = Depends(get_db)):
+    """List all active subscriptions for a user (used by bot /subscriptions command)."""
+    subs = db.query(Subscription).filter(Subscription.user_id == user_id).all()
+    result = []
+    for sub in subs:
+        station = db.query(GasStation).filter(GasStation.id == sub.station_id).first()
+        result.append({
+            "id": sub.id,
+            "user_id": sub.user_id,
+            "station_id": sub.station_id,
+            "station_name": station.name if station else f"АЗС #{sub.station_id}",
+            "station_region": station.region if station else "",
+            "fuel_type": sub.fuel_type,
+            "created_at": sub.created_at.isoformat(),
+        })
+    return {"subscriptions": result}
+
+
+@app.get("/api/subscribe/status/{user_id}/{station_id}",
+         response_model=SubscriptionStatusOut)
+def get_subscription_status(user_id: int, station_id: int,
+                              db: Session = Depends(get_db)):
+    """Check whether a user is subscribed to a specific station (for the bell icon)."""
+    sub = db.query(Subscription).filter(
+        Subscription.user_id == user_id,
+        Subscription.station_id == station_id,
+    ).first()
+    return SubscriptionStatusOut(
+        subscribed=sub is not None,
+        subscription_id=sub.id if sub else None,
+    )
+
 
 @app.get("/api/analytics", response_model=AnalyticsOut)
 def get_analytics(db: Session = Depends(get_db)):

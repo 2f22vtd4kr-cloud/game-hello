@@ -102,6 +102,21 @@ export interface Analytics {
   };
 }
 
+export interface Subscription {
+  id: number;
+  user_id: number;
+  station_id: number;
+  station_name: string;
+  station_region: string;
+  fuel_type: string | null;
+  created_at: string;
+}
+
+export interface SubscriptionStatus {
+  subscribed: boolean;
+  subscription_id?: number;
+}
+
 export type TabId = "map" | "analytics" | "catalog" | "vault" | "reserve";
 
 export const FUEL_LABELS: Record<string, string> = {

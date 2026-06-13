@@ -859,6 +859,64 @@ async def map_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     )
 
 
+async def subscriptions_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """List the user's active station subscriptions and allow unsubscribing."""
+    chat_id = update.effective_user.id
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                f"{TMA_URL}/api/subscriptions/{chat_id}",
+                timeout=aiohttp.ClientTimeout(total=8),
+            ) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    subs = data.get("subscriptions", [])
+                else:
+                    subs = []
+    except Exception:
+        subs = []
+
+    if not subs:
+        await update.message.reply_text(
+            "🔕 У вас нет активных подписок на АЗС.\n\n"
+            "Откройте *Матрицу Снабжения*, найдите нужную АЗС на карте и нажмите 🔔 "
+            "чтобы получать мгновенные уведомления о появлении топлива.",
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup([[
+                InlineKeyboardButton(
+                    "⛽ Открыть Матрицу", web_app=WebAppInfo(url=TMA_URL)
+                )
+            ]]),
+        )
+        return
+
+    lines = ["🔔 *Ваши подписки на АЗС:*\n"]
+    buttons: list[list[InlineKeyboardButton]] = []
+
+    for sub in subs:
+        fuel_part = f" · {sub['fuel_type']}" if sub.get("fuel_type") else " · Все виды топлива"
+        lines.append(
+            f"• *{sub['station_name']}*\n"
+            f"  📍 {sub['station_region']}{fuel_part}\n"
+        )
+        buttons.append([InlineKeyboardButton(
+            f"🔕 Отписаться: {sub['station_name'][:28]}",
+            callback_data=f"unsub_{sub['id']}_{chat_id}",
+        )])
+
+    buttons.append([InlineKeyboardButton(
+        "⛽ Открыть Матрицу", web_app=WebAppInfo(url=TMA_URL)
+    )])
+    buttons.append([InlineKeyboardButton("🏠 Главное меню", callback_data="main_menu")])
+
+    await update.message.reply_text(
+        "\n".join(lines),
+        parse_mode="Markdown",
+        reply_markup=InlineKeyboardMarkup(buttons),
+    )
+
+
 async def tma_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Open the Telegram Mini App directly — optionally at a specific tab."""
     args = context.args  # e.g. /tma reserve  or  /tma vault
@@ -1274,6 +1332,80 @@ async def menu_navigation(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             ]]),
         )
 
+    elif data.startswith("unsub_"):
+        # Format: unsub_{subscription_id}_{user_id}
+        parts = data.split("_")
+        if len(parts) >= 3:
+            sub_id = parts[1]
+            user_id = parts[2]
+            await query.answer("⏳ Отписываемся…")
+            try:
+                async with aiohttp.ClientSession() as session:
+                    async with session.delete(
+                        f"{TMA_URL}/api/subscribe/{sub_id}?user_id={user_id}",
+                        timeout=aiohttp.ClientTimeout(total=8),
+                    ) as resp:
+                        if resp.status == 200:
+                            await query.edit_message_text(
+                                "🔕 *Подписка успешно отменена.*\n\n"
+                                "Вы больше не будете получать уведомления об этой АЗС.\n"
+                                "Чтобы снова подписаться — откройте Матрицу Снабжения.",
+                                parse_mode="Markdown",
+                                reply_markup=InlineKeyboardMarkup([[
+                                    InlineKeyboardButton(
+                                        "⛽ Матрица Снабжения",
+                                        web_app=WebAppInfo(url=TMA_URL),
+                                    ),
+                                ], [
+                                    InlineKeyboardButton(
+                                        "🔔 Мои подписки", callback_data="my_subs"
+                                    ),
+                                ]]),
+                            )
+                        else:
+                            await query.answer("Не удалось отписаться — попробуйте позже.", show_alert=True)
+            except Exception:
+                await query.answer("Ошибка соединения. Повторите позже.", show_alert=True)
+        else:
+            await query.answer("Неверный формат.", show_alert=True)
+
+    elif data == "my_subs":
+        # Re-fetch and display subscriptions inline
+        chat_id = query.from_user.id
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(
+                    f"{TMA_URL}/api/subscriptions/{chat_id}",
+                    timeout=aiohttp.ClientTimeout(total=8),
+                ) as resp:
+                    subs = (await resp.json()).get("subscriptions", []) if resp.status == 200 else []
+        except Exception:
+            subs = []
+
+        if not subs:
+            await query.edit_message_text(
+                "🔕 У вас нет активных подписок на АЗС.",
+                reply_markup=InlineKeyboardMarkup([[
+                    InlineKeyboardButton("⛽ Открыть Матрицу", web_app=WebAppInfo(url=TMA_URL))
+                ]]),
+            )
+            return
+
+        lines = ["🔔 *Ваши подписки:*\n"]
+        buttons: list[list[InlineKeyboardButton]] = []
+        for sub in subs:
+            fuel_part = f" · {sub['fuel_type']}" if sub.get("fuel_type") else ""
+            lines.append(f"• *{sub['station_name']}*{fuel_part}\n")
+            buttons.append([InlineKeyboardButton(
+                f"🔕 {sub['station_name'][:30]}",
+                callback_data=f"unsub_{sub['id']}_{chat_id}",
+            )])
+        buttons.append([InlineKeyboardButton("🏠 Меню", callback_data="main_menu")])
+        await query.edit_message_text(
+            "\n".join(lines), parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup(buttons),
+        )
+
     elif data == "admin_exit":
         context.user_data.clear()
         await query.edit_message_text(
@@ -1501,14 +1633,15 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 async def post_init(application: Application) -> None:
     """Регистрирует командное меню и запускает фоновые задачи."""
     await application.bot.set_my_commands([
-        BotCommand("start",    "Главное меню и выбор квот"),
-        BotCommand("tma",      "Открыть Матрицу Снабжения (мини-приложение)"),
-        BotCommand("map",      "Карта остатков топлива АЗС"),
-        BotCommand("myorders", "Мои заказы и ваучеры"),
-        BotCommand("rules",    "Актуальные правила и сводки Губернатора"),
-        BotCommand("admin",    "Вход для контролёров АЗС"),
-        BotCommand("stats",    "Статистика системы (только для контролёров)"),
-        BotCommand("cancel",   "Отменить активный счёт на оплату"),
+        BotCommand("start",         "Главное меню и выбор квот"),
+        BotCommand("tma",           "Открыть Матрицу Снабжения (мини-приложение)"),
+        BotCommand("map",           "Карта остатков топлива АЗС"),
+        BotCommand("myorders",      "Мои заказы и ваучеры"),
+        BotCommand("subscriptions", "Мои подписки на АЗС (уведомления)"),
+        BotCommand("rules",         "Актуальные правила и сводки Губернатора"),
+        BotCommand("admin",         "Вход для контролёров АЗС"),
+        BotCommand("stats",         "Статистика системы (только для контролёров)"),
+        BotCommand("cancel",        "Отменить активный счёт на оплату"),
     ])
     logger.info("Командное меню Telegram зарегистрировано.")
     asyncio.create_task(_invoice_cleanup_loop(application.bot))
@@ -1523,14 +1656,15 @@ def main() -> None:
     init_db()
 
     app = Application.builder().token(BOT_TOKEN).post_init(post_init).build()
-    app.add_handler(CommandHandler("start",    start))
-    app.add_handler(CommandHandler("tma",      tma_cmd))   # Deep-link to TMA tabs
-    app.add_handler(CommandHandler("rules",    rules_cmd))
-    app.add_handler(CommandHandler("map",      map_cmd))
-    app.add_handler(CommandHandler("admin",    admin_cmd))
-    app.add_handler(CommandHandler("stats",    stats_cmd))
-    app.add_handler(CommandHandler("myorders", myorders_cmd))
-    app.add_handler(CommandHandler("cancel",   cancel_cmd))
+    app.add_handler(CommandHandler("start",         start))
+    app.add_handler(CommandHandler("tma",           tma_cmd))
+    app.add_handler(CommandHandler("rules",         rules_cmd))
+    app.add_handler(CommandHandler("map",           map_cmd))
+    app.add_handler(CommandHandler("admin",         admin_cmd))
+    app.add_handler(CommandHandler("stats",         stats_cmd))
+    app.add_handler(CommandHandler("myorders",      myorders_cmd))
+    app.add_handler(CommandHandler("cancel",        cancel_cmd))
+    app.add_handler(CommandHandler("subscriptions", subscriptions_cmd))
     app.add_handler(CallbackQueryHandler(menu_navigation))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
 

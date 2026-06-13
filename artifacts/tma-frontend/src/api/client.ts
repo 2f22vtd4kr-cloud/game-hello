@@ -1,6 +1,7 @@
 import type {
   Analytics, FlipResult, GasStation, LimitsMap,
-  Purchase, PurchaseResult, TapScoreResult, User,
+  Purchase, PurchaseResult, Subscription, SubscriptionStatus,
+  TapScoreResult, User,
 } from "@/types";
 
 const BASE = "/api";
@@ -61,6 +62,32 @@ export const fetchVault = (userId: number) =>
 
 // Analytics
 export const fetchAnalytics = () => req<Analytics>("/analytics");
+
+// Subscriptions (push-notification alerts)
+export const checkSubscriptionStatus = (userId: number, stationId: number) =>
+  req<SubscriptionStatus>(`/subscribe/status/${userId}/${stationId}`);
+
+export const subscribeToStation = (
+  userId: number,
+  telegramChatId: number,
+  stationId: number,
+  fuelType?: string,
+) =>
+  req<Subscription>("/subscribe", {
+    method: "POST",
+    body: JSON.stringify({
+      user_id: userId,
+      telegram_chat_id: telegramChatId,
+      station_id: stationId,
+      fuel_type: fuelType ?? null,
+    }),
+  });
+
+export const unsubscribeFromStation = (subscriptionId: number, userId: number) =>
+  req(`/subscribe/${subscriptionId}?user_id=${userId}`, { method: "DELETE" });
+
+export const fetchUserSubscriptions = (userId: number) =>
+  req<{ subscriptions: Subscription[] }>(`/subscriptions/${userId}`);
 
 // Games
 export const flipCard = (userId: number) =>
