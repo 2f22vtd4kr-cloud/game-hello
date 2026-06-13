@@ -1,0 +1,103 @@
+
+2026-06-13 22:41:33.38
+256c6be1
+System
+sending SIGTERM to artifact process artifact=artifacts/api-server
+
+2026-06-13 22:41:33.38
+256c6be1
+System
+received signal, shutting down artifact processes signal=terminated
+
+2026-06-13 22:41:33.75
+256c6be1
+User
+2026-06-13 19:41:33,758 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot8748626398:AAEMboVUgsr6rG1hE2Ut3khZOLZHH3cfamA/getMe "HTTP/1.1 200 OK"
+
+2026-06-13 22:41:33.87
+256c6be1
+User
+2026-06-13 19:41:33,874 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot8748626398:AAEMboVUgsr6rG1hE2Ut3khZOLZHH3cfamA/setMyCommands "HTTP/1.1 200 OK"
+
+2026-06-13 22:41:33.87
+256c6be1
+User
+2026-06-13 19:41:33,875 - __main__ - INFO - Командное меню Telegram зарегистрировано.
+
+2026-06-13 22:41:33.87
+256c6be1
+User
+2026-06-13 19:41:33,875 - __main__ - INFO - Фоновая задача очистки просроченных инвойсов запущена.
+
+2026-06-13 22:41:33.97
+256c6be1
+User
+2026-06-13 19:41:33,975 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot8748626398:AAEMboVUgsr6rG1hE2Ut3khZOLZHH3cfamA/deleteWebhook "HTTP/1.1 200 OK"
+
+2026-06-13 22:41:33.97
+256c6be1
+User
+2026-06-13 19:41:33,979 - apscheduler.scheduler - INFO - Scheduler started
+
+2026-06-13 22:41:33.97
+256c6be1
+User
+2026-06-13 19:41:33,979 - telegram.ext.Application - INFO - Application started
+
+2026-06-13 22:41:35.49
+256c6be1
+User
+
+2026-06-13 22:41:35.49
+256c6be1
+User
+Read more about it in the
+
+2026-06-13 22:41:35.49
+256c6be1
+User
+[FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+
+2026-06-13 22:41:35.49
+256c6be1
+User
+Read more about it in the
+
+2026-06-13 22:41:35.49
+256c6be1
+User
+@app.on_event("startup")
+
+2026-06-13 22:41:35.49
+256c6be1
+User
+on_event is deprecated, use lifespan event handlers instead.
+
+2026-06-13 22:41:35.49
+256c6be1
+User
+@app.on_event("shutdown")
+
+2026-06-13 22:41:35.49
+256c6be1
+User
+
+2026-06-13 22:41:35.49
+256c6be1
+User
+/home/runner/workspace/tma_backend/main.py:431: DeprecationWarning:
+
+2026-06-13 22:41:35.49
+256c6be1
+User
+on_event is deprecated, use lifespan event handlers instead.
+
+2026-06-13 22:41:35.49
+256c6be1
+User
+[FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+
+2026-06-13 22:41:35.49
+256c6be1
+User
+/home/runner/workspace/tma_backend/main.py:411: DeprecationWarning:
