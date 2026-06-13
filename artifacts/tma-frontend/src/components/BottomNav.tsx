@@ -27,7 +27,7 @@ export function BottomNav({ active, onChange, visible = true }: Props) {
         borderTop: "1px solid #22222f",
         display: "flex", alignItems: "stretch",
         paddingBottom: "env(safe-area-inset-bottom, 0px)",
-        zIndex: 100,
+        zIndex: 10000,
       }}
     >
       {TABS.map((tab) => {

@@ -1734,10 +1734,81 @@ async def post_init(application: Application) -> None:
         BotCommand("admin",         "Вход для контролёров АЗС"),
         BotCommand("stats",         "Статистика системы (только для контролёров)"),
         BotCommand("cancel",        "Отменить активный счёт на оплату"),
+        BotCommand("buystars",      "Купить топливный ваучер за Telegram Stars"),
     ])
     logger.info("Командное меню Telegram зарегистрировано.")
     asyncio.create_task(_invoice_cleanup_loop(application.bot))
     logger.info("Фоновая задача очистки просроченных инвойсов запущена.")
+
+
+_STARS_FUEL_PRICES: dict[str, int] = {
+    "АИ-92": 47, "АИ-95": 52, "АИ-95+": 56,
+    "АИ-100": 68, "ДТ": 60, "ДТ+": 65, "Газ": 28,
+}
+_STARS_RUB_RATE = 1.84  # 1 Star ≈ 1.84 RUB
+
+
+def _stars_for(fuel: str, volume: int) -> int:
+    import math
+    rub = _STARS_FUEL_PRICES.get(fuel, 47) * volume
+    return max(1, math.ceil(rub / _STARS_RUB_RATE))
+
+
+async def buystars_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Show a Stars payment menu — fuel type × volume options."""
+    rows = []
+    for fuel in ("АИ-92", "АИ-95", "ДТ", "Газ"):
+        row = []
+        for vol in (20, 40, 60):
+            stars = _stars_for(fuel, vol)
+            row.append(InlineKeyboardButton(
+                f"{fuel} {vol}л — ⭐{stars}",
+                callback_data=f"buystars_{fuel}_{vol}",
+            ))
+        rows.append(row)
+
+    markup = InlineKeyboardMarkup(rows)
+    await update.message.reply_text(
+        "⭐ *Покупка топливного ваучера за Telegram Stars*\n\n"
+        "Выберите тип топлива и объём. Оплата произойдёт прямо в Telegram — "
+        "быстро, безопасно, без внешних сервисов.\n\n"
+        "_1 Star ≈ 1.84 ₽ · цены действительны на сегодня_",
+        parse_mode="Markdown",
+        reply_markup=markup,
+    )
+
+
+async def buystars_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Send a Stars invoice for the chosen fuel/volume."""
+    query = update.callback_query
+    await query.answer()
+
+    parts = query.data.split("_", 2)  # buystars_{fuel}_{volume}
+    if len(parts) != 3:
+        return
+
+    _, fuel, vol_str = parts
+    try:
+        volume = int(vol_str)
+    except ValueError:
+        return
+
+    stars = _stars_for(fuel, volume)
+    price_rub = _STARS_FUEL_PRICES.get(fuel, 47) * volume
+    payload = f"stars_{fuel}_{volume}_0"
+
+    await context.bot.send_invoice(
+        chat_id=query.message.chat_id,
+        title=f"Топливный ваучер {fuel} {volume}л",
+        description=(
+            f"Предоплаченный ваучер на {volume} литров {fuel}.\n"
+            f"Действителен на всех АЗС Матрицы Снабжения. "
+            f"Стоимость: ~{price_rub} ₽"
+        ),
+        payload=payload,
+        currency="XTR",
+        prices=[LabeledPrice(label=f"{fuel} {volume}л", amount=stars)],
+    )
 
 
 async def pre_checkout_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -1799,6 +1870,8 @@ def main() -> None:
     app.add_handler(CommandHandler("myorders",      myorders_cmd))
     app.add_handler(CommandHandler("cancel",        cancel_cmd))
     app.add_handler(CommandHandler("subscriptions", subscriptions_cmd))
+    app.add_handler(CommandHandler("buystars", buystars_cmd))
+    app.add_handler(CallbackQueryHandler(buystars_callback, pattern=r"^buystars_"))
     app.add_handler(CallbackQueryHandler(menu_navigation))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
     app.add_handler(PreCheckoutQueryHandler(pre_checkout_handler))

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { purchaseVoucher, fetchLimits, createStarsInvoice, createCryptoBotInvoice } from "@/api/client";
+import { fetchLimits, createStarsInvoice, createCryptoBotInvoice } from "@/api/client";
 import { useUserStore } from "@/stores/useUserStore";
 import { useStationStore } from "@/stores/useStationStore";
 import { useVaultStore } from "@/stores/useVaultStore";
@@ -15,7 +15,7 @@ const FUEL_PRICES: Record<string, number> = {
 const VOLUMES = [20, 40, 60];
 const STAR_RUB_RATE = 1.84;
 
-type PayMethod = "mock" | "stars" | "cryptobot";
+type PayMethod = "stars" | "cryptobot";
 
 function BlockOverlay({ reason, onClose }: { reason: string; onClose: () => void }) {
   return (
@@ -68,9 +68,8 @@ function BlockOverlay({ reason, onClose }: { reason: string; onClose: () => void
 
 function PaymentMethodSelector({ value, onChange }: { value: PayMethod; onChange: (m: PayMethod) => void }) {
   const methods: { id: PayMethod; label: string; emoji: string; color: string }[] = [
-    { id: "mock",      label: "Тест",     emoji: "🧪", color: "#6b7280" },
-    { id: "stars",     label: "Stars",    emoji: "⭐", color: "#f59e0b" },
-    { id: "cryptobot", label: "Crypto",   emoji: "💎", color: "#3b82f6" },
+    { id: "stars",     label: "Telegram Stars", emoji: "⭐", color: "#f59e0b" },
+    { id: "cryptobot", label: "Криптовалюта",   emoji: "💎", color: "#3b82f6" },
   ];
   return (
     <div style={{ display: "flex", gap: "0.4rem", marginBottom: "0.6rem" }}>
@@ -269,7 +268,7 @@ export function CatalogTab({ initialStationId }: CatalogTabProps) {
   const [limits, setLimits] = useState<LimitsMap | null>(null);
   const [blockReason, setBlockReason] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [payMethod, setPayMethod] = useState<PayMethod>("mock");
+  const [payMethod, setPayMethod] = useState<PayMethod>("stars");
 
   useEffect(() => {
     if (initialStationId && stations.length > 0 && !selectedStation) {
@@ -322,21 +321,7 @@ export function CatalogTab({ initialStationId }: CatalogTabProps) {
       return;
     }
 
-    // Default mock purchase
-    try {
-      const result = await purchaseVoucher(user.id, fuelType, volume, selectedStation.id);
-      if (result.blocked) {
-        setBlockReason(result.block_reason ?? "Шлюз временно недоступен.");
-        return;
-      }
-      if (result.purchase) {
-        addPurchase(result.purchase);
-        toast(`✓ Ваучер получен! QR: ${result.purchase.qr_hash.slice(0, 12)}…`, "success");
-        fetchLimits(user.id, selectedStation.zone_type).then(setLimits).catch(() => {});
-      }
-    } catch (e: unknown) {
-      toast(String(e), "error");
-    }
+    toast("Выберите способ оплаты: Telegram Stars или Криптовалюта.", "error");
   };
 
   if (!user) return (
