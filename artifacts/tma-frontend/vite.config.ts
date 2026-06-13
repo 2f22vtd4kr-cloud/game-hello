@@ -13,6 +13,10 @@ export default defineConfig({
   base: "./",
 
   resolve: {
+    // Force a single copy of React and Leaflet across the entire pnpm workspace.
+    // Without this, react-leaflet (and other packages) can pull in a second React
+    // instance, causing the "Invalid hook call" crash in Telegram WebView.
+    dedupe: ["react", "react-dom", "react/jsx-runtime", "leaflet"],
     alias: {
       "@": path.resolve(__dirname, "./src"),
       "@assets": path.resolve(__dirname, "../../attached_assets"),
@@ -24,7 +28,7 @@ export default defineConfig({
   server: {
     host: "0.0.0.0",
     port: 3001,
-    allowedHosts: "all",
+    allowedHosts: true,
 
     /**
      * HMR must use wss:// and port 443 so that the Replit proxy and
