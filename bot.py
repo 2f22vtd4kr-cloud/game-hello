@@ -1899,6 +1899,8 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
 async def post_init(application: Application) -> None:
     """Регистрирует командное меню и запускает фоновые задачи."""
+    await application.bot.delete_webhook(drop_pending_updates=True)
+    logger.info("Webhook сброшен (drop_pending_updates=True).")
     await application.bot.set_my_commands([
         BotCommand("start",         "Главное меню и выбор квот"),
         BotCommand("tma",           "Открыть Матрицу Снабжения (мини-приложение)"),
@@ -2687,8 +2689,7 @@ async def conflict_error_handler(update: object, context) -> None:
             "Конфликт: другой экземпляр бота уже запущен с этим токеном. "
             "Завершение работы, чтобы уступить активному экземпляру."
         )
-        import sys
-        sys.exit(1)
+        os._exit(1)
 
 
 def main() -> None:
@@ -2737,20 +2738,23 @@ def main() -> None:
 
     is_production = bool(os.getenv("REPLIT_DEPLOYMENT"))
     if is_production:
-        deploy_domain = os.getenv("REPLIT_DEV_DOMAIN", "")
+        replit_domains = os.getenv("REPLIT_DOMAINS", "")
+        deploy_domain = replit_domains.split(",")[0].strip() if replit_domains else ""
+        if not deploy_domain:
+            deploy_domain = os.getenv("REPLIT_DEV_DOMAIN", "")
         if deploy_domain:
             webhook_url = f"https://{deploy_domain}/tg/webhook"
             print(f"🔔 Production mode: webhook → {webhook_url}")
             app.run_webhook(
-                listen="127.0.0.1",
+                listen="0.0.0.0",
                 port=8443,
                 url_path="/tg/webhook",
                 webhook_url=webhook_url,
                 drop_pending_updates=True,
             )
         else:
-            print("⚠️  REPLIT_DEV_DOMAIN not set — falling back to polling.")
-            app.run_polling(drop_pending_updates=True)
+            print("❌ Ни REPLIT_DOMAINS, ни REPLIT_DEV_DOMAIN не заданы — запуск невозможен.")
+            os._exit(1)
     else:
         app.run_polling(drop_pending_updates=True)
 
