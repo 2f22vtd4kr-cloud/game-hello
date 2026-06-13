@@ -10,13 +10,9 @@ import { useStationStore } from "@/stores/useStationStore";
 import { useMapStore } from "@/stores/useMapStore";
 import { StationCard } from "@/components/StationCard";
 
-// Fix Leaflet default icon paths
-delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-});
+// NOTE: Leaflet default marker icons are fixed globally in src/main.tsx via
+// bundled asset imports.  No CDN URLs needed here — this file only uses
+// L.divIcon() for custom station markers, so no further setup is required.
 
 function createStationIcon(status: string) {
   const color = STATUS_COLORS[status] ?? "#9ca3af";
@@ -66,7 +62,13 @@ function MapRecenter({ lat, lng, zoom }: { lat: number; lng: number; zoom: numbe
 
 const FUEL_OPTIONS = ["АИ-92", "АИ-95", "АИ-95+", "АИ-100", "ДТ", "ДТ+", "Газ"];
 
-export function MapTab({ visible }: { visible: boolean }) {
+interface MapTabProps {
+  visible: boolean;
+  /** Station to pre-select on first render (from deep-link startParam) */
+  initialStationId?: number;
+}
+
+export function MapTab({ visible, initialStationId }: MapTabProps) {
   const { stations, fetch, loading } = useStationStore();
   const { viewport, filterStatus, filterFuel, setFilter, selectedStationId, selectStation } =
     useMapStore();
@@ -75,6 +77,13 @@ export function MapTab({ visible }: { visible: boolean }) {
   useEffect(() => {
     fetch();
   }, [fetch]);
+
+  // Honor deep-link pre-selection once stations are loaded
+  useEffect(() => {
+    if (initialStationId && stations.length > 0) {
+      selectStation(initialStationId);
+    }
+  }, [initialStationId, stations.length, selectStation]);
 
   const filtered = stations.filter((s) => {
     const status = dominantStatus(s);
@@ -270,7 +279,7 @@ export function MapTab({ visible }: { visible: boolean }) {
           chunkedLoading
           maxClusterRadius={50}
           showCoverageOnHover={false}
-          iconCreateFunction={(cluster) => {
+          iconCreateFunction={(cluster: { getChildCount: () => number }) => {
             const count = cluster.getChildCount();
             return L.divIcon({
               html: `<div style="

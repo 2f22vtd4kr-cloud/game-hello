@@ -1,0 +1,156 @@
+✅ ULTIMATE ALL-IN-ONE REPLIT PROMPT (Copy and paste this exactly into Replit AI — this is your final optimized commit)
+**FINAL COMPREHENSIVE FIX for fuel-tickets-ru Telegram Mini App — React + Leaflet + Vite + Replit + Telegram SDK**
+
+The app crashes with "Произошла системная ошибка" in Telegram WebView due to React-Leaflet (missing CSS, marker icons, SSR issues). Publishing fails with "Could not find run command". Combine all previous suggestions + new ones.
+
+### 1. Project Structure Assumption (based on repo)
+- Frontend: `artifacts/tma-frontend/` (Vite + React + TypeScript)
+- Backend: `tma_backend/`
+- Root: pnpm workspace
+
+### 2. CRITICAL Leaflet Fixes (Main Crash Cause)
+
+**Create/Edit `artifacts/tma-frontend/src/main.tsx`:**
+```tsx
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App.tsx';
+import 'leaflet/dist/leaflet.css';  // MUST HAVE
+import './index.css';
+
+// Fix Leaflet default markers for Vite + Telegram WebView
+import L from 'leaflet';
+import markerIcon from 'leaflet/dist/images/marker-icon.png';
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
+import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: markerIcon2x,
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
+});
+
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  
+    
+  
+);
+Update artifacts/tma-frontend/vite.config.ts:
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+
+export default defineConfig({
+  plugins: [react()],
+  base: './',
+  server: {
+    host: '0.0.0.0',
+    port: 3002,
+    cors: true,
+    hmr: {
+      protocol: 'ws',
+      host: '0.0.0.0',
+      clientPort: 443
+    }
+  },
+  build: {
+    outDir: 'dist',
+    assetsDir: 'assets',
+    sourcemap: true,
+  },
+  resolve: {
+    alias: {
+      leaflet: 'leaflet'  // ensure proper resolution
+    }
+  }
+});
+3. Safe MapTab.tsx (Prevent Render Errors)
+// artifacts/tma-frontend/src/components/MapTab.tsx
+import { useEffect, useRef } from 'react';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+
+export default function MapTab() {
+  const mapRef = useRef(null);
+
+  useEffect(() => {
+    // Telegram WebApp integration
+    if (window.Telegram?.WebApp) {
+      window.Telegram.WebApp.ready();
+      window.Telegram.WebApp.expand();
+    }
+  }, []);
+
+  return (
+    
+      
+        
+        {/* Your markers here */}
+      
+    
+  );
+}
+4. Enhanced ErrorBoundary.tsx
+// artifacts/tma-frontend/src/components/ErrorBoundary.tsx
+import React from 'react';
+
+class ErrorBoundary extends React.Component {
+  state = { hasError: false };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: any) {
+    console.error('Map Error:', error);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        
+          
+Ошибка загрузки карты
+           window.location.reload()}>Перезапустить
+        
+      );
+    }
+    return this.props.children;
+  }
+}
+
+export default ErrorBoundary;
+5. Root Configuration Files
+Update root package.json scripts:
+{
+  "scripts": {
+    "dev": "pnpm --filter @workspace/tma-frontend dev",
+    "build": "pnpm --filter @workspace/tma-frontend build",
+    "preview": "pnpm --filter @workspace/tma-frontend preview",
+    "deploy": "pnpm build"
+  }
+}
+Create/Update .replit:
+run = "pnpm --filter @workspace/tma-frontend run build"
+[deploy]
+startCommand = "npx serve -s artifacts/tma-frontend/dist"
+6. Execution Commands (Run in Shell after AI generates files)
+pnpm install
+pnpm --filter @workspace/tma-frontend run build
+7. Deployment
+	•	Use Replit Static Deployment → point to artifacts/tma-frontend/dist
+	•	For Telegram: Set the published URL in BotFather as Mini App
+Additional Telegram Best Practices:
+	•	Initialize Telegram.WebApp in App.tsx
+	•	Handle Telegram.WebApp.themeParams
+	•	Add haptic feedback where appropriate
+Generate/update all files, fix imports, and make the app fully production-ready for Crimea fuel map with gamification. Prioritize Leaflet stability first.
+---
+
+**After pasting this prompt:**
+
+1. Let Replit AI generate the files.
+2. Run the shell commands listed.
+3. Build → Deploy as Static App.
+4. Test the URL directly and in Telegram.
+
+This combines **all** previous fixes + new ones (SSR, SDK, ErrorBoundary, deployment). It should finally work. Paste any new errors/logs if needed!

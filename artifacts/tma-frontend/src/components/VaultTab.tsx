@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useVaultStore } from "@/stores/useVaultStore";
 import { useUserStore } from "@/stores/useUserStore";
@@ -164,9 +164,25 @@ function PurchaseCard({ purchase }: { purchase: Purchase }) {
   );
 }
 
-export function VaultTab() {
+interface VaultTabProps {
+  /** Purchase ID to highlight on first render (from deep-link startParam) */
+  initialPurchaseId?: number;
+}
+
+export function VaultTab({ initialPurchaseId }: VaultTabProps) {
   const { user } = useUserStore();
   const { purchases, loading, fetch } = useVaultStore();
+  const [highlightedId, setHighlightedId] = useState<number | undefined>(initialPurchaseId);
+
+  // Auto-clear highlight ring after 3 seconds
+  const highlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (highlightedId) {
+      if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
+      highlightTimerRef.current = setTimeout(() => setHighlightedId(undefined), 3000);
+    }
+    return () => { if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current); };
+  }, [highlightedId]);
 
   useEffect(() => {
     if (user) fetch(user.id);

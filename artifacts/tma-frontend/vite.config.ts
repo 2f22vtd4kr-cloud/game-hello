@@ -4,16 +4,37 @@ import path from "path";
 
 export default defineConfig({
   plugins: [react()],
+
+  /**
+   * base: './' — Required for Telegram Mini App static deployments.
+   * Assets are referenced with relative paths so they work regardless of the
+   * hosting path prefix (e.g. served from a CDN subfolder or Replit domain).
+   */
+  base: "./",
+
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
       "@assets": path.resolve(__dirname, "../../attached_assets"),
+      // Ensure Leaflet resolves to the ESM package (not a CDN copy)
+      leaflet: path.resolve(__dirname, "../../node_modules/.pnpm/leaflet@1.9.4/node_modules/leaflet"),
     },
   },
+
   server: {
     host: "0.0.0.0",
     port: 3001,
     allowedHosts: "all",
+
+    /**
+     * HMR must use wss:// and port 443 so that the Replit proxy and
+     * Telegram WebView don't block the WebSocket upgrade.
+     */
+    hmr: {
+      protocol: "wss",
+      clientPort: 443,
+    },
+
     proxy: {
       "/api": {
         target: "http://localhost:8000",
@@ -22,6 +43,22 @@ export default defineConfig({
       "/health": {
         target: "http://localhost:8000",
         changeOrigin: true,
+      },
+    },
+  },
+
+  build: {
+    outDir: "dist",
+    assetsDir: "assets",
+    sourcemap: true,
+    rollupOptions: {
+      output: {
+        // Split Leaflet into its own chunk — it's large and rarely changes
+        manualChunks: {
+          leaflet: ["leaflet", "react-leaflet", "react-leaflet-cluster"],
+          charts: ["recharts"],
+          motion: ["framer-motion"],
+        },
       },
     },
   },

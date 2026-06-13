@@ -222,13 +222,26 @@ function FuelItem({
   );
 }
 
-export function CatalogTab() {
+interface CatalogTabProps {
+  /** Station to pre-select (from deep-link startParam) */
+  initialStationId?: number;
+}
+
+export function CatalogTab({ initialStationId }: CatalogTabProps) {
   const { user } = useUserStore();
   const { stations } = useStationStore();
   const { addPurchase } = useVaultStore();
   const { add: toast } = useToast();
 
   const [selectedStation, setSelectedStation] = useState<GasStation | null>(null);
+
+  // Honor deep-link pre-selection once stations are available
+  useEffect(() => {
+    if (initialStationId && stations.length > 0 && !selectedStation) {
+      const found = stations.find((s) => s.id === initialStationId) ?? null;
+      if (found) setSelectedStation(found);
+    }
+  }, [initialStationId, stations, selectedStation]);
   const [limits, setLimits] = useState<LimitsMap | null>(null);
   const [blockReason, setBlockReason] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");

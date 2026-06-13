@@ -29,6 +29,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 BOT_TOKEN          = os.getenv("TELEGRAM_BOT_TOKEN", "")
+# Bot username (without @) used for deep-link generation.
+# Set BOT_USERNAME in Replit Secrets or .env to enable ?startapp= links.
+BOT_USERNAME       = os.getenv("BOT_USERNAME", "")
 ADMIN_PASSWORD     = os.getenv("ADMIN_PASSWORD", "crimea2026")
 ADMIN_CHAT_ID      = int(os.getenv("ADMIN_CHAT_ID", "0")) or None   # chat_id администратора
 CRYPTO_BOT_TOKEN   = os.getenv("CRYPTO_BOT_TOKEN", "")
@@ -38,6 +41,39 @@ USDT_RUB_RATE      = 92          # курс конвертации для ото
 DB_PATH            = "vouchers.db"
 MAP_URL         = "https://fuel.sevtech.org/map"
 TMA_URL         = "https://3001-" + os.getenv("REPLIT_DEV_DOMAIN", "localhost")
+
+
+# ─── Deep-link helpers ────────────────────────────────────────────
+# Payload format (matches src/lib/deeplink.ts in the TMA frontend):
+#   map             → Map tab (no specific station)
+#   map_<id>        → Map tab, station <id> pre-selected
+#   catalog_<id>    → Catalog tab, station <id> pre-selected
+#   vault           → Vault tab (purchase history)
+#   vault_<id>      → Vault tab, purchase <id> highlighted
+#   analytics       → Analytics tab
+#   reserve         → Reserve (games) tab
+
+def build_start_param(tab: str, entity_id: int | None = None) -> str:
+    """Build a Telegram startParam payload string."""
+    return f"{tab}_{entity_id}" if entity_id is not None else tab
+
+
+def tma_deep_link(tab: str, entity_id: int | None = None) -> str:
+    """
+    Return a ?startapp= deep link that opens the TMA at a specific tab.
+    Falls back to the direct TMA URL when BOT_USERNAME is not configured.
+    """
+    payload = build_start_param(tab, entity_id)
+    if BOT_USERNAME:
+        return f"https://t.me/{BOT_USERNAME}?startapp={payload}"
+    # Fallback: open TMA root — Telegram will show it without pre-navigation
+    return TMA_URL
+
+
+def tma_btn(text: str, tab: str, entity_id: int | None = None) -> "InlineKeyboardButton":
+    """Create an InlineKeyboardButton that deep-links into the TMA."""
+    return InlineKeyboardButton(text, url=tma_deep_link(tab, entity_id))
+
 
 DAILY_FREE_LIMIT    = 50   # суточный лимит бесплатных кодов
 FREE_COOLDOWN_DAYS  = 7    # дней между бесплатными кодами на один госномер
@@ -756,10 +792,13 @@ async def myorders_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
             f"   ⛽ {fuel}, 20 л\n"
             f"   📅 Выдан: {date_str}\n"
         )
-        buttons.append([InlineKeyboardButton(
-            f"📷 Показать QR (заказ {idx})",
-            callback_data=f"show_qr_{v['payload']}",
-        )])
+        buttons.append([
+            InlineKeyboardButton(
+                f"📷 Показать QR (заказ {idx})",
+                callback_data=f"show_qr_{v['payload']}",
+            ),
+            tma_btn("🗄️ Сейф", "vault"),
+        ])
 
     buttons.append([InlineKeyboardButton("🏠 Главное меню", callback_data="main_menu")])
 
@@ -804,13 +843,59 @@ async def rules_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def map_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(
-        f"🗺️ *Карта остатков топлива на АЗС Севастополя:*\n\n{MAP_URL}\n\n"
-        "Сверяйте наличие топлива перед выездом на заправку.",
+        "🗺️ *Карта остатков топлива на АЗС Севастополя*\n\n"
+        "Интерактивная карта с 236 АЗС — наличие топлива, очереди, "
+        "аналитика и возможность отметить актуальные остатки.\n\n"
+        "Откройте Матрицу Снабжения, чтобы увидеть карту в реальном времени:",
         parse_mode="Markdown",
         reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("🗺️ Открыть карту", url=MAP_URL)],
+            [InlineKeyboardButton(
+                "🗺️⛽ Открыть Матрицу Снабжения",
+                web_app=WebAppInfo(url=TMA_URL),
+            )],
+            [tma_btn("🗺️ Карта АЗС (глубокая ссылка)", "map")],
             [InlineKeyboardButton("🏠 Главное меню", callback_data="main_menu")],
         ])
+    )
+
+
+async def tma_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Open the Telegram Mini App directly — optionally at a specific tab."""
+    args = context.args  # e.g. /tma reserve  or  /tma vault
+    tab_map = {
+        "карта": "map", "map": "map",
+        "аналитика": "analytics", "analytics": "analytics",
+        "каталог": "catalog", "catalog": "catalog",
+        "сейф": "vault", "vault": "vault",
+        "игры": "reserve", "reserve": "reserve",
+    }
+    tab = "map"
+    if args:
+        tab = tab_map.get(args[0].lower(), "map")
+
+    tab_names = {
+        "map": "🗺️ Карта АЗС",
+        "analytics": "📊 Аналитика",
+        "catalog": "🛒 Каталог топлива",
+        "vault": "🗄️ Мой Сейф",
+        "reserve": "🎮 Игры & Резерв",
+    }
+    tab_label = tab_names.get(tab, "Матрица Снабжения")
+
+    await update.message.reply_text(
+        f"⛽ *Топливный Узел — Матрица Снабжения*\n\n"
+        f"Переход: *{tab_label}*\n\n"
+        "Интерактивная карта 236 АЗС, аналитика поставок, каталог топлива, "
+        "ваучеры и игровые механики — всё в одном приложении.",
+        parse_mode="Markdown",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton(
+                "⛽ Открыть Матрицу",
+                web_app=WebAppInfo(url=TMA_URL),
+            )],
+            [tma_btn(f"🔗 Перейти: {tab_label}", tab)],
+            [InlineKeyboardButton("🏠 Главное меню", callback_data="main_menu")],
+        ]),
     )
 
 
@@ -1137,6 +1222,12 @@ async def menu_navigation(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
                 "Контролёр сверит код с госномером вашего авто и погасит его."
             ),
             parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup([[
+                InlineKeyboardButton(
+                    "🗄️ Открыть Сейф в Матрице",
+                    web_app=WebAppInfo(url=TMA_URL),
+                ),
+            ]]),
         )
 
     elif data == "stats_refresh":
@@ -1410,12 +1501,13 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 async def post_init(application: Application) -> None:
     """Регистрирует командное меню и запускает фоновые задачи."""
     await application.bot.set_my_commands([
-        BotCommand("start", "Главное меню и выбор квот"),
-        BotCommand("rules", "Актуальные правила и сводки Губернатора"),
-        BotCommand("map",   "Карта остатков топлива АЗС"),
-        BotCommand("admin", "Вход для контролёров АЗС"),
-        BotCommand("stats",    "Статистика системы (только для контролёров)"),
+        BotCommand("start",    "Главное меню и выбор квот"),
+        BotCommand("tma",      "Открыть Матрицу Снабжения (мини-приложение)"),
+        BotCommand("map",      "Карта остатков топлива АЗС"),
         BotCommand("myorders", "Мои заказы и ваучеры"),
+        BotCommand("rules",    "Актуальные правила и сводки Губернатора"),
+        BotCommand("admin",    "Вход для контролёров АЗС"),
+        BotCommand("stats",    "Статистика системы (только для контролёров)"),
         BotCommand("cancel",   "Отменить активный счёт на оплату"),
     ])
     logger.info("Командное меню Telegram зарегистрировано.")
@@ -1431,10 +1523,11 @@ def main() -> None:
     init_db()
 
     app = Application.builder().token(BOT_TOKEN).post_init(post_init).build()
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("rules", rules_cmd))
-    app.add_handler(CommandHandler("map",   map_cmd))
-    app.add_handler(CommandHandler("admin", admin_cmd))
+    app.add_handler(CommandHandler("start",    start))
+    app.add_handler(CommandHandler("tma",      tma_cmd))   # Deep-link to TMA tabs
+    app.add_handler(CommandHandler("rules",    rules_cmd))
+    app.add_handler(CommandHandler("map",      map_cmd))
+    app.add_handler(CommandHandler("admin",    admin_cmd))
     app.add_handler(CommandHandler("stats",    stats_cmd))
     app.add_handler(CommandHandler("myorders", myorders_cmd))
     app.add_handler(CommandHandler("cancel",   cancel_cmd))

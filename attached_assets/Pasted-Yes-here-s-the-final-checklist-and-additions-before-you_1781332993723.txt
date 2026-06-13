@@ -1,0 +1,64 @@
+Yes — here’s the final checklist and additions before you send everything to Replit.
+Final Recommendations to Add
+Add these sections to your master Replit prompt for maximum success:
+
+ADDITIONAL SECTIONS TO APPEND (copy-paste these)
+### 8. Telegram Mini App SDK Best Practices (Critical for WebView)
+- In `App.tsx` or main entry:
+  ```tsx
+  useEffect(() => {
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+      tg.ready();
+      tg.expand();
+      tg.setHeaderColor('bg_color');
+      tg.setBackgroundColor('bg_color');
+      // Enable back button
+      tg.BackButton.show();
+      tg.BackButton.onClick(() => window.history.back());
+    }
+  }, []);
+	•	Use tg.themeParams to dynamically adapt colors.
+	•	Add haptic feedback on button presses: tg.HapticFeedback.impactOccurred('medium')
+9. Design System Implementation (Liquid Glass Style)
+	•	Use Tailwind or CSS variables for:
+	◦	backdrop-filter: blur(20px)
+	◦	Semi-transparent backgrounds (rgba(255,255,255,0.08))
+	◦	Neon borders: box-shadow: 0 0 15px rgba(0, 240, 255, 0.6)
+	•	All cards should have subtle inner glow + border gradient.
+	•	Follow the futuristic aesthetic from the provided hero images (liquid glass orbs, robotic arms, cyan-purple palette).
+10. Data & Backend Readiness
+	•	Create a mockData.ts with ~30-50 realistic Crimea gas stations (ТЭС, АТАН, etc.) including lat/lng.
+	•	Structure for easy switch to real API later.
+	•	Implement basic user report persistence (localStorage + sync via WebSocket if possible).
+	•	Add seed script: pnpm run seed
+11. Performance & Polish
+	•	Use react-leaflet with marker clustering (react-leaflet-markercluster).
+	•	Lazy load heavy components.
+	•	Add loading skeletons with glass shimmer effect.
+	•	Implement pull-to-refresh on map tab.
+	•	Proper ErrorBoundary around Map (already in previous prompt).
+12. Final Project Commands
+After AI generates files, run in Shell:
+pnpm install
+pnpm --filter @workspace/tma-frontend run build
+Then use Static Deployment pointing to artifacts/tma-frontend/dist.
+
+COMPLETE MASTER PROMPT STRUCTURE (Recommended Order)
+	1	Project goal & tech stack
+	2	Critical Leaflet + Vite fixes (from previous prompt)
+	3	MapTab + ErrorBoundary code
+	4	Telegram SDK integration (new)
+	5	UI Inventory + Screen Flow (include the full one I gave you)
+	6	Design System (Liquid Glass + holographic)
+	7	Component examples + mock data
+	8	Deployment config (.replit, scripts)
+	9	Execution steps
+
+One final tip before sending:
+Add this line at the very top of your Replit prompt:
+“You are an expert full-stack React + Vite + Leaflet developer specializing in Telegram Mini Apps. Generate production-ready, clean, well-commented code following all the specifications below. Fix all issues and create any missing files.”
+This primes the AI better.
+
+Ready to go? Would you like me to output the complete combined master prompt (all sections merged into one clean block) right now so you can copy-paste it directly into Replit?
+Just say “Yes, give me the full master prompt” and I’ll deliver it.

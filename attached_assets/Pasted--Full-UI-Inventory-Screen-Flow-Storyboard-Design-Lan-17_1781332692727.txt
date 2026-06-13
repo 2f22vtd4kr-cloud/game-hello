@@ -1,0 +1,191 @@
+ТОПЛИВНЫЙ УЗЕЛ  
+**Матрица Снабжения** — Full UI Inventory + Screen Flow + Storyboard  
+**Design Language**: Apple-style Liquid Glass + Holographic Futuristic (translucent frosted glass cards, neon cyan/purple glows, deep space dark background, 3D depth, reflections, subtle animations)
+
+
+
+---
+
+
+
+### 1. UI INVENTORY (Comprehensive Component Library)
+
+
+
+#### Core Visual Elements
+- Background: Deep navy/black gradient with subtle star/constellation particles + reflective floor
+- Glass Cards: Frosted translucent panels with blur, thin neon borders (cyan/purple), inner glow
+- Accents: Electric cyan, magenta-purple, white highlights
+- Icons: Minimal line icons (fuel pump, map pin, trophy, radar) with glow
+- Typography: SF Pro / Inter — Bold headings, clean body
+
+
+
+#### Global Components
+- Header Bar: Holographic top bar with app title "ТОПЛИВНЫЙ УЗЕЛ", back button, Telegram Mini App close
+- Bottom Navigation: 4-tab glass bar — Карта | Резервы | Игры | Профиль
+- Floating Action Button (FAB): Glowing fuel pump icon for quick "Report Fuel"
+- Neon Buttons: Gradient fill (cyan→purple), hover/press scale + glow
+- Progress Bars: Liquid-filled horizontal bars with percentage
+- Status Dots: Green (available), Yellow (talons), Red (no fuel), Gray (unknown)
+
+
+
+#### Reusable Components
+- Station Card: Glass panel with station name, fuel grid (progress + ✓/✗), queue indicator, "Subscribe" bell button
+- Fuel Indicator: Circular or horizontal gauge with fuel type (AI-95 etc.)
+- Map Marker: Glowing holographic pins with color-coded rings
+- Notification Toast: Sliding glass card from top with fuel alert
+- Level Badge: Shield + XP counter with particle effect on level up
+- Mini-Game Panel: Fuel pump tapping area with timer and score
+
+
+
+#### Data Visuals
+- Regional Reserves Dashboard (bars for AI-95, AI-92, DT, etc.)
+- Activity Heatmap on Russia/Crimea map
+- Leaderboard cards with ranks and avatars
+
+
+
+---
+
+
+
+### 2. SCREEN FLOW / WIREFRAME FLOW
+
+
+
+Onboarding → Splash → Home (Map Tab) ↓ ┌─────────────────────┐ │ Карта (Main) │ ←── Radar / Filters └──────────┬──────────┘ ↓ Station Detail Modal ── Subscribe → Notifications ↓ ┌─────────────────────┐ │ Резервы │ ← Regional Overview + City List └──────────┬──────────┘ ↓ ┌─────────────────────┐ │ Игры & Награды │ ← Speed Refuel Mini-game + Leaderboard └──────────┬──────────┘ ↓ ┌─────────────────────┐ │ Профиль │ ← Level, XP, History, Friends └─────────────────────┘
+**Main Navigation Paths**:
+- Map → Station Card (tap marker)
+- Map → Radar Mode (pin drop)
+- Reserves → City Detail
+- Games → Speed Refuel (15/30 sec session)
+- Profile → Progress → Hall of Fame
+
+
+
+---
+
+
+
+### 3. STORYBOARD (Sequential User Journey)
+
+
+
+#### Screen 1: Splash / Onboarding
+- Full-screen animated liquid glass sphere with glowing fuel pump icon
+- Text: "ТОПЛИВНЫЙ УЗЕЛ" + "Матрица Снабжения"
+- Subtle rotating holographic tanks + robotic arms in background
+- "Войти через Telegram" button (glow pulse)
+
+
+
+#### Screen 2: Home — Карта (Main View)
+- Full-screen Leaflet map of Russia/Crimea with glowing markers
+- Top holographic panel: Current reserves summary (AI-95 55%, etc.)
+- Bottom nav active on "Карта"
+- Floating "Report" FAB
+- Floating "Radar" button (pin icon)
+
+
+
+#### Screen 3: Station Detail (Modal)
+- Large glass card sliding up
+- Station name + network logo
+- Fuel grid with liquid progress bars + status buttons (✓ / ✗)
+- Queue counter + "Очередь" button
+- "Подписаться на обновления" glowing bell
+- QR code section (for official stations)
+
+
+
+#### Screen 4: Резервы (Reserves Dashboard)
+- Top: Regional liquid glass overview with progress bars
+- Middle: Interactive map of active zones (green/yellow/red)
+- Bottom: City list (Симферополь, Севастополь, etc.) with status
+
+
+
+#### Screen 5: Игры & Награды
+- "Заправка на скорость" mini-game preview
+- Daily leaderboard (glass cards with ranks)
+- Reward circles: 65% fuel found, 25% reports, etc.
+- Trophy case with unlocked badges
+
+
+
+#### Screen 6: Профиль
+- Large user level shield ("Новичок" → "Легенда Тавриды")
+- XP progress ring
+- Stats: Reports made, fuel helped find, friends invited
+- History feed of contributions
+
+
+
+#### Additional Flow Screens
+- Notification Screen: List of "Fuel appeared at ТЭС-12!"
+- Radar Active: Map with pulsing radius circle + live alerts
+- Error / Empty States: Elegant glass "No data" with retry
+- Level Up Animation: Particle explosion + glowing shield upgrade
+
+
+
+---
+
+
+
+Design System Summary (Liquid Glass Style)
+
+
+
+- All cards have backdrop-filter: blur(20px), semi-transparent white/black base, neon border glow
+- Heavy use of depth (shadows + inner highlights)
+- Micro-animations: fuel liquid fill, marker pulse, button press haptic + scale
+- Consistent icon set: Fuel pump, map, bell, trophy, robot arm accents
+- Color palette: #00F0FF (cyan), #C026D3 (purple), dark navy background
+
+
+
+This inventory + flow is ready for implementation in your React + Leaflet Telegram Mini App. All screens maintain the futuristic holographic aesthetic from the provided images.
+
+
+
+generate actual image prompts for these screens (for the russian audience)!
+
+
+
+Futuristic holographic splash screen for a fuel supply app called "ТОПЛИВНЫЙ УЗЕЛ", ultra-modern liquid glass style, large glowing translucent sphere in the center with neon cyan-purple rim, inside a minimalist white fuel pump icon, bold glowing Russian text "ТОПЛИВНЫЙ УЗЕЛ" and smaller "Матрица Снабжения" below, background features floating transparent fuel tanks, robotic arms, glass pipelines, deep space dark navy background with subtle constellation stars and reflections on glossy floor, cinematic lighting, volumetric glow, Apple Vision Pro aesthetic, 8k, highly detailed, photorealistic futuristic UI --ar 9:16 --stylize 250
+
+
+
+Mobile app interface screenshot, dark futuristic liquid glass UI, full-screen interactive map of Crimea and southern Russia with glowing holographic markers (green, yellow, red), top translucent glass panel showing regional fuel reserves with progress bars (AI-95 55%, AI-92 40%, DT 30%), bottom glass navigation bar with icons labeled "Карта", "Резервы", "Игры", "Профиль", floating neon "Radar" button and glowing fuel pump FAB, holographic reflections and depth, cyberpunk Apple design, clean typography, 8k detail --ar 9:16
+
+
+
+Close-up of a mobile app modal card floating above a map, liquid glass translucent panel with neon cyan borders, detailed gas station information for "ТЭС Таврида 2", fuel status grid with horizontal liquid progress bars (AI-92 70% green, AI-95 35% yellow, DT+ 75% green), ✓ and ✗ buttons, queue indicator "Очередь • 1", glowing "Подписаться на обновления" bell button, QR code section, dark holographic background, premium Apple-style futuristic UI, depth and blur effects --ar 9:16
+
+
+
+Futuristic mobile dashboard screen "Резервы", holographic glass cards showing current fuel reserves across regions, large progress bars for AI-95 55%, AI-92 40%, DT 30%, interactive map of Russia with colored activity zones (green/yellow/red), city list (Симферополь, Севастополь, Ялта), warning "Дефицит" badge, liquid glass material, neon accents, dark sci-fi background with subtle fuel infrastructure elements, Apple Vision Pro aesthetic --ar 9:16
+
+
+
+Mobile app games section "Игры & Награды", futuristic liquid glass interface, central mini-game preview "Заправка на скорость" with fuel pump icons, daily leaderboard with glowing rank cards, circular reward statistics (65% Топливо, 25% Отчеты, 10% Геймплей), trophy collection area, user level progress, holographic floating elements, dark premium cyberpunk design, Apple-style UI --ar 9:16
+
+
+
+User profile screen in futuristic fuel app, large glowing shield badge "Новичок" with XP progress ring (0/300 XP), statistics cards (reports, helped drivers, friends invited), translucent glass panels with user contribution history, holographic background with fuel tanks and stars, bottom navigation active on profile icon, liquid glass material, neon cyan-purple glows, premium Apple futuristic UI design --ar 9:16
+
+
+
+Stunning hero promotional image for Telegram Mini App "ТОПЛИВНЫЙ УЗЕЛ — Матрица Снабжения", iPhone 16 Pro floating in center showing the app map interface, surrounded by large translucent liquid glass fuel tanks and robotic arms, holographic data panels with fuel statistics floating around, dramatic cinematic lighting with cyan and purple neon glows, reflective glossy floor, deep space background with constellations, ultra-premium futuristic Apple product photography style, 8k --ar 16:9
+
+
+
+Floating notification toast in futuristic UI: glass card sliding from top with text "Бензин появился на ТЭС Симферополь! AI-95 доступен", green success glow, map in background with pulsing radar circle, liquid glass design --ar 9:16
+
+
+
+Man make them moder. The Liquid Apple glass style. Much more cleaner in design. @img1
