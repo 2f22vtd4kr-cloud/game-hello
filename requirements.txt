@@ -7,3 +7,14 @@ uvicorn[standard]==0.34.0
 sqlalchemy==2.0.41
 apscheduler==3.10.4
 python-multipart==0.0.20
+aiohttp==3.10.11
+apscheduler==3.10.4
+fastapi==0.115.0
+httpx
+python-dotenv==1.0.0
+python-multipart==0.0.20
+python-telegram-bot==20.7
+qrcode[pil]
+sqlalchemy==2.0.41
+telegram
+uvicorn[standard]==0.34.0
