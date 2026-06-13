@@ -2,7 +2,9 @@ modules = ["nodejs-20", "python-3.12", "web"]
 
 [deployment]
 router = "application"
-deploymentTarget = "autoscale"
+deploymentTarget = "vm"
+run = ["bash", "start.sh"]
+build = ["bash", "-c", "pnpm --filter @workspace/tma-frontend run build"]
 
 [deployment.postBuild]
 args = ["pnpm", "store", "prune"]
