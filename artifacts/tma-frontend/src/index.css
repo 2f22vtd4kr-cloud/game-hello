@@ -271,3 +271,38 @@ input::placeholder { color: var(--text-dim); }
 .leaflet-cluster-anim .leaflet-marker-shadow {
   transition: transform 0.3s ease-out, opacity 0.3s;
 }
+
+/* ── Crisis / Glitch Animations ──────────────────────────────────── */
+.glitch-crisis {
+  position: relative;
+  color: #ff0088;
+  animation: glitch 0.4s linear infinite;
+}
+
+@keyframes glitch {
+  0%   { transform: translate(0); }
+  20%  { transform: translate(-2px, 2px); }
+  40%  { transform: translate(-2px, -2px); }
+  60%  { transform: translate(2px, 2px); }
+  80%  { transform: translate(2px, -2px); }
+  100% { transform: translate(0); }
+}
+
+.crisis-badge {
+  border-color: #ff008888 !important;
+  box-shadow: 0 0 8px #ff008844, inset 0 0 8px #ff008811 !important;
+  animation: crisis-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes crisis-pulse {
+  0%, 100% { box-shadow: 0 0 8px #ff008844, inset 0 0 8px #ff008811; }
+  50%       { box-shadow: 0 0 18px #ff0088aa, inset 0 0 14px #ff008833; }
+}
+
+.crisis-price-text {
+  color: #ff0088;
+  text-shadow: 0 0 8px #ff008888;
+  animation: glitch 0.4s linear infinite;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+}

@@ -3,6 +3,8 @@
 All routes, background scheduler, analytics, payment, gamification.
 """
 
+import asyncio
+import json
 import logging
 import os
 import random
@@ -14,7 +16,7 @@ import httpx
 
 import uvicorn
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -42,6 +44,24 @@ from tma_backend.seed_regions import DAILY_LIMITS, FUEL_PRICES_RUB, XP_TIERS
 logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s %(name)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
+
+# ── WebSocket price-broadcast state ──────────────────────────────────────────
+_price_ws_clients: set[WebSocket] = set()
+
+
+async def _broadcast_prices(data: dict) -> None:
+    """Send a price-update frame to every connected WebSocket client."""
+    if not _price_ws_clients:
+        return
+    msg = json.dumps({"type": "prices", "data": data})
+    dead: set[WebSocket] = set()
+    for ws in list(_price_ws_clients):
+        try:
+            await ws.send_text(msg)
+        except Exception:
+            dead.add(ws)
+    _price_ws_clients -= dead
+
 
 app = FastAPI(
     title="Топливный Узел API",
@@ -1338,10 +1358,11 @@ def _compute_dynamic_price(db: Session, region: str, fuel_type: str, base_rub: i
     }
 
 
-def fluctuate_prices():
+async def fluctuate_prices():
     """
     APScheduler job: every 15 min, randomly generate or expire price events
     to create realistic market volatility. Logs significant shifts as NewsEvents.
+    Broadcasts updated prices to all connected WebSocket clients.
     """
     db = SessionLocal()
     try:
@@ -1397,6 +1418,23 @@ def fluctuate_prices():
 
         db.commit()
         logger.info("Price fluctuation tick complete.")
+
+        # Broadcast updated prices to all WS clients
+        if _price_ws_clients:
+            try:
+                from tma_backend.seed_regions import REGIONS as _R, FUEL_PRICES_RUB as _FP
+                prices_data: dict = {}
+                with SessionLocal() as bdb:
+                    for r in _R:
+                        rname = r["name"]
+                        prices_data[rname] = {
+                            ft: _compute_dynamic_price(bdb, rname, ft, base)
+                            for ft, base in _FP.items()
+                        }
+                await _broadcast_prices(prices_data)
+            except Exception as be:
+                logger.error("WS broadcast error: %s", be)
+
     except Exception as e:
         logger.error("fluctuate_prices error: %s", e)
         db.rollback()
@@ -1615,6 +1653,47 @@ def premium_status(user_id: int, db: Session = Depends(get_db)):
 # ──────────────────────────────────────────────────────────────────
 #  Serve built frontend (production)
 # ──────────────────────────────────────────────────────────────────
+
+# ── WebSocket: live price feed ────────────────────────────────────────────────
+
+@app.websocket("/ws/prices")
+async def prices_websocket(websocket: WebSocket):
+    """
+    Real-time price update stream.
+    On connect: immediately sends current prices for all regions.
+    Stays alive via ping/pong.  Reconnect with 5 s back-off from the client.
+    """
+    await websocket.accept()
+    _price_ws_clients.add(websocket)
+    try:
+        # Push current snapshot immediately
+        from tma_backend.seed_regions import REGIONS, FUEL_PRICES_RUB
+        prices_data: dict = {}
+        with SessionLocal() as db:
+            for r in REGIONS:
+                rname = r["name"]
+                prices_data[rname] = {
+                    ft: _compute_dynamic_price(db, rname, ft, base)
+                    for ft, base in FUEL_PRICES_RUB.items()
+                }
+        await websocket.send_text(json.dumps({"type": "prices", "data": prices_data}))
+
+        # Keep the socket alive; client may send "ping"
+        while True:
+            try:
+                raw = await asyncio.wait_for(websocket.receive_text(), timeout=30)
+                if raw == "ping":
+                    await websocket.send_text(json.dumps({"type": "pong"}))
+            except asyncio.TimeoutError:
+                # Server-side keepalive ping
+                await websocket.send_text(json.dumps({"type": "ping"}))
+    except WebSocketDisconnect:
+        pass
+    except Exception:
+        pass
+    finally:
+        _price_ws_clients.discard(websocket)
+
 
 FRONTEND_DIST = os.path.join(
     os.path.dirname(__file__), "..", "artifacts", "tma-frontend", "dist"

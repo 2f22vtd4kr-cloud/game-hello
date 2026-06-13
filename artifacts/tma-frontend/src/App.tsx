@@ -22,6 +22,7 @@ import { VpnModal } from "@/components/VpnModal";
 import { useUserStore } from "@/stores/useUserStore";
 import { useStationStore } from "@/stores/useStationStore";
 import { useMapStore } from "@/stores/useMapStore";
+import { usePriceStore } from "@/stores/usePriceStore";
 import { parseStartParam } from "@/lib/deeplink";
 import { select as hapticSelect } from "@/lib/haptic";
 import type { TabId } from "@/types";
@@ -89,6 +90,14 @@ export default function App() {
   const { init: initUser } = useUserStore();
   const { fetch: fetchStations } = useStationStore();
   const { selectStation } = useMapStore();
+  const { initPrices, connectWs } = usePriceStore();
+
+  // ── Price store + WebSocket live feed ───────────────────────────
+  useEffect(() => {
+    void initPrices();
+    const disconnect = connectWs();
+    return disconnect;
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Keep a stable reference to the BackButton callback so we can offClick it
   const backCbRef = useRef<(() => void) | null>(null);

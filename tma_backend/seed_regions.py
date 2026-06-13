@@ -49,7 +49,7 @@ REGIONS = [
      "lat_range": (59.00, 61.00), "lng_range": (28.50, 32.50), "station_count": 18},
     {"name": "Краснодарский край", "zone_type": "standard",
      "chains": ["Роснефть", "Лукойл", "Газпромнефть", "Газпром"],
-     "lat_range": (43.50, 45.50), "lng_range": (37.00, 40.50), "station_count": 28},
+     "lat_range": (44.80, 45.50), "lng_range": (38.00, 41.00), "station_count": 28},
     {"name": "Ростовская область", "zone_type": "standard",
      "chains": ["Роснефть", "Лукойл", "Газпромнефть", "ОПТИ", "Газпром"],
      "lat_range": (47.00, 48.50), "lng_range": (39.00, 41.50), "station_count": 22},

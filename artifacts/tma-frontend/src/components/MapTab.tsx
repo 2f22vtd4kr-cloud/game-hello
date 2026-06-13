@@ -8,6 +8,7 @@ import type { GasStation } from "@/types";
 import { STATUS_COLORS } from "@/types";
 import { useStationStore } from "@/stores/useStationStore";
 import { useMapStore } from "@/stores/useMapStore";
+import { usePriceStore } from "@/stores/usePriceStore";
 import { StationCard } from "@/components/StationCard";
 
 // NOTE: Leaflet default marker icons are fixed globally in src/main.tsx via
@@ -61,6 +62,53 @@ function MapRecenter({ lat, lng, zoom }: { lat: number; lng: number; zoom: numbe
 }
 
 const FUEL_OPTIONS = ["АИ-92", "АИ-95", "АИ-95+", "АИ-100", "ДТ", "ДТ+", "Газ"];
+const POPUP_FUELS = ["АИ-92", "АИ-95", "ДТ"];
+
+function PopupContent({ station }: { station: GasStation }) {
+  const getPrice = usePriceStore((s) => s.getPrice);
+  return (
+    <div style={{
+      background: "#14141c", color: "#e2e8f0",
+      padding: "0.6rem 0.7rem", borderRadius: "8px",
+      fontSize: "0.8rem", minWidth: "180px",
+    }}>
+      <strong style={{ display: "block", marginBottom: "0.2rem" }}>{station.name}</strong>
+      <span style={{ color: "#6b7280", fontSize: "0.72rem" }}>{station.address}</span>
+      <div style={{ marginTop: "0.45rem", display: "flex", gap: "0.3rem", flexWrap: "wrap" }}>
+        {POPUP_FUELS.map((ft) => {
+          const p = getPrice(station.region, ft);
+          if (!p) return null;
+          const crisis = p.is_crisis;
+          return (
+            <span
+              key={ft}
+              className={crisis ? "crisis-badge" : ""}
+              style={{
+                background: crisis ? "rgba(255,0,136,0.08)" : "rgba(168,85,247,0.08)",
+                border: `1px solid ${crisis ? "#ff008855" : "#a855f733"}`,
+                borderRadius: "6px",
+                padding: "0.1rem 0.4rem",
+                fontSize: "0.7rem",
+              }}
+            >
+              <span style={{ color: "#9ca3af" }}>{ft}&#8239;</span>
+              <span
+                className={crisis ? "crisis-price-text" : ""}
+                style={crisis ? undefined : {
+                  color: "#a855f7",
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontWeight: 700,
+                }}
+              >
+                {p.effective}₽
+              </span>
+            </span>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 interface MapTabProps {
   visible: boolean;
@@ -339,17 +387,9 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
               <Popup
                 closeButton={false}
                 className="tma-popup"
-                maxWidth={260}
+                maxWidth={280}
               >
-                <div style={{
-                  background: "#14141c", color: "#e2e8f0",
-                  padding: "0.5rem", borderRadius: "8px",
-                  fontSize: "0.8rem",
-                }}>
-                  <strong>{station.name}</strong>
-                  <br />
-                  <span style={{ color: "#6b7280" }}>{station.address}</span>
-                </div>
+                <PopupContent station={station} />
               </Popup>
             </Marker>
           ))}

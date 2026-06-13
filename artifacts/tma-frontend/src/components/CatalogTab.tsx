@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { fetchLimits, createStarsInvoice, createCryptoBotInvoice } from "@/api/client";
 import { useUserStore } from "@/stores/useUserStore";
+import { usePriceStore } from "@/stores/usePriceStore";
 import { useStationStore } from "@/stores/useStationStore";
 import { useVaultStore } from "@/stores/useVaultStore";
 import { useToast } from "@/components/Toast";
@@ -114,9 +115,12 @@ function FuelItem({
 }) {
   const [volume, setVolume] = useState(20);
   const [buying, setBuying] = useState(false);
+  const getPrice = usePriceStore((s) => s.getPrice);
 
   const limit = limits?.[fuelType];
-  const pricePerL = FUEL_PRICES[fuelType] ?? 50;
+  const priceData = getPrice(station.region, fuelType);
+  const pricePerL = priceData?.effective ?? FUEL_PRICES[fuelType] ?? 50;
+  const isCrisis = (priceData?.multiplier ?? 1) > 1.15;
   const totalPrice = pricePerL * volume;
   const remaining = limit?.remaining ?? Infinity;
   const withinLimit = volume <= remaining;
@@ -153,12 +157,14 @@ function FuelItem({
   return (
     <motion.div
       layout
+      className={isCrisis ? "crisis-badge" : ""}
       style={{
         background: "#14141c",
-        border: "1px solid #22222f",
+        border: `1px solid ${isCrisis ? "#ff008855" : "#22222f"}`,
         borderRadius: "14px",
         padding: "0.85rem",
         marginBottom: "0.5rem",
+        transition: "border-color 0.4s",
       }}
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.6rem" }}>
@@ -170,14 +176,31 @@ function FuelItem({
           <span style={{ color: "#e2e8f0", fontWeight: 600, fontSize: "0.9rem" }}>
             {FUEL_LABELS[fuelType] ?? fuelType}
           </span>
+          {isCrisis && (
+            <span style={{
+              background: "rgba(255,0,136,0.15)",
+              border: "1px solid #ff008866",
+              borderRadius: "4px",
+              padding: "0.05rem 0.35rem",
+              fontSize: "0.65rem",
+              color: "#ff0088",
+              fontWeight: 700,
+              letterSpacing: "0.04em",
+            }}>
+              КРИЗИС
+            </span>
+          )}
         </div>
-        <span style={{
-          color: "#a855f7",
-          fontFamily: "'JetBrains Mono', monospace",
-          fontSize: "0.85rem",
-          fontWeight: 600,
-        }}>
-          {pricePerL} ₽/л
+        <span
+          className={isCrisis ? "crisis-price-text" : ""}
+          style={isCrisis ? undefined : {
+            color: "#a855f7",
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: "0.85rem",
+            fontWeight: 600,
+          }}
+        >
+          {pricePerL.toFixed(1)} ₽/л
         </span>
       </div>
 
