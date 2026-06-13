@@ -62,7 +62,7 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd artifacts/tma-frontend && /home/runner/workspace/node_modules/.pnpm/node_modules/.bin/vite --port 5000 --host 0.0.0.0"
+args = "cd artifacts/tma-frontend && ./node_modules/.bin/vite --port 5000 --host 0.0.0.0"
 waitForPort = 5000
 
 [agent]
