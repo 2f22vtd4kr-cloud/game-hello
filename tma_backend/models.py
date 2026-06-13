@@ -266,3 +266,17 @@ class RssCacheEntry(Base):
     feed_url = Column(String, unique=True, nullable=False)
     last_fetched_at = Column(DateTime(timezone=True), nullable=True)
     last_item_count = Column(Integer, default=0)
+
+
+class RegionFavorite(Base):
+    """User-starred region for monitoring in Мой Сейф."""
+    __tablename__ = "region_favorites"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(BigInteger, nullable=False, index=True)
+    region_name = Column(String, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=_now)
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "region_name", name="uq_fav_user_region"),
+    )
