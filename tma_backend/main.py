@@ -62,7 +62,7 @@ async def _broadcast_prices(data: dict) -> None:
             await ws.send_text(msg)
         except Exception:
             dead.add(ws)
-    _price_ws_clients -= dead
+    _price_ws_clients.difference_update(dead)
 
 
 scheduler = AsyncIOScheduler(timezone="UTC")

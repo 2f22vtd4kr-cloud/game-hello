@@ -19,6 +19,7 @@ import { CatalogTab } from "@/components/CatalogTab";
 import { VaultTab } from "@/components/VaultTab";
 import { ReserveTab } from "@/components/ReserveTab";
 import { VpnModal } from "@/components/VpnModal";
+import { MarketTicker } from "@/components/MarketTicker";
 import { useUserStore } from "@/stores/useUserStore";
 import { useStationStore } from "@/stores/useStationStore";
 import { useMapStore } from "@/stores/useMapStore";
@@ -225,6 +226,11 @@ export default function App() {
         🔒
       </button>
 
+      {/* Live market ticker — always visible, fixed strip */}
+      <div style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 9800 }}>
+        <MarketTicker />
+      </div>
+
       {/*
         Content area:
         · MapTab is ALWAYS in the DOM — unmounting it resets the Leaflet
@@ -236,6 +242,7 @@ export default function App() {
           flex: 1,
           position: "relative",
           overflow: "hidden",
+          paddingTop: "28px",
           paddingBottom: navVisible ? "60px" : "0px",
           transition: "padding-bottom 0.3s",
         }}

@@ -286,6 +286,7 @@ export function CatalogTab({ initialStationId }: CatalogTabProps) {
   const { stations } = useStationStore();
   const { addPurchase } = useVaultStore();
   const { add: toast } = useToast();
+  const getPrice = usePriceStore((s) => s.getPrice);
 
   const [selectedStation, setSelectedStation] = useState<GasStation | null>(null);
   const [limits, setLimits] = useState<LimitsMap | null>(null);
@@ -474,37 +475,53 @@ export function CatalogTab({ initialStationId }: CatalogTabProps) {
                 onClick={() => setSelectedStation(s)}
                 style={{
                   background: "#14141c",
-                  border: "1px solid #22222f",
+                  border: `1px solid ${avgAvail < 25 ? "#ef444422" : "#22222f"}`,
                   borderRadius: "12px",
-                  padding: "0.75rem",
-                  marginBottom: "0.5rem",
+                  padding: "0.7rem 0.75rem",
+                  marginBottom: "0.4rem",
                   cursor: "pointer",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
                 }}
               >
-                <div style={{ minWidth: 0, flex: 1 }}>
-                  <p style={{ margin: "0 0 0.15rem", color: "#e2e8f0", fontSize: "0.88rem", fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                    {s.name}
-                  </p>
-                  <p style={{ margin: "0 0 0.1rem", color: "#6b7280", fontSize: "0.72rem" }}>
-                    {s.region}
-                  </p>
-                  <p style={{ margin: 0, color: "#4b5563", fontSize: "0.7rem" }}>{s.address}</p>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <p style={{ margin: "0 0 0.1rem", color: "#e2e8f0", fontSize: "0.87rem", fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {s.name}
+                    </p>
+                    <p style={{ margin: 0, color: "#4b5563", fontSize: "0.68rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {s.region}
+                    </p>
+                  </div>
+                  <div style={{ textAlign: "right", flexShrink: 0, marginLeft: "0.5rem" }}>
+                    <p style={{
+                      margin: "0 0 0.1rem",
+                      fontFamily: "'JetBrains Mono',monospace",
+                      fontSize: "0.95rem", fontWeight: 700,
+                      color: hasFuel ? availColor : "#ef4444",
+                    }}>
+                      {hasFuel ? `${avgAvail}%` : "—"}
+                    </p>
+                    <span style={{ color: "#4b5563", fontSize: "0.65rem" }}>🚗 {s.queue_cars}</span>
+                  </div>
                 </div>
-                <div style={{ textAlign: "right", flexShrink: 0, marginLeft: "0.5rem" }}>
-                  <p style={{
-                    margin: "0 0 0.2rem",
-                    fontFamily: "'JetBrains Mono',monospace",
-                    fontSize: "0.9rem", fontWeight: 700,
-                    color: hasFuel ? availColor : "#ef4444",
-                  }}>
-                    {hasFuel ? `${avgAvail}%` : "—"}
-                  </p>
-                  <span style={{ color: "#6b7280", fontSize: "0.68rem" }}>
-                    🚗 {s.queue_cars}
-                  </span>
+                {/* Live price chips */}
+                <div style={{ display: "flex", gap: "0.3rem", marginTop: "0.4rem" }}>
+                  {["АИ-92", "АИ-95", "ДТ"].map((ft) => {
+                    const p = getPrice(s.region, ft);
+                    if (!p) return null;
+                    return (
+                      <span key={ft} style={{
+                        background: p.is_crisis ? "#ef444418" : "#0b0b0f",
+                        border: `1px solid ${p.is_crisis ? "#ef444433" : "#1a1a24"}`,
+                        borderRadius: "5px",
+                        fontFamily: "'JetBrains Mono',monospace",
+                        fontSize: "0.62rem",
+                        color: p.is_crisis ? "#ef4444" : p.multiplier > 1.03 ? "#f59e0b" : "#6b7280",
+                        padding: "0.1rem 0.35rem",
+                      }}>
+                        {ft} {p.effective.toFixed(0)}₽
+                      </span>
+                    );
+                  })}
                 </div>
               </motion.div>
             );

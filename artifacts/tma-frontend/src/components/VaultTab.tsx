@@ -226,94 +226,140 @@ export function VaultTab({ initialPurchaseId }: VaultTabProps) {
       </div>
 
       {/* Profile card */}
-      <div style={{
-        margin: "0 1rem 0.75rem",
-        background: "#14141c",
-        border: "1px solid #22222f",
-        borderRadius: "14px",
-        padding: "0.85rem",
-      }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
-          <div>
-            <p style={{ margin: 0, color: "#e2e8f0", fontWeight: 700, fontSize: "0.95rem" }}>
-              {user.username ? `@${user.username}` : `#${user.id}`}
-            </p>
-            <p style={{ margin: 0, color: "#a855f7", fontSize: "0.78rem" }}>{user.level}</p>
-          </div>
-          <div style={{ textAlign: "right" }}>
-            <p style={{
-              margin: 0,
-              fontFamily: "'JetBrains Mono', monospace",
-              fontSize: "1.2rem", fontWeight: 700, color: "#a855f7",
-            }}>
-              {user.xp.toLocaleString("ru")} XP
-            </p>
-            <p style={{ margin: 0, color: "#4b5563", fontSize: "0.68rem" }}>
-              {active.length > 0 ? `${active.length} ваучер${active.length > 1 ? "а" : ""}` : "нет ваучеров"}
-            </p>
-            {user.neurocredits > 0 && (
-              <p style={{ margin: 0, color: "#db2777", fontSize: "0.65rem", fontFamily: "'JetBrains Mono',monospace" }}>
-                ⬡ {user.neurocredits} NC
-              </p>
-            )}
-          </div>
-        </div>
+      {(() => {
+        const currentTier = XP_TIER_THRESHOLDS.find(
+          (t) => user.xp >= t.min && (t.max === null || user.xp <= t.max)
+        );
+        const nextTier = currentTier?.max !== null
+          ? XP_TIER_THRESHOLDS.find((t) => t.min === (currentTier!.max! + 1))
+          : null;
+        const pct = currentTier && currentTier.max !== null
+          ? Math.min(100, ((user.xp - currentTier.min) / (currentTier.max - currentTier.min)) * 100)
+          : 100;
+        const tierIdx = XP_TIER_THRESHOLDS.findIndex(t => t === currentTier);
+        const tierColor = tierIdx >= 5 ? "#f59e0b" : tierIdx >= 3 ? "#db2777" : "#a855f7";
+        return (
+          <div style={{
+            margin: "0 1rem 0.75rem",
+            background: "linear-gradient(135deg, #14141c, #1a0d22)",
+            border: `1px solid ${tierColor}33`,
+            borderRadius: "16px",
+            overflow: "hidden",
+            boxShadow: `0 0 20px ${tierColor}18`,
+          }}>
+            {/* Top gradient bar */}
+            <div style={{ height: "3px", background: `linear-gradient(90deg, ${tierColor}88, ${tierColor}, #db2777)` }} />
 
-        {/* XP progress bar toward next tier */}
-        {(() => {
-          const currentTier = XP_TIER_THRESHOLDS.find(
-            (t) => user.xp >= t.min && (t.max === null || user.xp <= t.max)
-          );
-          const nextTier = currentTier?.max !== null
-            ? XP_TIER_THRESHOLDS.find((t) => t.min === (currentTier!.max! + 1))
-            : null;
-          const pct = currentTier && currentTier.max !== null
-            ? Math.min(100, ((user.xp - currentTier.min) / (currentTier.max - currentTier.min)) * 100)
-            : 100;
-          return (
-            <>
-              <div style={{ height: "4px", borderRadius: "2px", background: "#0b0b0f", overflow: "hidden", marginBottom: "0.3rem" }}>
-                <div style={{
-                  height: "100%", width: `${pct}%`,
-                  background: "linear-gradient(90deg,#a855f7,#db2777)",
-                  boxShadow: "0 0 8px #a855f7", transition: "width 0.8s",
-                }} />
+            <div style={{ padding: "0.9rem 1rem 0.75rem" }}>
+              {/* User row */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.6rem" }}>
+                <div>
+                  <p style={{ margin: "0 0 0.15rem", color: "#e2e8f0", fontWeight: 700, fontSize: "1rem" }}>
+                    {user.username ? `@${user.username}` : `Пользователь #${user.id}`}
+                  </p>
+                  <span style={{
+                    background: `${tierColor}22`, border: `1px solid ${tierColor}44`,
+                    borderRadius: "6px", padding: "0.1rem 0.5rem",
+                    color: tierColor, fontSize: "0.72rem", fontWeight: 700,
+                  }}>
+                    {currentTier?.level ?? user.level}
+                  </span>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <p style={{
+                    margin: 0,
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: "1.5rem", fontWeight: 700, color: tierColor,
+                    lineHeight: 1, textShadow: `0 0 12px ${tierColor}66`,
+                  }}>
+                    {user.xp.toLocaleString("ru")}
+                  </p>
+                  <p style={{ margin: 0, color: "#4b5563", fontSize: "0.62rem", letterSpacing: "0.04em", textTransform: "uppercase" }}>XP</p>
+                </div>
               </div>
-              {nextTier && (
-                <p style={{ margin: 0, color: "#4b5563", fontSize: "0.65rem" }}>
-                  До «{nextTier.level}»: {(nextTier.min - user.xp).toLocaleString("ru")} XP
-                </p>
-              )}
-            </>
-          );
-        })()}
 
-        {/* Referral code */}
-        {referral && (
-          <div
-            onClick={() => navigator.clipboard.writeText(referral.code).catch(() => {})}
-            style={{
-              marginTop: "0.6rem",
-              background: "#050507",
-              border: "1px dashed #a855f733",
-              borderRadius: "8px",
-              padding: "0.4rem 0.6rem",
-              display: "flex", justifyContent: "space-between", alignItems: "center",
-              cursor: "pointer",
-            }}
-          >
-            <span style={{
-              fontFamily: "'JetBrains Mono', monospace",
-              color: "#a855f7", fontSize: "0.78rem", letterSpacing: "0.06em",
-            }}>
-              {referral.code}
-            </span>
-            <span style={{ color: "#4b5563", fontSize: "0.65rem" }}>
-              реф. код · {referral.uses} приглашений
-            </span>
+              {/* XP progress bar */}
+              <div style={{ marginBottom: "0.35rem" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.2rem" }}>
+                  <span style={{ color: "#4b5563", fontSize: "0.62rem" }}>
+                    {currentTier?.level ?? "—"}
+                  </span>
+                  <span style={{ color: "#4b5563", fontSize: "0.62rem" }}>
+                    {nextTier ? nextTier.level : "MAX"}
+                  </span>
+                </div>
+                <div style={{ height: "5px", borderRadius: "2.5px", background: "#0b0b0f", overflow: "hidden" }}>
+                  <div style={{
+                    height: "100%", width: `${pct}%`,
+                    background: `linear-gradient(90deg, ${tierColor}88, ${tierColor})`,
+                    boxShadow: `0 0 8px ${tierColor}`, transition: "width 0.8s",
+                  }} />
+                </div>
+                {nextTier && (
+                  <p style={{ margin: "0.2rem 0 0", color: "#374151", fontSize: "0.6rem" }}>
+                    До «{nextTier.level}»: <span style={{ color: tierColor }}>{(nextTier.min - user.xp).toLocaleString("ru")} XP</span>
+                  </p>
+                )}
+              </div>
+
+              {/* Stats row */}
+              <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem" }}>
+                <div style={{ flex: 1, background: "#0b0b0f", borderRadius: "8px", padding: "0.4rem", textAlign: "center" }}>
+                  <p style={{ margin: 0, fontFamily: "'JetBrains Mono',monospace", fontSize: "1rem", fontWeight: 700, color: "#a855f7" }}>
+                    {active.length}
+                  </p>
+                  <p style={{ margin: 0, color: "#374151", fontSize: "0.58rem" }}>ваучеров</p>
+                </div>
+                <div style={{ flex: 1, background: "#0b0b0f", borderRadius: "8px", padding: "0.4rem", textAlign: "center" }}>
+                  <p style={{ margin: 0, fontFamily: "'JetBrains Mono',monospace", fontSize: "1rem", fontWeight: 700, color: "#22c55e" }}>
+                    {purchases.length}
+                  </p>
+                  <p style={{ margin: 0, color: "#374151", fontSize: "0.58rem" }}>всего покупок</p>
+                </div>
+                {user.neurocredits > 0 && (
+                  <div style={{ flex: 1, background: "#0b0b0f", borderRadius: "8px", padding: "0.4rem", textAlign: "center" }}>
+                    <p style={{ margin: 0, fontFamily: "'JetBrains Mono',monospace", fontSize: "1rem", fontWeight: 700, color: "#db2777" }}>
+                      {user.neurocredits}
+                    </p>
+                    <p style={{ margin: 0, color: "#374151", fontSize: "0.58rem" }}>NC</p>
+                  </div>
+                )}
+                {user.checkin_streak && user.checkin_streak > 0 ? (
+                  <div style={{ flex: 1, background: "#0b0b0f", borderRadius: "8px", padding: "0.4rem", textAlign: "center" }}>
+                    <p style={{ margin: 0, fontFamily: "'JetBrains Mono',monospace", fontSize: "1rem", fontWeight: 700, color: "#f59e0b" }}>
+                      {user.checkin_streak}🔥
+                    </p>
+                    <p style={{ margin: 0, color: "#374151", fontSize: "0.58rem" }}>стрик</p>
+                  </div>
+                ) : null}
+              </div>
+
+              {/* Referral code */}
+              {referral && (
+                <div
+                  onClick={() => navigator.clipboard.writeText(referral.code).catch(() => {})}
+                  style={{
+                    marginTop: "0.6rem",
+                    background: "#050507",
+                    border: "1px dashed #a855f733",
+                    borderRadius: "8px",
+                    padding: "0.4rem 0.6rem",
+                    display: "flex", justifyContent: "space-between", alignItems: "center",
+                    cursor: "pointer",
+                  }}
+                >
+                  <span style={{ fontFamily: "'JetBrains Mono', monospace", color: "#a855f7", fontSize: "0.78rem", letterSpacing: "0.06em" }}>
+                    {referral.code}
+                  </span>
+                  <span style={{ color: "#4b5563", fontSize: "0.65rem" }}>
+                    реф. код · {referral.uses} приглашений
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
-        )}
-      </div>
+        );
+      })()}
 
       {loading && (
         <div style={{ textAlign: "center", padding: "2rem", color: "#6b7280" }}>

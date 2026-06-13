@@ -1,24 +1,217 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, PieChart, Pie, Cell,
 } from "recharts";
 import { fetchAnalytics, fetchTrend, fetchNews, fetchSystemStats } from "@/api/client";
 import type { SystemStats } from "@/api/client";
 import type { NewsItem } from "@/types";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
+import { usePriceStore } from "@/stores/usePriceStore";
 import type { Analytics, RegionalSupply, TrendPoint, TabId } from "@/types";
 
-interface Props {
-  onNavigate?: (tab: TabId) => void;
+interface Props { onNavigate?: (tab: TabId) => void; }
+
+// ── Animated counter ──────────────────────────────────────────────
+function AnimatedCounter({ value, suffix = "", color = "#e2e8f0", size = "1.8rem" }: {
+  value: number; suffix?: string; color?: string; size?: string;
+}) {
+  const [display, setDisplay] = useState(0);
+  const rafRef = useRef<number>(0);
+  useEffect(() => {
+    const start = Date.now();
+    const duration = 900;
+    const from = display;
+    const diff = value - from;
+    const tick = () => {
+      const t = Math.min(1, (Date.now() - start) / duration);
+      const ease = 1 - Math.pow(1 - t, 3);
+      setDisplay(Math.round(from + diff * ease));
+      if (t < 1) rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [value]); // eslint-disable-line react-hooks/exhaustive-deps
+  return (
+    <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: size, fontWeight: 700, color, lineHeight: 1 }}>
+      {display}{suffix}
+    </span>
+  );
 }
 
-// ── Region cycling monitor ─────────────────────────────────────────────────
+// ── Crisis banner ─────────────────────────────────────────────────
+function CrisisBanner({ count, onNavigate }: { count: number; onNavigate?: (t: TabId) => void }) {
+  if (count === 0) return null;
+  return (
+    <motion.div
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: 1, height: "auto" }}
+      style={{ padding: "0 1rem 0.6rem" }}
+    >
+      <div style={{
+        background: "linear-gradient(135deg, #1a0505, #1f0a0a)",
+        border: "1px solid #ef444444",
+        borderRadius: "12px",
+        padding: "0.65rem 0.9rem",
+        display: "flex", alignItems: "center", gap: "0.75rem",
+      }}>
+        <div style={{
+          width: "10px", height: "10px", borderRadius: "50%", flexShrink: 0,
+          background: "#ef4444",
+          boxShadow: "0 0 12px #ef4444",
+          animation: "crisisPulse 1s infinite",
+        }} />
+        <div style={{ flex: 1 }}>
+          <span style={{ color: "#ef4444", fontWeight: 700, fontSize: "0.78rem", letterSpacing: "0.04em" }}>
+            КРИТИЧЕСКИЙ ДЕФИЦИТ
+          </span>
+          <span style={{ color: "#9ca3af", fontSize: "0.72rem", marginLeft: "0.5rem" }}>
+            {count} {count === 1 ? "регион" : count < 5 ? "региона" : "регионов"} ниже 25%
+          </span>
+        </div>
+        <button
+          onClick={() => onNavigate?.("catalog")}
+          style={{
+            background: "#ef444422", border: "1px solid #ef444444", borderRadius: "8px",
+            color: "#ef4444", fontSize: "0.7rem", fontWeight: 700, padding: "0.3rem 0.6rem",
+            cursor: "pointer", flexShrink: 0,
+          }}
+        >
+          Купить →
+        </button>
+      </div>
+    </motion.div>
+  );
+}
+
+// ── Live price matrix ─────────────────────────────────────────────
+function PriceMatrix({ regions }: { regions: Record<string, RegionalSupply> }) {
+  const prices = usePriceStore((s) => s.prices);
+  const FUELS = ["АИ-92", "АИ-95", "ДТ"];
+  const FUEL_COLORS = ["#a855f7", "#db2777", "#f59e0b"];
+
+  const crisisRegions = Object.entries(regions)
+    .sort((a, b) => a[1].avg_pct - b[1].avg_pct)
+    .slice(0, 5)
+    .map(([r]) => r);
+
+  if (!crisisRegions.length || !Object.keys(prices).length) return null;
+
+  return (
+    <div style={{ padding: "0 1rem 0.75rem" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.6rem" }}>
+        <p style={{ color: "#9ca3af", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.05em", margin: 0 }}>
+          Матрица цен
+        </p>
+        <span style={{ color: "#4b5563", fontSize: "0.62rem" }}>· критич. регионы</span>
+      </div>
+
+      <div style={{ background: "#0b0b0f", border: "1px solid #1e1e2a", borderRadius: "12px", overflow: "hidden" }}>
+        {/* Header row */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr repeat(3, 72px)", background: "#14141c", borderBottom: "1px solid #1e1e2a" }}>
+          <div style={{ padding: "0.4rem 0.6rem", color: "#4b5563", fontSize: "0.6rem", textTransform: "uppercase" }}>Регион</div>
+          {FUELS.map((f, i) => (
+            <div key={f} style={{ padding: "0.4rem 0.4rem", color: FUEL_COLORS[i], fontSize: "0.62rem", fontWeight: 700, textAlign: "center" }}>{f}</div>
+          ))}
+        </div>
+
+        {crisisRegions.map((region, ri) => {
+          const regionPrices = prices[region] ?? {};
+          const supply = regions[region];
+          const isCritical = supply?.avg_pct < 25;
+          return (
+            <div
+              key={region}
+              style={{
+                display: "grid", gridTemplateColumns: "1fr repeat(3, 72px)",
+                borderBottom: ri < crisisRegions.length - 1 ? "1px solid #1a1a22" : "none",
+                background: isCritical ? "#1a050516" : "transparent",
+              }}
+            >
+              <div style={{ padding: "0.45rem 0.6rem", overflow: "hidden" }}>
+                <div style={{ color: isCritical ? "#ef4444" : "#e2e8f0", fontSize: "0.68rem", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {region.split(" ").slice(-1)[0].slice(0, 14)}
+                </div>
+                <div style={{ color: "#4b5563", fontSize: "0.6rem", marginTop: "1px" }}>
+                  {supply?.avg_pct ?? "—"}% · {supply?.count ?? "—"} АЗС
+                </div>
+              </div>
+              {FUELS.map((f) => {
+                const p = regionPrices[f] as { effective: number; multiplier: number; is_crisis: boolean } | undefined;
+                const isCrisisPrice = p?.is_crisis;
+                const up = (p?.multiplier ?? 1) > 1.03;
+                return (
+                  <div key={f} style={{ padding: "0.45rem 0.4rem", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                    {p ? (
+                      <>
+                        <span style={{
+                          fontFamily: "'JetBrains Mono',monospace",
+                          fontSize: "0.78rem", fontWeight: 700,
+                          color: isCrisisPrice ? "#ef4444" : up ? "#f59e0b" : "#22c55e",
+                        }}>
+                          {p.effective.toFixed(0)}₽
+                        </span>
+                        {p.multiplier !== 1 && (
+                          <span style={{ fontSize: "0.55rem", color: isCrisisPrice ? "#ef444488" : "#4b5563" }}>
+                            {up ? "▲" : "▼"}{Math.abs((p.multiplier - 1) * 100).toFixed(0)}%
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      <span style={{ color: "#374151", fontSize: "0.7rem" }}>—</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ── Fuel mix donut ────────────────────────────────────────────────
+function FuelMixDonut({ regions }: { regions: Record<string, RegionalSupply> }) {
+  const values = Object.values(regions);
+  if (!values.length) return null;
+  const green = values.reduce((a, r) => a + r.green, 0);
+  const yellow = values.reduce((a, r) => a + r.yellow, 0);
+  const red = values.reduce((a, r) => a + r.red, 0);
+  const total = green + yellow + red;
+  if (!total) return null;
+  const data = [
+    { name: "Норма", value: green, color: "#22c55e" },
+    { name: "Мало", value: yellow, color: "#eab308" },
+    { name: "Нет", value: red, color: "#ef4444" },
+  ];
+  return (
+    <div style={{ width: "110px", position: "relative" }}>
+      <PieChart width={110} height={110}>
+        <Pie data={data} cx={50} cy={50} innerRadius={30} outerRadius={48} paddingAngle={2} dataKey="value" startAngle={90} endAngle={-270}>
+          {data.map((entry, i) => <Cell key={i} fill={entry.color} stroke="transparent" />)}
+        </Pie>
+      </PieChart>
+      <div style={{
+        position: "absolute", top: "50%", left: "50%",
+        transform: "translate(-48%, -50%)",
+        textAlign: "center", pointerEvents: "none",
+      }}>
+        <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.9rem", fontWeight: 700, color: "#e2e8f0" }}>
+          {Math.round((green / total) * 100)}%
+        </span>
+        <div style={{ fontSize: "0.5rem", color: "#4b5563", textTransform: "uppercase" }}>норма</div>
+      </div>
+    </div>
+  );
+}
+
+// ── Region cycling monitor ────────────────────────────────────────
 function RegionMonitor({ regions }: { regions: Record<string, RegionalSupply> }) {
   const entries = Object.entries(regions).sort((a, b) => b[1].avg_pct - a[1].avg_pct);
   const [idx, setIdx] = useState(0);
   const [vis, setVis] = useState(true);
-
   useEffect(() => {
     if (!entries.length) return;
     const id = setInterval(() => {
@@ -27,118 +220,85 @@ function RegionMonitor({ regions }: { regions: Record<string, RegionalSupply> })
     }, 2800);
     return () => clearInterval(id);
   }, [entries.length]);
-
   if (!entries.length) return null;
   const [region, data] = entries[idx];
   const color = data.avg_pct >= 60 ? "#22c55e" : data.avg_pct >= 25 ? "#eab308" : "#ef4444";
   const dot = data.avg_pct >= 60 ? "🟢" : data.avg_pct >= 25 ? "🟡" : "🔴";
   const zoneLabel: Record<string, string> = { critical: "Крит", standard: "Стандарт", eastern: "Восток" };
-
   return (
-    <div style={{
-      background: "#0b0b0f", border: "1px solid #1e1e2a", borderRadius: "12px",
-      padding: "0.75rem 1rem", display: "flex", alignItems: "center", gap: "0.75rem",
-    }}>
-      <div style={{
-        width: "8px", height: "8px", borderRadius: "50%", flexShrink: 0,
-        background: "#a855f7", boxShadow: "0 0 8px #a855f7",
-        animation: "tmaPulse 1.5s infinite",
-      }} />
+    <div style={{ background: "#0b0b0f", border: "1px solid #1e1e2a", borderRadius: "12px", padding: "0.75rem 1rem", display: "flex", alignItems: "center", gap: "0.75rem" }}>
+      <div style={{ width: "8px", height: "8px", borderRadius: "50%", flexShrink: 0, background: "#a855f7", boxShadow: "0 0 8px #a855f7", animation: "tmaPulse 1.5s infinite" }} />
       <div style={{ flex: 1, minWidth: 0, transition: "opacity 0.28s", opacity: vis ? 1 : 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <span style={{ color: "#4b5563", fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.06em", flexShrink: 0 }}>
-            СКАН
-          </span>
-          <span style={{ color: "#e2e8f0", fontSize: "0.82rem", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {region}
-          </span>
+          <span style={{ color: "#4b5563", fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.06em", flexShrink: 0 }}>СКАН</span>
+          <span style={{ color: "#e2e8f0", fontSize: "0.82rem", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{region}</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "0.2rem" }}>
           <span style={{ fontSize: "0.78rem" }}>{dot}</span>
-          <span style={{ color, fontFamily: "'JetBrains Mono',monospace", fontSize: "1rem", fontWeight: 700 }}>
-            {data.avg_pct}%
-          </span>
-          <span style={{ color: "#4b5563", fontSize: "0.65rem", background: "#14141c", borderRadius: "4px", padding: "0.1rem 0.35rem" }}>
-            {zoneLabel[data.zone_type] ?? data.zone_type}
-          </span>
+          <span style={{ color, fontFamily: "'JetBrains Mono',monospace", fontSize: "1rem", fontWeight: 700 }}>{data.avg_pct}%</span>
+          <span style={{ color: "#4b5563", fontSize: "0.65rem", background: "#14141c", borderRadius: "4px", padding: "0.1rem 0.35rem" }}>{zoneLabel[data.zone_type] ?? data.zone_type}</span>
           <span style={{ color: "#4b5563", fontSize: "0.65rem" }}>{data.count} АЗС</span>
         </div>
       </div>
       <div style={{ display: "flex", gap: "3px", flexShrink: 0 }}>
         {Array.from({ length: Math.min(entries.length, 8) }).map((_, i) => (
-          <div key={i} style={{
-            width: "5px", height: "5px", borderRadius: "50%",
-            background: i === (idx % Math.min(entries.length, 8)) ? "#a855f7" : "#22222f",
-            transition: "background 0.3s",
-          }} />
+          <div key={i} style={{ width: "5px", height: "5px", borderRadius: "50%", background: i === (idx % Math.min(entries.length, 8)) ? "#a855f7" : "#22222f", transition: "background 0.3s" }} />
         ))}
       </div>
     </div>
   );
 }
 
-// ── Regional availability card ─────────────────────────────────────────────
-function RegionCard({ region, data, isFav, onToggleFav }: {
-  region: string; data: RegionalSupply; isFav: boolean; onToggleFav: () => void;
-}) {
+// ── Regional card ─────────────────────────────────────────────────
+function RegionCard({ region, data, isFav, onToggleFav }: { region: string; data: RegionalSupply; isFav: boolean; onToggleFav: () => void }) {
   const color = data.avg_pct >= 60 ? "#22c55e" : data.avg_pct >= 25 ? "#eab308" : "#ef4444";
   const total = data.green + data.yellow + data.red;
   const gP = total ? (data.green / total) * 100 : 0;
   const yP = total ? (data.yellow / total) * 100 : 0;
   const rP = total ? (data.red / total) * 100 : 0;
-
+  const trend = data.avg_pct >= 60 ? "↑" : data.avg_pct >= 25 ? "→" : "↓";
+  const trendColor = data.avg_pct >= 60 ? "#22c55e" : data.avg_pct >= 25 ? "#eab308" : "#ef4444";
   return (
-    <motion.div
-      whileTap={{ scale: 0.97 }}
-      style={{
-        background: "#14141c",
-        border: `1px solid ${isFav ? "#a855f730" : "#22222f"}`,
-        borderRadius: "14px", padding: "0.85rem", position: "relative", overflow: "hidden",
-      }}
-    >
+    <motion.div whileTap={{ scale: 0.97 }} style={{ background: "#14141c", border: `1px solid ${isFav ? "#a855f730" : data.avg_pct < 25 ? "#ef444422" : "#22222f"}`, borderRadius: "14px", padding: "0.85rem", position: "relative", overflow: "hidden" }}>
+      {data.avg_pct < 25 && (
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: "linear-gradient(90deg, #ef4444, #dc2626)" }} />
+      )}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <p style={{ color: "#9ca3af", fontSize: "0.64rem", margin: "0 0 0.3rem", textTransform: "uppercase", letterSpacing: "0.04em", flex: 1, lineHeight: 1.3 }}>
           {region.length > 22 ? region.slice(0, 22) + "…" : region}
         </p>
-        <button
-          onClick={onToggleFav}
-          style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.9rem", padding: "0", marginLeft: "0.25rem", opacity: isFav ? 1 : 0.35, transition: "opacity 0.2s", lineHeight: 1, flexShrink: 0 }}
-        >
+        <button onClick={onToggleFav} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.9rem", padding: "0", marginLeft: "0.25rem", opacity: isFav ? 1 : 0.35, transition: "opacity 0.2s", lineHeight: 1, flexShrink: 0 }}>
           {isFav ? "⭐" : "☆"}
         </button>
       </div>
-      <p style={{ margin: "0 0 0.4rem", fontSize: "1.8rem", fontWeight: 700, color, fontFamily: "'JetBrains Mono',monospace", lineHeight: 1 }}>
-        {data.avg_pct}<span style={{ fontSize: "1rem" }}>%</span>
-      </p>
-      <div style={{ height: "4px", borderRadius: "2px", overflow: "hidden", background: "#0b0b0f", display: "flex" }}>
-        <div style={{ width: `${gP}%`, background: "#22c55e" }} />
-        <div style={{ width: `${yP}%`, background: "#eab308" }} />
-        <div style={{ width: `${rP}%`, background: "#ef4444" }} />
+      <div style={{ display: "flex", alignItems: "baseline", gap: "0.3rem" }}>
+        <AnimatedCounter value={data.avg_pct} suffix="%" color={color} size="1.8rem" />
+        <span style={{ fontSize: "1rem", color: trendColor, fontWeight: 700 }}>{trend}</span>
+      </div>
+      <div style={{ height: "4px", borderRadius: "2px", overflow: "hidden", background: "#0b0b0f", display: "flex", marginTop: "0.4rem" }}>
+        <div style={{ width: `${gP}%`, background: "#22c55e", transition: "width 0.8s" }} />
+        <div style={{ width: `${yP}%`, background: "#eab308", transition: "width 0.8s" }} />
+        <div style={{ width: `${rP}%`, background: "#ef4444", transition: "width 0.8s" }} />
+      </div>
+      <div style={{ display: "flex", gap: "6px", marginTop: "0.4rem" }}>
+        {[["🟢", data.green], ["🟡", data.yellow], ["🔴", data.red]].map(([emoji, v]) => (
+          <span key={String(emoji)} style={{ color: "#4b5563", fontSize: "0.58rem" }}>{emoji} {v}</span>
+        ))}
       </div>
     </motion.div>
   );
 }
 
-// ── Period button ──────────────────────────────────────────────────────────
+// ── Period button ─────────────────────────────────────────────────
 function PBtn({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
   return (
-    <button
-      onClick={onClick}
-      style={{
-        background: active ? "linear-gradient(135deg,#a855f7,#db2777)" : "#14141c",
-        border: active ? "none" : "1px solid #22222f",
-        color: active ? "#fff" : "#6b7280",
-        borderRadius: "8px", padding: "0.3rem 0.7rem",
-        fontSize: "0.72rem", fontWeight: active ? 700 : 400,
-        cursor: "pointer", transition: "all 0.2s",
-      }}
-    >
+    <button onClick={onClick} style={{ background: active ? "linear-gradient(135deg,#a855f7,#db2777)" : "#14141c", border: active ? "none" : "1px solid #22222f", color: active ? "#fff" : "#6b7280", borderRadius: "8px", padding: "0.3rem 0.7rem", fontSize: "0.72rem", fontWeight: active ? 700 : 400, cursor: "pointer", transition: "all 0.2s" }}>
       {label}
     </button>
   );
 }
 
-// ── Per-region stacked bar ─────────────────────────────────────────────────
+// ── Stacked bar ───────────────────────────────────────────────────
 function AvailabilityBar({ region, data }: { region: string; data: RegionalSupply }) {
   const total = data.green + data.yellow + data.red;
   if (!total) return null;
@@ -146,25 +306,24 @@ function AvailabilityBar({ region, data }: { region: string; data: RegionalSuppl
   const yP = (data.yellow / total) * 100;
   const rP = (data.red / total) * 100;
   return (
-    <div style={{ marginBottom: "0.75rem" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.25rem" }}>
-        <span style={{ color: "#9ca3af", fontSize: "0.72rem" }}>
-          {region.length > 28 ? region.slice(0, 28) + "…" : region}
-        </span>
-        <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.72rem", color: data.avg_pct >= 60 ? "#22c55e" : data.avg_pct >= 25 ? "#eab308" : "#ef4444" }}>
-          {data.avg_pct}%
-        </span>
+    <div style={{ marginBottom: "0.65rem" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.2rem" }}>
+        <span style={{ color: "#9ca3af", fontSize: "0.72rem" }}>{region.length > 28 ? region.slice(0, 28) + "…" : region}</span>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+          <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.72rem", color: data.avg_pct >= 60 ? "#22c55e" : data.avg_pct >= 25 ? "#eab308" : "#ef4444" }}>{data.avg_pct}%</span>
+          <span style={{ color: "#4b5563", fontSize: "0.62rem" }}>{data.count} АЗС</span>
+        </div>
       </div>
-      <div style={{ height: "6px", borderRadius: "3px", overflow: "hidden", background: "#0b0b0f", display: "flex" }}>
-        <div style={{ width: `${gP}%`, background: "#22c55e", transition: "width 0.8s" }} />
-        <div style={{ width: `${yP}%`, background: "#eab308", transition: "width 0.8s" }} />
-        <div style={{ width: `${rP}%`, background: "#ef4444", transition: "width 0.8s" }} />
+      <div style={{ height: "7px", borderRadius: "3.5px", overflow: "hidden", background: "#0b0b0f", display: "flex" }}>
+        <div style={{ width: `${gP}%`, background: "linear-gradient(90deg,#16a34a,#22c55e)", transition: "width 0.8s" }} />
+        <div style={{ width: `${yP}%`, background: "linear-gradient(90deg,#ca8a04,#eab308)", transition: "width 0.8s" }} />
+        <div style={{ width: `${rP}%`, background: "linear-gradient(90deg,#dc2626,#ef4444)", transition: "width 0.8s" }} />
       </div>
     </div>
   );
 }
 
-// ── Main component ─────────────────────────────────────────────────────────
+// ── Main component ────────────────────────────────────────────────
 export function AnalyticsTab({ onNavigate }: Props) {
   const [data, setData] = useState<Analytics | null>(null);
   const [sysStats, setSysStats] = useState<SystemStats | null>(null);
@@ -189,16 +348,13 @@ export function AnalyticsTab({ onNavigate }: Props) {
     try { setTrendData(await fetchTrend(selectedRegion || undefined, trendDays)); } catch {}
   }, [selectedRegion, trendDays]);
 
-  // Initial load
   useEffect(() => {
     setLoading(true);
     Promise.all([loadAnalytics(), loadTrend()]).finally(() => setLoading(false));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Reload trend when region or period changes
   useEffect(() => { loadTrend(); }, [loadTrend]);
 
-  // Poll analytics every 5 min, trend every 60 min
   useEffect(() => {
     const a = setInterval(loadAnalytics, 5 * 60 * 1000);
     const t = setInterval(loadTrend, 60 * 60 * 1000);
@@ -209,10 +365,12 @@ export function AnalyticsTab({ onNavigate }: Props) {
   const sorted = Object.entries(regions).sort((a, b) => b[1].avg_pct - a[1].avg_pct);
   const filtered = selectedRegion ? sorted.filter(([r]) => r === selectedRegion) : sorted;
   const overallColor = (data?.availability_index ?? 0) >= 60 ? "#22c55e" : (data?.availability_index ?? 0) >= 25 ? "#eab308" : "#ef4444";
+  const criticalCount = Object.values(regions).filter(r => r.avg_pct < 25).length;
+  const sc = data?.station_counts ?? { total: 0, green: 0, yellow: 0, red: 0 };
 
   if (loading) return (
     <div style={{ padding: "1rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
-      {[1, 2, 3].map((i) => (
+      {[1, 2, 3, 4].map((i) => (
         <div key={i} style={{ height: "80px", borderRadius: "12px", background: "linear-gradient(90deg,#14141c 25%,#1e1e2a 50%,#14141c 75%)", backgroundSize: "200% 100%", animation: "shimmer 1.5s infinite" }} />
       ))}
     </div>
@@ -223,6 +381,7 @@ export function AnalyticsTab({ onNavigate }: Props) {
       <style>{`
         @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
         @keyframes tmaPulse{0%,100%{opacity:1}50%{opacity:0.35}}
+        @keyframes crisisPulse{0%,100%{opacity:1;box-shadow:0 0 12px #ef4444}50%{opacity:0.6;box-shadow:0 0 4px #ef4444}}
       `}</style>
 
       {/* Header */}
@@ -238,155 +397,96 @@ export function AnalyticsTab({ onNavigate }: Props) {
           </p>
         </div>
         <button
-          onClick={async () => {
-            setRefreshing(true);
-            await Promise.all([loadAnalytics(), loadTrend()]).catch(() => {});
-            setRefreshing(false);
-          }}
+          onClick={async () => { setRefreshing(true); await Promise.all([loadAnalytics(), loadTrend()]).catch(() => {}); setRefreshing(false); }}
           disabled={refreshing}
-          style={{
-            background: refreshing ? "#14141c" : "rgba(168,85,247,0.15)",
-            border: "1px solid #a855f733",
-            borderRadius: "8px",
-            color: refreshing ? "#4b5563" : "#a855f7",
-            fontSize: "0.72rem",
-            padding: "0.3rem 0.6rem",
-            cursor: refreshing ? "default" : "pointer",
-            transition: "all 0.2s",
-            flexShrink: 0,
-            marginLeft: "0.5rem",
-          }}
+          style={{ background: refreshing ? "#14141c" : "rgba(168,85,247,0.15)", border: "1px solid #a855f733", borderRadius: "8px", color: refreshing ? "#4b5563" : "#a855f7", fontSize: "0.72rem", padding: "0.3rem 0.6rem", cursor: refreshing ? "default" : "pointer", transition: "all 0.2s", flexShrink: 0, marginLeft: "0.5rem" }}
         >
           {refreshing ? "↻ …" : "↻ Обновить"}
         </button>
       </div>
 
-      {/* Global stats summary row */}
-      {data && (() => {
-        const sc = data.station_counts;
-        const criticalRegions = Object.values(regions).filter(r => r.avg_pct < 25).length;
-        return (
-          <div style={{ padding: "0 1rem 0.75rem", display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "0.4rem" }}>
-            {[
-              { label: "Всего АЗС", value: sc.total, color: "#a855f7" },
-              { label: "🟢 Норма", value: sc.green, color: "#22c55e" },
-              { label: "🟡 Мало", value: sc.yellow, color: "#eab308" },
-              { label: "🔴 Крит", value: sc.red + criticalRegions, color: sc.red > 0 ? "#ef4444" : "#22c55e" },
-            ].map(({ label, value, color }) => (
-              <div key={label} style={{
-                background: "#14141c", border: "1px solid #22222f", borderRadius: "10px",
-                padding: "0.45rem 0.5rem", textAlign: "center",
-              }}>
-                <p style={{ margin: 0, fontFamily: "'JetBrains Mono',monospace", fontSize: "1.1rem", fontWeight: 700, color, lineHeight: 1 }}>
-                  {value}
-                </p>
-                <p style={{ margin: "0.2rem 0 0", color: "#4b5563", fontSize: "0.55rem", textTransform: "uppercase", letterSpacing: "0.04em" }}>
-                  {label}
-                </p>
-              </div>
-            ))}
-          </div>
-        );
-      })()}
+      {/* Crisis banner */}
+      <CrisisBanner count={criticalCount} onNavigate={onNavigate} />
 
-      {/* Live system stats row */}
-      {sysStats && (
-        <div style={{ padding: "0 1rem 0.5rem" }}>
-          <div style={{
-            background: "#0b0b0f", border: "1px solid #1a1a24", borderRadius: "12px",
-            padding: "0.55rem 0.9rem", display: "flex", gap: "0.5rem",
-            flexWrap: "wrap", justifyContent: "space-between", alignItems: "center",
-          }}>
-            {[
-              { label: "Пользователи", value: sysStats.total_users, icon: "👥" },
-              { label: "Отчётов", value: sysStats.total_reports, icon: "📋" },
-              { label: "Новостей", value: sysStats.total_news, icon: "📡" },
-              { label: "Средн. %", value: `${sysStats.avg_availability_pct}%`, icon: "⛽" },
-            ].map(({ label, value, icon }) => (
-              <div key={label} style={{ textAlign: "center", minWidth: "52px" }}>
-                <p style={{ margin: 0, color: "#a855f7", fontSize: "0.82rem", fontWeight: 700, fontFamily: "'JetBrains Mono',monospace" }}>
-                  {icon} {value}
-                </p>
-                <p style={{ margin: 0, color: "#374151", fontSize: "0.55rem", textTransform: "uppercase", letterSpacing: "0.04em" }}>
-                  {label}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Region cycling monitor */}
-      {Object.keys(regions).length > 0 && (
-        <div style={{ padding: "0 1rem 0.75rem" }}>
-          <RegionMonitor regions={regions} />
-        </div>
-      )}
-
-      {/* Индекс наличия + Region selector */}
-      <div style={{ padding: "0 1rem 0.75rem", display: "flex", gap: "0.75rem", alignItems: "stretch" }}>
-        <div style={{
-          background: "#14141c", border: "1px solid #22222f", borderRadius: "14px",
-          padding: "0.85rem", flexShrink: 0,
-          display: "flex", flexDirection: "column", justifyContent: "center",
-        }}>
-          <p style={{ color: "#6b7280", fontSize: "0.64rem", margin: "0 0 0.3rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-            Индекс наличия
-          </p>
-          <p style={{ margin: 0, fontSize: "2rem", fontWeight: 700, color: overallColor, fontFamily: "'JetBrains Mono',monospace", lineHeight: 1 }}>
-            {data?.availability_index ?? "—"}<span style={{ fontSize: "1rem" }}>%</span>
-          </p>
-        </div>
-
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-          <select
-            value={selectedRegion}
-            onChange={(e) => setSelectedRegion(e.target.value)}
-            style={{
-              background: "#14141c", border: "1px solid #22222f", borderRadius: "10px",
-              color: "#e2e8f0", fontSize: "0.75rem", padding: "0.45rem 0.6rem",
-              width: "100%", outline: "none", cursor: "pointer", flex: 1,
-            }}
-          >
-            <option value="">Все регионы</option>
-            {Object.keys(regions).sort().map((r) => (
-              <option key={r} value={r}>{r.length > 32 ? r.slice(0, 32) + "…" : r}</option>
-            ))}
-          </select>
-
-          <button
-            onClick={() => onNavigate?.("catalog")}
-            style={{
-              background: "linear-gradient(135deg,#a855f7,#db2777)",
-              border: "none", borderRadius: "10px", color: "#fff",
-              fontSize: "0.78rem", fontWeight: 700, padding: "0.55rem",
-              cursor: "pointer", boxShadow: "0 0 12px #a855f740",
-            }}
-          >
-            🎫 Купить талон
-          </button>
-        </div>
-      </div>
-
-      {/* Regional index cards */}
+      {/* Hero stats grid */}
       <div style={{ padding: "0 1rem 0.75rem" }}>
-        <p style={{ color: "#9ca3af", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 0.6rem" }}>
-          Индекс по регионам
-        </p>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
-          {filtered.map(([region, d]) => (
-            <RegionCard
-              key={region}
-              region={region}
-              data={d}
-              isFav={isFavorite(region)}
-              onToggleFav={() => isFavorite(region) ? removeFavorite(region) : addFavorite(region)}
-            />
-          ))}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "0.5rem" }}>
+          {/* Availability Index — big hero card */}
+          <div style={{ background: "linear-gradient(135deg,#14141c,#1a0d22)", border: `1px solid ${overallColor}33`, borderRadius: "14px", padding: "0.9rem 1rem", position: "relative", overflow: "hidden" }}>
+            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: `linear-gradient(90deg, ${overallColor}88, ${overallColor})` }} />
+            <p style={{ color: "#6b7280", fontSize: "0.6rem", margin: "0 0 0.3rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>Индекс наличия</p>
+            <AnimatedCounter value={data?.availability_index ?? 0} suffix="%" color={overallColor} size="2.2rem" />
+            <p style={{ margin: "0.3rem 0 0", color: "#4b5563", fontSize: "0.6rem" }}>
+              {criticalCount > 0 ? `⚠ ${criticalCount} крит. регионов` : "✓ Стабильно"}
+            </p>
+          </div>
+
+          {/* Station counts */}
+          <div style={{ background: "#14141c", border: "1px solid #22222f", borderRadius: "14px", padding: "0.9rem 1rem" }}>
+            <p style={{ color: "#6b7280", fontSize: "0.6rem", margin: "0 0 0.3rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>АЗС в базе</p>
+            <AnimatedCounter value={sc.total} color="#a855f7" size="2.2rem" />
+            <div style={{ display: "flex", gap: "8px", marginTop: "0.3rem" }}>
+              <span style={{ color: "#22c55e", fontSize: "0.65rem" }}>🟢{sc.green}</span>
+              <span style={{ color: "#eab308", fontSize: "0.65rem" }}>🟡{sc.yellow}</span>
+              <span style={{ color: "#ef4444", fontSize: "0.65rem" }}>🔴{sc.red}</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Trend graph */}
+      {/* Live system stats */}
+      {sysStats && (
+        <div style={{ padding: "0 1rem 0.75rem" }}>
+          <div style={{ background: "#0b0b0f", border: "1px solid #1a1a24", borderRadius: "12px", padding: "0.6rem 0.9rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            {[
+              { icon: "👥", value: sysStats.total_users, label: "Юзеров" },
+              { icon: "📋", value: sysStats.total_reports, label: "Репортов" },
+              { icon: "📡", value: sysStats.total_news, label: "Новостей" },
+              { icon: "⛽", value: `${sysStats.avg_availability_pct}%`, label: "Ср. наличие" },
+            ].map(({ icon, value, label }) => (
+              <div key={label} style={{ textAlign: "center" }}>
+                <p style={{ margin: 0, color: "#a855f7", fontSize: "0.85rem", fontWeight: 700, fontFamily: "'JetBrains Mono',monospace" }}>{icon} {value}</p>
+                <p style={{ margin: 0, color: "#374151", fontSize: "0.55rem", textTransform: "uppercase", letterSpacing: "0.04em" }}>{label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Live price matrix */}
+      <PriceMatrix regions={regions} />
+
+      {/* Overview: donut + region monitor */}
+      <div style={{ padding: "0 1rem 0.75rem", display: "flex", gap: "0.75rem", alignItems: "stretch" }}>
+        <FuelMixDonut regions={regions} />
+        <div style={{ flex: 1 }}>
+          <RegionMonitor regions={regions} />
+          <div style={{ marginTop: "0.5rem" }}>
+            <button
+              onClick={() => onNavigate?.("catalog")}
+              style={{ width: "100%", background: "linear-gradient(135deg,#a855f7,#db2777)", border: "none", borderRadius: "10px", color: "#fff", fontSize: "0.78rem", fontWeight: 700, padding: "0.55rem", cursor: "pointer", boxShadow: "0 0 12px #a855f740" }}
+            >
+              🎫 Купить талон
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Region selector */}
+      <div style={{ padding: "0 1rem 0.75rem" }}>
+        <select
+          value={selectedRegion}
+          onChange={(e) => setSelectedRegion(e.target.value)}
+          style={{ width: "100%", background: "#14141c", border: "1px solid #22222f", borderRadius: "10px", color: "#e2e8f0", fontSize: "0.75rem", padding: "0.45rem 0.6rem", outline: "none", cursor: "pointer" }}
+        >
+          <option value="">Все регионы</option>
+          {Object.keys(regions).sort().map((r) => (
+            <option key={r} value={r}>{r.length > 32 ? r.slice(0, 32) + "…" : r}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Trend chart — AreaChart with gradient */}
       <div style={{ padding: "0 1rem 0.75rem" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.6rem", flexWrap: "wrap", gap: "0.4rem" }}>
           <p style={{ color: "#9ca3af", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.05em", margin: 0 }}>
@@ -404,13 +504,19 @@ export function AnalyticsTab({ onNavigate }: Props) {
           <div style={{ background: "#14141c", border: "1px solid #22222f", borderRadius: "14px", padding: "2rem 1rem", textAlign: "center" }}>
             <p style={{ color: "#4b5563", fontSize: "0.8rem", margin: 0 }}>
               ⏳ Данные накапливаются…<br />
-              <span style={{ fontSize: "0.68rem" }}>График появится после первых замеров (каждый час)</span>
+              <span style={{ fontSize: "0.68rem" }}>График появится после первых замеров</span>
             </p>
           </div>
         ) : (
           <div style={{ background: "#14141c", border: "1px solid #22222f", borderRadius: "14px", padding: "1rem 1rem 0.5rem" }}>
             <ResponsiveContainer width="100%" height={160}>
-              <LineChart data={trendData} margin={{ top: 4, right: 4, left: -28, bottom: 0 }}>
+              <AreaChart data={trendData} margin={{ top: 4, right: 4, left: -28, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="trendGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#a855f7" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#a855f7" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#1e1e2a" />
                 <XAxis
                   dataKey="time"
@@ -420,9 +526,7 @@ export function AnalyticsTab({ onNavigate }: Props) {
                       ? d.toLocaleTimeString("ru", { hour: "2-digit", minute: "2-digit" })
                       : d.toLocaleDateString("ru", { day: "numeric", month: "short" });
                   }}
-                  tick={{ fill: "#4b5563", fontSize: 9 }}
-                  stroke="#22222f"
-                  interval="preserveStartEnd"
+                  tick={{ fill: "#4b5563", fontSize: 9 }} stroke="#22222f" interval="preserveStartEnd"
                 />
                 <YAxis domain={[0, 100]} tick={{ fill: "#4b5563", fontSize: 9 }} stroke="#22222f" />
                 <Tooltip
@@ -434,21 +538,27 @@ export function AnalyticsTab({ onNavigate }: Props) {
                     return d.toLocaleString("ru", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
                   }}
                 />
-                <Line type="monotone" dataKey="availability" stroke="#a855f7" strokeWidth={2} dot={false} activeDot={{ r: 4, fill: "#a855f7" }} />
-              </LineChart>
+                <Area type="monotone" dataKey="availability" stroke="#a855f7" strokeWidth={2} fill="url(#trendGrad)" dot={false} activeDot={{ r: 4, fill: "#a855f7" }} />
+              </AreaChart>
             </ResponsiveContainer>
           </div>
         )}
       </div>
 
-      {/* Per-region stacked bars */}
+      {/* Regional index cards */}
+      <div style={{ padding: "0 1rem 0.75rem" }}>
+        <p style={{ color: "#9ca3af", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 0.6rem" }}>Индекс по регионам</p>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
+          {filtered.map(([region, d]) => (
+            <RegionCard key={region} region={region} data={d} isFav={isFavorite(region)} onToggleFav={() => isFavorite(region) ? removeFavorite(region) : addFavorite(region)} />
+          ))}
+        </div>
+      </div>
+
+      {/* Stacked availability bars */}
       <div style={{ padding: "0 1rem 0.5rem" }}>
-        <p style={{ color: "#9ca3af", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 0.75rem" }}>
-          Распределение статусов
-        </p>
-        {filtered.map(([region, d]) => (
-          <AvailabilityBar key={region} region={region} data={d} />
-        ))}
+        <p style={{ color: "#9ca3af", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 0.75rem" }}>Распределение статусов</p>
+        {filtered.map(([region, d]) => <AvailabilityBar key={region} region={region} data={d} />)}
       </div>
 
       <NewsFeed />
@@ -456,21 +566,10 @@ export function AnalyticsTab({ onNavigate }: Props) {
   );
 }
 
-// ─── News Feed ───────────────────────────────────────────────────
-
-const SEVERITY_COLOR: Record<string, string> = {
-  critical: "#ef4444",
-  warning:  "#f59e0b",
-  info:     "#3b82f6",
-  success:  "#22c55e",
-};
-
-const SEVERITY_LABEL: Record<string, string> = {
-  critical: "КРИТИЧНО",
-  warning:  "ВНИМАНИЕ",
-  info:     "ИНФО",
-  success:  "НОРМА",
-};
+// ─── News Feed ────────────────────────────────────────────────────
+const SEVERITY_COLOR: Record<string, string> = { critical: "#ef4444", warning: "#f59e0b", info: "#3b82f6", success: "#22c55e" };
+const SEVERITY_LABEL: Record<string, string> = { critical: "КРИТИЧНО", warning: "ВНИМАНИЕ", info: "ИНФО", success: "НОРМА" };
+const SEVERITY_BG: Record<string, string> = { critical: "#1a050514", warning: "#1a0f0014", info: "#05081a14", success: "#05190e14" };
 
 function NewsFeed() {
   const [news, setNews] = useState<NewsItem[]>([]);
@@ -488,14 +587,9 @@ function NewsFeed() {
       setNews(data);
       setLastNewsRefresh(new Date());
       if (!open) setOpen(true);
-    } catch {
-      // ignore
-    } finally {
-      setLoading(false);
-    }
+    } catch {} finally { setLoading(false); }
   }, [news.length, open, newsLimit]);
 
-  // Auto-refresh news every 5 minutes when feed is open
   useEffect(() => {
     if (!open) return;
     const id = setInterval(() => {
@@ -504,134 +598,78 @@ function NewsFeed() {
     return () => clearInterval(id);
   }, [open]);
 
-  const load = () => loadNews();
+  const criticalCount = news.filter(n => n.severity === "critical").length;
 
   return (
-    <div style={{ padding: "0 1rem 1.5rem" }}>
-      <div style={{
-        background: "#14141c",
-        border: "1px solid #22222f",
-        borderRadius: "16px",
-        overflow: "hidden",
-      }}>
-        <button
-          onClick={load}
-          style={{
-            width: "100%", display: "flex", alignItems: "center",
-            justifyContent: "space-between",
-            padding: "0.9rem 1rem",
-            background: "none", border: "none", cursor: "pointer",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <span style={{ fontSize: "1rem" }}>📡</span>
-            <div>
-              <span style={{ color: "#e2e8f0", fontWeight: 700, fontSize: "0.95rem" }}>
-                Матричная лента событий
-              </span>
-              {lastNewsRefresh && (
-                <p style={{ margin: 0, color: "#4b5563", fontSize: "0.58rem" }}>
-                  Обновлено {lastNewsRefresh.toLocaleTimeString("ru", { hour: "2-digit", minute: "2-digit" })} · {news.length} сигналов
-                </p>
-              )}
-            </div>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-            {open && (
-              <button
-                onClick={(e) => { e.stopPropagation(); loadNews(true); }}
-                style={{ background: "none", border: "none", color: "#a855f7", fontSize: "0.7rem", cursor: "pointer", padding: "0.15rem 0.35rem" }}
-              >
-                ↻
-              </button>
-            )}
-            <span style={{ color: "#6b7280", fontSize: "0.8rem" }}>
-              {loading ? "…" : open ? "▲" : "▼"}
+    <div style={{ padding: "0 1rem 1rem" }}>
+      <button
+        onClick={() => loadNews()}
+        style={{ width: "100%", background: "transparent", border: "1px solid #22222f", borderRadius: "12px", padding: "0.75rem 1rem", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <span style={{ color: "#9ca3af", fontSize: "0.78rem", fontWeight: 600 }}>📡 Лента событий</span>
+          {criticalCount > 0 && (
+            <span style={{ background: "#ef444422", border: "1px solid #ef444433", borderRadius: "6px", color: "#ef4444", fontSize: "0.62rem", fontWeight: 700, padding: "0.1rem 0.4rem" }}>
+              {criticalCount} крит
             </span>
-          </div>
-        </button>
+          )}
+        </div>
+        <span style={{ color: loading ? "#a855f7" : "#6b7280", fontSize: "0.75rem" }}>
+          {loading ? "⟳" : open ? "▲" : "▼"}
+        </span>
+      </button>
 
-        {open && news.length === 0 && !loading && (
-          <p style={{ color: "#4b5563", fontSize: "0.75rem", textAlign: "center", padding: "1rem" }}>
-            Событий пока нет
-          </p>
-        )}
-
-        {open && news.slice(0, newsLimit).map((item) => {
-          const color = SEVERITY_COLOR[item.severity] ?? "#6b7280";
-          const label = SEVERITY_LABEL[item.severity] ?? item.severity.toUpperCase();
-          const time = item.created_at
-            ? new Date(item.created_at).toLocaleString("ru-RU", {
-                day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
-              })
-            : null;
-          return (
-            <div key={item.id} style={{
-              padding: "0.65rem 1rem",
-              borderTop: "1px solid #1a1a24",
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.2rem" }}>
-                <span style={{
-                  background: `${color}22`,
-                  color,
-                  border: `1px solid ${color}44`,
-                  borderRadius: "4px",
-                  padding: "0.1rem 0.35rem",
-                  fontSize: "0.58rem",
-                  fontWeight: 700,
-                  letterSpacing: "0.05em",
-                  fontFamily: "monospace",
-                }}>
-                  {label}
+      {open && news.length > 0 && (
+        <div style={{ marginTop: "0.5rem", display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+          {lastNewsRefresh && (
+            <p style={{ color: "#374151", fontSize: "0.6rem", margin: "0 0 0.25rem", textAlign: "right" }}>
+              Обновлено: {lastNewsRefresh.toLocaleTimeString("ru", { hour: "2-digit", minute: "2-digit" })}
+            </p>
+          )}
+          {news.map((item) => (
+            <motion.div
+              key={item.id}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              style={{
+                background: SEVERITY_BG[item.severity] ?? "#14141c",
+                border: `1px solid ${SEVERITY_COLOR[item.severity] ?? "#22222f"}22`,
+                borderLeft: `3px solid ${SEVERITY_COLOR[item.severity] ?? "#22222f"}`,
+                borderRadius: "10px", padding: "0.65rem 0.8rem",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "0.5rem", marginBottom: "0.25rem" }}>
+                <span style={{ background: `${SEVERITY_COLOR[item.severity] ?? "#22222f"}22`, color: SEVERITY_COLOR[item.severity] ?? "#9ca3af", fontSize: "0.58rem", fontWeight: 700, padding: "0.1rem 0.4rem", borderRadius: "4px", letterSpacing: "0.06em", flexShrink: 0 }}>
+                  {SEVERITY_LABEL[item.severity] ?? item.severity.toUpperCase()}
                 </span>
-                <span style={{ color: "#4b5563", fontSize: "0.62rem" }}>{item.region}</span>
-                {item.fuel_type && (
-                  <span style={{ color: "#6b7280", fontSize: "0.62rem" }}>· {item.fuel_type}</span>
-                )}
-                {item.price_delta_pct !== null && item.price_delta_pct !== undefined && (
-                  <span style={{
-                    color: item.price_delta_pct > 0 ? "#ef4444" : "#22c55e",
-                    fontSize: "0.62rem", fontWeight: 700,
-                  }}>
+                <span style={{ color: "#374151", fontSize: "0.6rem", flexShrink: 0 }}>
+                  {new Date(item.created_at).toLocaleString("ru", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                </span>
+              </div>
+              <p style={{ color: "#e2e8f0", fontSize: "0.8rem", margin: "0 0 0.25rem", fontWeight: 500, lineHeight: 1.35 }}>{item.headline}</p>
+              {item.body && <p style={{ color: "#6b7280", fontSize: "0.72rem", margin: 0, lineHeight: 1.4 }}>{item.body}</p>}
+              <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.35rem", flexWrap: "wrap" }}>
+                <span style={{ color: "#4b5563", fontSize: "0.62rem" }}>📍 {item.region}</span>
+                {item.fuel_type && <span style={{ color: "#4b5563", fontSize: "0.62rem" }}>⛽ {item.fuel_type}</span>}
+                {item.price_delta_pct != null && (
+                  <span style={{ color: item.price_delta_pct > 0 ? "#ef4444" : "#22c55e", fontSize: "0.62rem", fontFamily: "'JetBrains Mono',monospace" }}>
                     {item.price_delta_pct > 0 ? "+" : ""}{item.price_delta_pct.toFixed(1)}%
                   </span>
                 )}
-                {time && <span style={{ color: "#374151", fontSize: "0.6rem", marginLeft: "auto" }}>{time}</span>}
+                {item.source && <span style={{ color: "#374151", fontSize: "0.6rem" }}>· {item.source}</span>}
               </div>
-              <p style={{ margin: 0, color: "#d1d5db", fontSize: "0.78rem", fontWeight: 600, lineHeight: 1.3 }}>
-                {item.headline}
-              </p>
-              {item.body && (
-                <p style={{ margin: "0.2rem 0 0", color: "#6b7280", fontSize: "0.7rem", lineHeight: 1.4 }}>
-                  {item.body}
-                </p>
-              )}
-            </div>
-          );
-        })}
-
-        {open && news.length >= newsLimit && (
-          <button
-            onClick={() => {
-              const newLimit = newsLimit + 15;
-              setNewsLimit(newLimit);
-              fetchNews(undefined, newLimit).then((d) => { setNews(d); setLastNewsRefresh(new Date()); }).catch(() => {});
-            }}
-            style={{
-              width: "100%",
-              background: "none",
-              border: "none",
-              borderTop: "1px solid #1a1a24",
-              color: "#a855f7",
-              fontSize: "0.75rem",
-              padding: "0.65rem",
-              cursor: "pointer",
-            }}
-          >
-            Загрузить ещё…
-          </button>
-        )}
-      </div>
+            </motion.div>
+          ))}
+          {news.length >= newsLimit && (
+            <button
+              onClick={() => { const next = newsLimit + 15; setNewsLimit(next); loadNews(true, next); }}
+              style={{ background: "#14141c", border: "1px solid #22222f", borderRadius: "10px", color: "#9ca3af", fontSize: "0.75rem", padding: "0.6rem", cursor: "pointer", width: "100%" }}
+            >
+              Загрузить ещё
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
