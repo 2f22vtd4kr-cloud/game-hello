@@ -31,13 +31,20 @@ export default defineConfig({
     allowedHosts: true,
 
     /**
-     * HMR must use wss:// and port 443 so that the Replit proxy and
-     * Telegram WebView don't block the WebSocket upgrade.
+     * HMR: use the Replit dev domain so the proxy doesn't block the
+     * WebSocket upgrade. Falls back gracefully if REPLIT_DEV_DOMAIN
+     * is not set (local dev).
      */
-    hmr: {
-      protocol: "wss",
-      clientPort: 443,
-    },
+    hmr: process.env.REPLIT_DEV_DOMAIN
+      ? {
+          protocol: "wss",
+          host: process.env.REPLIT_DEV_DOMAIN,
+          clientPort: 443,
+        }
+      : {
+          protocol: "wss",
+          clientPort: 443,
+        },
 
     proxy: {
       "/api": {
