@@ -120,13 +120,14 @@ export function ToastContainer() {
   return (
     <div style={{
       position: "fixed",
-      top: "calc(env(safe-area-inset-top, 0px) + 36px)",
+      top: "50%",
       left: "50%",
       zIndex: 9999,
       display: "flex", flexDirection: "column",
+      alignItems: "center",
       gap: "0.45rem",
       pointerEvents: "none",
-      transform: "translateX(-50%)",
+      transform: "translate(-50%, -50%)",
     }}>
       <AnimatePresence mode="popLayout">
         {toasts.map((t) => (
