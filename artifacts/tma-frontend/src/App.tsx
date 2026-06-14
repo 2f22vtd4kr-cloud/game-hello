@@ -16,6 +16,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ToastContainer } from "@/components/Toast";
 import { BottomNav } from "@/components/BottomNav";
+import { PriceAlertBanner } from "@/components/PriceAlertBanner";
 import { MapTab } from "@/components/MapTab";
 import { AnalyticsTab } from "@/components/AnalyticsTab";
 import { CatalogTab } from "@/components/CatalogTab";
@@ -104,7 +105,7 @@ export default function App() {
   const { init: initUser } = useUserStore();
   const { fetch: fetchStations, stations } = useStationStore();
   const { selectStation } = useMapStore();
-  const { initPrices, connectWs } = usePriceStore();
+  const { initPrices, connectWs, priceAlerts, dismissAlert } = usePriceStore();
 
   const crisisCount = stations.reduce((n, s) => {
     const avg = s.fuel_statuses.length
@@ -247,6 +248,14 @@ export default function App() {
   return (
     <ErrorBoundary>
       <ToastContainer />
+
+      {/* Price change alert banners — slide in from top when fuel moves ≥1% */}
+      <PriceAlertBanner
+        alerts={priceAlerts}
+        onDismiss={dismissAlert}
+        onNavigate={() => handleTabChange("catalog")}
+        topOffset={TICKER_H}
+      />
 
       <AnimatePresence>
         {showSplash && <IntroSplash onDone={handleSplashDone} />}

@@ -21,9 +21,15 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
-SIGNING_SECRET = os.getenv("PAYMENT_SIGNING_SECRET", "tma_node_signing_key_dev_2026")
+SIGNING_SECRET   = os.getenv("PAYMENT_SIGNING_SECRET", "tma_node_signing_key_dev_2026")
 CRYPTO_BOT_TOKEN = os.getenv("CRYPTO_BOT_TOKEN", "")
-CRYPTO_PAY_API = "https://pay.crypt.bot/api"
+CRYPTO_PAY_API   = os.getenv("CRYPTO_PAY_API", "https://pay.crypt.bot/api")
+# PAYMENT_METHOD controls which provider is used:
+#   "auto"      → CryptoBotProvider when CRYPTO_BOT_TOKEN is set, else Mock
+#   "cryptobot" → CryptoBotProvider (requires CRYPTO_BOT_TOKEN)
+#   "stars"     → StarsPaymentProvider (Telegram Stars)
+#   "mock"      → MockPaymentProvider (testing)
+PAYMENT_METHOD = os.getenv("PAYMENT_METHOD", "auto")
 
 FUEL_PRICES_RUB: dict[str, int] = {
     "АИ-92": 47, "АИ-95": 52, "АИ-95+": 56,
@@ -94,7 +100,7 @@ class CryptoBotProvider(PaymentProvider):
     ) -> PaymentResult:
         amount_usdt = round(price_rub / USDT_RUB_RATE, 2)
         qr = generate_qr_hash(user_id, fuel_type, volume)
-        description = f"Топливный ваучер {volume}л {fuel_type} — Топливный Узел"
+        description = f"⛽️ Ваучер {volume}л {fuel_type} — Топливо"
 
         try:
             resp = httpx.post(
@@ -165,13 +171,21 @@ class StarsPaymentProvider(PaymentProvider):
         )
 
 
-def get_provider(method: str = "mock") -> PaymentProvider:
-    """Return the appropriate provider by method name."""
-    if method == "cryptobot" and CRYPTO_BOT_TOKEN:
+def get_provider(method: str = PAYMENT_METHOD) -> PaymentProvider:
+    """
+    Return the appropriate provider by method name.
+    Defaults to PAYMENT_METHOD env var ("auto" → CryptoBot if token set, else Mock).
+    """
+    resolved = method if method != "auto" else ("cryptobot" if CRYPTO_BOT_TOKEN else "mock")
+    if resolved == "cryptobot":
+        if not CRYPTO_BOT_TOKEN:
+            logger.warning("PAYMENT_METHOD=cryptobot but CRYPTO_BOT_TOKEN is not set — falling back to mock")
+            return MockPaymentProvider()
         return CryptoBotProvider()
-    if method == "stars":
+    if resolved == "stars":
         return StarsPaymentProvider()
     return MockPaymentProvider()
 
 
+# Module-level default provider (uses PAYMENT_METHOD env var)
 provider: PaymentProvider = get_provider()

@@ -1,0 +1,49 @@
+Replit Prompt / Instructions for the Developer (copy-paste this):
+
+Next Task: Implement Price Change Alert Toasts + Payment Configuration Fix
+Price Change Alerts (as you suggested):
+	•	When a fuel price moves ≥1% between updates (WebSocket or polling ticks),
+	•	Show a temporary banner/toast at the top with old → new price,
+	•	Trigger haptic pulse (heavy for big moves),
+	•	Include a “Купить сейчас” button that jumps directly to the Каталог tab.
+Implementation Example:
+// In price refresh or WebSocket handler
+const checkAndShowPriceAlerts = (newPrices: Record) => {
+  Object.keys(newPrices).forEach(fuel => {
+    const oldP = previousPrices[fuel];
+    const newP = newPrices[fuel];
+    if (oldP && Math.abs((newP - oldP) / oldP) * 100 >= 1) {
+      haptic.trigger('heavy');
+      
+      showToast({
+        type: newP > oldP ? 'warning' : 'success',
+        title: `Цена ${fuel} изменилась`,
+        message: `${oldP} → ${newP} ₽ (${((newP - oldP)/oldP*100).toFixed(1)}%)`,
+        action: {
+          label: "Купить сейчас ⛽️",
+          onClick: () => switchToTab('catalog')
+        },
+        duration: 6000
+      });
+    }
+  });
+  previousPrices = { ...newPrices };
+};
+Add this to the existing 45s auto-refresh and historical chart updates.
+
+Payment Routing (Critical – Replit still hasn’t prompted):
+Please add / ensure these environment variables are requested in Replit Secrets:
+	•	CRYPTO_BOT_TOKEN → Your CryptoBot API token (all payments must go to your CryptoBot account)
+	•	TELEGRAM_BOT_TOKEN / Stars handling → Route Telegram Stars payments to your Telegram account
+	•	CRYPTO_PAY_API = “https://pay.crypt.bot/api/”
+Update bot.py and tma_backend/payment.py (or wherever payments are handled) to use these secrets properly instead of mocks.
+Replit Agent: Please ask the user for these payment secrets now if not already configured.
+
+Quick Repo Check Summary (from latest https://github.com/2f22vtd4kr-cloud/fuel-tickets-ru):
+	•	Most previous features (dynamic pricing, haptics, bottom nav with emojis, dark theme, AI predictions, chart enhancements, disclaimers) look integrated.
+	•	Station stats inconsistency and price alerts are still pending → implement now.
+	•	Payments are still using mocks in several places.
+Please implement the price change toasts + fix payment secrets configuration first, then redeploy.
+Let me know when it’s live!
+
+Paste the whole thing into Replit Agent. It combines your suggestion with the payment fix and repo status.
