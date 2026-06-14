@@ -534,6 +534,15 @@ def simulate_availability_shifts():
         now = _now()
         cooldown = timedelta(minutes=30)  # max one notification per sub per 30 min
 
+        # Pre-load station names for all changed station_ids in one query.
+        changed_station_ids = {sid for (sid, _) in changed.keys()}
+        station_names: dict[int, str] = {
+            st.id: st.name
+            for st in db.query(GasStation.id, GasStation.name)
+            .filter(GasStation.id.in_(changed_station_ids))
+            .all()
+        } if changed_station_ids else {}
+
         for (station_id, fuel_type), (old_s, new_s) in changed.items():
             # Notify when fuel *appears* (green) or critically *runs out* (red)
             if new_s not in ("green", "red"):
@@ -557,7 +566,7 @@ def simulate_availability_shifts():
                 if sub.last_notified_at and (now - sub.last_notified_at) < cooldown:
                     continue
 
-                station_name = sub.station.name if sub.station else f"АЗС #{station_id}"
+                station_name = station_names.get(station_id, f"АЗС #{station_id}")
                 _send_fuel_notification(
                     sub.telegram_chat_id, station_name, sub.fuel_type, new_s
                 )

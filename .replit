@@ -3,8 +3,8 @@ modules = ["nodejs-20", "python-3.12", "web"]
 [deployment]
 router = "application"
 deploymentTarget = "autoscale"
-run = ["node", "--enable-source-maps", "artifacts/api-server/dist/index.mjs"]
-build = ["bash", "-c", "pip install -r requirements.txt && pnpm install --frozen-lockfile && pnpm --filter @workspace/tma-frontend run build && cd artifacts/api-server && node build.mjs"]
+run = ["bash", "start.sh"]
+build = ["bash", "-c", "pip install -r requirements.txt && pnpm install --frozen-lockfile && pnpm --filter @workspace/tma-frontend run build"]
 
 [deployment.postBuild]
 args = ["pnpm", "store", "prune"]
