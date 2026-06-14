@@ -241,20 +241,27 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
         <button
           onClick={() => setShowFilters(!showFilters)}
           style={{
-            background: "rgba(20,20,28,0.92)",
-            border: "1px solid #22222f",
+            background: (filterStatus !== "all" || filterFuel || filterNetwork || filterRegion)
+              ? "rgba(168,85,247,0.15)"
+              : "rgba(20,20,28,0.92)",
+            border: `1px solid ${(filterStatus !== "all" || filterFuel || filterNetwork || filterRegion) ? "#a855f755" : "#22222f"}`,
             borderRadius: "10px",
-            color: "#e2e8f0",
+            color: (filterStatus !== "all" || filterFuel || filterNetwork || filterRegion) ? "#c084fc" : "#e2e8f0",
             padding: "0.4rem 0.75rem",
-            fontSize: "0.78rem",
+            fontSize: "0.75rem",
             cursor: "pointer",
             backdropFilter: "blur(12px)",
             display: "flex",
             alignItems: "center",
             gap: "0.3rem",
+            fontWeight: 600,
+            boxShadow: (filterStatus !== "all" || filterFuel || filterNetwork || filterRegion)
+              ? "0 0 10px rgba(168,85,247,0.25)"
+              : "none",
+            transition: "all 0.2s",
           }}
         >
-          🔍 Фильтры{" "}
+          ⬡ Фильтры{" "}
           {(filterStatus !== "all" || filterFuel || filterNetwork || filterRegion) && (
             <span
               style={{
@@ -263,6 +270,7 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
                 width: "6px",
                 height: "6px",
                 display: "inline-block",
+                boxShadow: "0 0 6px #a855f7",
               }}
             />
           )}
@@ -291,15 +299,30 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
         <div
           style={{
             background: "rgba(20,20,28,0.92)",
-            border: "1px solid #22222f",
+            border: `1px solid ${filtered.length < stations.length ? "#a855f740" : "#22222f"}`,
             borderRadius: "10px",
-            color: "#9ca3af",
+            color: filtered.length < stations.length ? "#a855f7" : "#9ca3af",
             padding: "0.4rem 0.75rem",
-            fontSize: "0.78rem",
+            fontSize: "0.72rem",
             backdropFilter: "blur(12px)",
+            fontFamily: "'JetBrains Mono',monospace",
+            letterSpacing: "0.04em",
+            display: "flex",
+            alignItems: "center",
+            gap: "0.35rem",
           }}
         >
-          {loading ? "…" : `${filtered.length} АЗС`}
+          {loading ? (
+            <span style={{ color: "#374151" }}>···</span>
+          ) : (
+            <>
+              <span style={{ color: filtered.length < stations.length ? "#a855f7" : "#6b7280", fontSize: "0.6rem" }}>▸</span>
+              {filtered.length} АЗС
+              {filtered.length < stations.length && (
+                <span style={{ color: "#4b5563", fontSize: "0.6rem" }}>/ {stations.length}</span>
+              )}
+            </>
+          )}
         </div>
       </div>
 

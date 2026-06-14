@@ -178,7 +178,6 @@ export function StationCard({ station, onClose }: Props) {
           </div>
         </div>
       </div>
-      <style>{`@keyframes crisisPulse{0%,100%{opacity:1;box-shadow:0 0 12px currentColor}50%{opacity:0.5;box-shadow:0 0 4px currentColor}}`}</style>
 
       {/* Summary row */}
       <div style={{ padding: "0.5rem 1rem", borderBottom: "1px solid #0f0f17", display: "flex", gap: "0.75rem", alignItems: "center" }}>

@@ -609,14 +609,19 @@ function XpTiers() {
 
   return (
     <div style={{ padding: "0 1rem 2rem" }}>
-      <div style={{ background: "#14141c", border: "1px solid #22222f", borderRadius: "16px", padding: "1rem" }}>
+      <div style={{ background: "linear-gradient(160deg,#0d0d18,#0f0b1a)", border: "1px solid #1e1e2a", borderRadius: "16px", padding: "1rem", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: "linear-gradient(90deg,transparent,#a855f7,transparent)" }} />
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
-          <h3 style={{ margin: 0, color: "#e2e8f0", fontSize: "0.9rem", fontWeight: 700 }}>⭐ Путь участника</h3>
+          <div>
+            <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.46rem", letterSpacing: "0.14em", marginBottom: "0.15rem" }}>РАНГОВЫЙ_ПУТЬ · УЧАСТНИКА</div>
+            <h3 style={{ margin: 0, color: "#e2e8f0", fontSize: "0.9rem", fontWeight: 800 }}>⭐ Путь участника</h3>
+          </div>
           {next && (
-            <span style={{ color: "#6b7280", fontSize: "0.65rem" }}>
-              до <span style={{ color: TIER_COLORS[next.name] ?? "#9ca3af", fontWeight: 700 }}>{next.short}</span>
-              {" "}<span style={{ fontFamily: "monospace" }}>{(next.min - xp).toLocaleString("ru")}</span> XP
-            </span>
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.46rem", letterSpacing: "0.08em", marginBottom: "0.1rem" }}>СЛЕДУЮЩИЙ</div>
+              <span style={{ color: TIER_COLORS[next.name] ?? "#9ca3af", fontWeight: 700, fontSize: "0.65rem" }}>{next.short}</span>
+              <span style={{ color: "#374151", fontFamily: "'JetBrains Mono',monospace", fontSize: "0.62rem" }}> −{(next.min - xp).toLocaleString("ru")} XP</span>
+            </div>
           )}
         </div>
 
@@ -764,9 +769,12 @@ function DailyCheckin() {
           </motion.div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginBottom: "0.1rem" }}>
+              <div>
+                <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.4rem", letterSpacing: "0.12em", marginBottom: "1px" }}>ЕЖЕДНЕВНЫЙ_БОНУС · СЕРИЯ</div>
               <p style={{ margin: 0, color: "#e2e8f0", fontWeight: 800, fontSize: "0.88rem" }}>
                 Ежедневный бонус
               </p>
+              </div>
               <span style={{ fontFamily: "'JetBrains Mono',monospace", background: "#f59e0b18", border: "1px solid #f59e0b33", borderRadius: "4px", color: "#f59e0b", fontSize: "0.52rem", fontWeight: 700, padding: "0.08rem 0.3rem" }}>
                 +50 XP
               </span>
@@ -871,8 +879,14 @@ function LeaderboardSection() {
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
-            <span style={{ fontSize: "1.1rem" }}>🏆</span>
+            <div style={{
+              width: "36px", height: "36px", borderRadius: "10px", flexShrink: 0,
+              background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.25)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: "1.1rem", boxShadow: "0 0 10px rgba(245,158,11,0.2)",
+            }}>🏆</div>
             <div style={{ textAlign: "left" }}>
+              <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.46rem", letterSpacing: "0.14em", marginBottom: "0.1rem" }}>РЕЙТИНГ_ОПЕРАТОРОВ · XP</div>
               <p style={{ margin: 0, color: "#e2e8f0", fontWeight: 700, fontSize: "0.9rem", lineHeight: 1 }}>
                 Таблица лидеров
               </p>
@@ -1045,9 +1059,15 @@ function ReferralSection() {
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: "linear-gradient(90deg,transparent,#a855f7,#db2777,transparent)" }} />
 
         {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
-          <span style={{ fontSize: "1.1rem" }}>🔗</span>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginBottom: "0.5rem" }}>
+          <div style={{
+            width: "38px", height: "38px", borderRadius: "10px", flexShrink: 0,
+            background: "rgba(168,85,247,0.12)", border: "1px solid rgba(168,85,247,0.28)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: "1.1rem", boxShadow: "0 0 10px rgba(168,85,247,0.2)",
+          }}>🔗</div>
           <div>
+            <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.46rem", letterSpacing: "0.14em", marginBottom: "0.1rem" }}>РЕФЕРАЛ_ПРОГРАММА · +200_XP</div>
             <p style={{ margin: 0, color: "#e2e8f0", fontWeight: 700, fontSize: "0.9rem", lineHeight: 1 }}>
               Реферальная программа
             </p>
@@ -1188,6 +1208,7 @@ function OperatorConsole() {
 
           {/* Info */}
           <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.43rem", letterSpacing: "0.14em", marginBottom: "0.18rem" }}>КОНСОЛЬ_ОПЕРАТОРА · СТАТУС</div>
             <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginBottom: "0.2rem" }}>
               <p style={{ margin: 0, color, fontWeight: 800, fontSize: "0.95rem", lineHeight: 1 }}>
                 {tierName.join(" ")}

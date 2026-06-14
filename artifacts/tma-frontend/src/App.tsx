@@ -2,11 +2,13 @@
  * Root application component.
  *
  * Responsibilities:
+ *  - Intro splash screen on first launch
  *  - Initialize Telegram WebApp SDK (ready, expand, theme colours)
  *  - Parse deep-link startParam → navigate to correct tab + pre-select entity
  *  - Manage Telegram BackButton (shows when leaving the default map tab)
  *  - Keep MapTab always mounted (visibility toggle) to preserve Leaflet state
  *  - Fetch baseline data (user profile, station list) on boot
+ *  - Admin panel (long-press header or ?admin=1 param)
  */
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence } from "framer-motion";
@@ -20,6 +22,8 @@ import { VaultTab } from "@/components/VaultTab";
 import { ReserveTab } from "@/components/ReserveTab";
 import { VpnModal } from "@/components/VpnModal";
 import { MarketTicker } from "@/components/MarketTicker";
+import { IntroSplash } from "@/components/IntroSplash";
+import { AdminPanel } from "@/components/AdminPanel";
 import { useUserStore } from "@/stores/useUserStore";
 import { useStationStore } from "@/stores/useStationStore";
 import { useMapStore } from "@/stores/useMapStore";
@@ -45,7 +49,6 @@ interface TelegramWebApp {
   setBackgroundColor: (color: string) => void;
   initDataUnsafe?: {
     user?: { id: number; username?: string; first_name?: string; last_name?: string };
-    /** Deep-link payload passed via ?startapp= */
     start_param?: string;
   };
   MainButton: {
@@ -78,6 +81,7 @@ interface TelegramWebApp {
 // ─── App ──────────────────────────────────────────────────────────────────────
 
 const DEFAULT_TAB: TabId = "map";
+const SPLASH_KEY = "tma-splash-seen-v2";
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabId>(DEFAULT_TAB);
@@ -86,7 +90,10 @@ export default function App() {
   const [navVisible, setNavVisible] = useState(true);
   const [showVpn, setShowVpn] = useState(false);
   const [vpnTroubleshooter, setVpnTroubleshooter] = useState(false);
+  const [showSplash, setShowSplash] = useState(() => !localStorage.getItem(SPLASH_KEY));
+  const [showAdmin, setShowAdmin] = useState(false);
   const vpnSuggested = useRef(false);
+  const adminPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { init: initUser } = useUserStore();
   const { fetch: fetchStations, stations } = useStationStore();
@@ -116,19 +123,16 @@ export default function App() {
     const tg = window.Telegram?.WebApp;
 
     if (tg) {
-      // Tell Telegram the Mini App is ready and should be full-screen
       tg.ready();
       tg.expand();
 
-      // Force the dark theme colours used by this app
       try {
         tg.setHeaderColor("#050507");
         tg.setBackgroundColor("#050507");
       } catch {
-        // Older SDK versions throw on unknown colour strings — safe to ignore
+        // older SDK versions throw on unknown colour strings — safe to ignore
       }
 
-      // Hide the MainButton — we manage our own navigation
       try { tg.MainButton.hide(); } catch {}
     }
 
@@ -141,11 +145,15 @@ export default function App() {
     }
     if (deepLink.stationId) {
       setInitialStationId(deepLink.stationId);
-      // Also pre-select in the map store so MapTab shows the popup immediately
       selectStation(deepLink.stationId);
     }
     if (deepLink.purchaseId) {
       setInitialPurchaseId(deepLink.purchaseId);
+    }
+
+    // ── Admin panel via URL param ───────────────────────────────
+    if (new URLSearchParams(window.location.search).get("admin") === "1") {
+      setShowAdmin(true);
     }
 
     // ── User + stations ─────────────────────────────────────────
@@ -177,7 +185,6 @@ export default function App() {
     const tg = window.Telegram?.WebApp;
     if (!tg?.BackButton) return;
 
-    // Remove the previous click listener before registering a new one
     if (backCbRef.current) {
       try { tg.BackButton.offClick(backCbRef.current); } catch {}
     }
@@ -197,13 +204,41 @@ export default function App() {
   const handleTabChange = (tab: TabId) => {
     hapticSelect();
     setActiveTab(tab);
-    // Always show nav when switching tabs from outside the map
     if (!navVisible) setNavVisible(true);
+  };
+
+  // ── Splash done ─────────────────────────────────────────────────
+  const handleSplashDone = () => {
+    localStorage.setItem(SPLASH_KEY, "1");
+    setShowSplash(false);
+  };
+
+  // ── Admin panel long-press on ticker ───────────────────────────
+  const handleTickerPressStart = () => {
+    adminPressTimer.current = setTimeout(() => {
+      setShowAdmin(true);
+    }, 3000); // 3-second long press
+  };
+  const handleTickerPressEnd = () => {
+    if (adminPressTimer.current) {
+      clearTimeout(adminPressTimer.current);
+      adminPressTimer.current = null;
+    }
   };
 
   return (
     <ErrorBoundary>
       <ToastContainer />
+
+      {/* Intro Splash */}
+      <AnimatePresence>
+        {showSplash && <IntroSplash onDone={handleSplashDone} />}
+      </AnimatePresence>
+
+      {/* Admin Panel */}
+      <AnimatePresence>
+        {showAdmin && <AdminPanel onClose={() => setShowAdmin(false)} />}
+      </AnimatePresence>
 
       <AnimatePresence>
         {showVpn && (
@@ -234,17 +269,57 @@ export default function App() {
         🔒
       </button>
 
-      {/* Live market ticker — always visible, fixed strip */}
-      <div style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 9800 }}>
+      {/* Crisis floating badge — shows when many stations are in crisis */}
+      {crisisCount >= 5 && (
+        <div
+          style={{
+            position: "fixed", top: "34px", right: "10px",
+            zIndex: 9700,
+            background: "linear-gradient(135deg,#1a0606,#200a0a)",
+            border: "1px solid #ef444455",
+            borderRadius: "8px",
+            padding: "0.2rem 0.5rem",
+            display: "flex", alignItems: "center", gap: "0.3rem",
+            boxShadow: "0 0 12px #ef444430",
+            pointerEvents: "none",
+          }}
+        >
+          <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: "#ef4444", boxShadow: "0 0 5px #ef4444", animation: "crisisPulse 1.2s infinite", flexShrink: 0 }} />
+          <span style={{ fontFamily: "'JetBrains Mono',monospace", color: "#ef4444", fontSize: "0.52rem", letterSpacing: "0.08em" }}>
+            {crisisCount} КРИЗИС
+          </span>
+        </div>
+      )}
+
+      {/* Live market ticker — always visible, fixed strip
+          Long-press 3s to open admin panel */}
+      <div
+        style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 9800 }}
+        onMouseDown={handleTickerPressStart}
+        onMouseUp={handleTickerPressEnd}
+        onTouchStart={handleTickerPressStart}
+        onTouchEnd={handleTickerPressEnd}
+      >
         <MarketTicker />
       </div>
 
       {/*
         Content area:
-        · MapTab is ALWAYS in the DOM — unmounting it resets the Leaflet
-          viewport (zoom/pan). We toggle CSS visibility instead.
-        · All other tabs use conditional rendering — they're lightweight.
+        · MapTab is ALWAYS in the DOM — unmounting resets Leaflet viewport.
+        · All other tabs use conditional rendering.
       */}
+      {/* Global ambient dot-grid background — subtle cyberpunk grid */}
+      <div
+        aria-hidden
+        style={{
+          position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none",
+          backgroundImage: "radial-gradient(circle, rgba(168,85,247,0.07) 1px, transparent 1px)",
+          backgroundSize: "28px 28px",
+          maskImage: "radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%)",
+          WebkitMaskImage: "radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%)",
+        }}
+      />
+
       <div
         style={{
           flex: 1,
@@ -253,6 +328,7 @@ export default function App() {
           paddingTop: "28px",
           paddingBottom: navVisible ? "60px" : "0px",
           transition: "padding-bottom 0.3s",
+          zIndex: 1,
         }}
       >
         {/* Map — always mounted, hidden via CSS when another tab is active */}

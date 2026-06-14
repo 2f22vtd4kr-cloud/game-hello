@@ -206,6 +206,28 @@ export interface SystemStats {
 }
 export const fetchSystemStats = () => req<SystemStats>("/stats");
 
+// Admin stats (extended)
+export interface AdminStats {
+  stations_total: number;
+  users_total: number;
+  vouchers_total: number;
+  reports_24h: number;
+  crisis_zones: string[];
+  scheduler_running: boolean;
+  db_size_mb: number;
+  generated_at: string;
+}
+export const fetchAdminStats = () => req<AdminStats>("/admin/stats");
+export const adminTriggerJob = (job: string) =>
+  req<{ ok: boolean; job: string }>(`/admin/trigger/${job}`, { method: "POST" });
+export const adminResetCrisis = (region?: string) =>
+  req<{ ok: boolean; affected: number }>("/admin/crisis/reset", {
+    method: "POST",
+    body: JSON.stringify({ region }),
+  });
+export const adminReseedDb = () =>
+  req<{ ok: boolean; message: string }>("/admin/db/reseed", { method: "POST" });
+
 // Top stations
 export interface TopStation {
   id: number;

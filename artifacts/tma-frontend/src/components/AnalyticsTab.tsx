@@ -110,9 +110,12 @@ function PriceMatrix({ regions }: { regions: Record<string, RegionalSupply> }) {
     <div style={{ padding: "0 1rem 0.75rem" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.6rem" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <p style={{ color: "#9ca3af", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.06em", margin: 0 }}>
-            Матрица цен
-          </p>
+          <div>
+            <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.43rem", letterSpacing: "0.14em", marginBottom: "0.1rem" }}>МАТРИЦА_ЦЕН · КРИТИЧНЫЕ_ЗОНЫ</div>
+            <p style={{ color: "#9ca3af", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.06em", margin: 0 }}>
+              Матрица цен
+            </p>
+          </div>
           <span style={{ background: "#ef444415", border: "1px solid #ef444430", borderRadius: "4px", color: "#ef4444", fontSize: "0.55rem", fontWeight: 700, padding: "0.1rem 0.35rem", fontFamily: "'JetBrains Mono',monospace" }}>
             ТОП-6 крит.
           </span>
@@ -452,11 +455,6 @@ export function AnalyticsTab({ onNavigate }: Props) {
 
   return (
     <div style={{ paddingBottom: "5rem" }}>
-      <style>{`
-        @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
-        @keyframes tmaPulse{0%,100%{opacity:1}50%{opacity:0.35}}
-        @keyframes crisisPulse{0%,100%{opacity:1;box-shadow:0 0 12px #ef4444}50%{opacity:0.6;box-shadow:0 0 4px #ef4444}}
-      `}</style>
 
       {/* Header */}
       <div style={{ padding: "0.75rem 1rem 0.5rem", position: "relative" }}>
@@ -510,6 +508,7 @@ export function AnalyticsTab({ onNavigate }: Props) {
           {/* Availability Index — big hero card */}
           <div style={{ background: "linear-gradient(135deg,#14141c,#1a0d22)", border: `1px solid ${overallColor}33`, borderRadius: "14px", padding: "0.9rem 1rem", position: "relative", overflow: "hidden" }}>
             <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: `linear-gradient(90deg, ${overallColor}88, ${overallColor})` }} />
+            <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.38rem", letterSpacing: "0.12em", marginBottom: "0.1rem" }}>ИНДЕКС_НАЛИЧИЯ</div>
             <p style={{ color: "#6b7280", fontSize: "0.6rem", margin: "0 0 0.3rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>Индекс наличия</p>
             <AnimatedCounter value={data?.availability_index ?? 0} suffix="%" color={overallColor} size="2.2rem" />
             <p style={{ margin: "0.3rem 0 0", color: "#4b5563", fontSize: "0.6rem" }}>
@@ -519,6 +518,7 @@ export function AnalyticsTab({ onNavigate }: Props) {
 
           {/* Station counts */}
           <div style={{ background: "#14141c", border: "1px solid #22222f", borderRadius: "14px", padding: "0.9rem 1rem" }}>
+            <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.38rem", letterSpacing: "0.12em", marginBottom: "0.1rem" }}>СТАНЦИЙ_В_СЕТИ</div>
             <p style={{ color: "#6b7280", fontSize: "0.6rem", margin: "0 0 0.3rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>АЗС в базе</p>
             <AnimatedCounter value={sc.total} color="#a855f7" size="2.2rem" />
             <div style={{ display: "flex", gap: "8px", marginTop: "0.3rem" }}>
@@ -533,6 +533,7 @@ export function AnalyticsTab({ onNavigate }: Props) {
       {/* Live system stats — command center */}
       {sysStats && (
         <div style={{ padding: "0 1rem 0.75rem" }}>
+          <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.43rem", letterSpacing: "0.14em", marginBottom: "0.18rem" }}>СОСТОЯНИЕ_СИСТЕМЫ · LIVE</div>
           <p style={{ color: "#4b5563", fontSize: "0.58rem", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 0.5rem", display: "flex", alignItems: "center", gap: "0.4rem" }}>
             <span style={{ display: "inline-block", width: "5px", height: "5px", borderRadius: "50%", background: "#22c55e", boxShadow: "0 0 6px #22c55e", animation: "tmaPulse 2s infinite" }} />
             Состояние системы · live
@@ -567,7 +568,9 @@ export function AnalyticsTab({ onNavigate }: Props) {
       <PriceMatrix regions={regions} />
 
       {/* Overview: donut + region monitor */}
-      <div style={{ padding: "0 1rem 0.75rem", display: "flex", gap: "0.75rem", alignItems: "stretch" }}>
+      <div style={{ padding: "0 1rem 0.75rem" }}>
+        <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.43rem", letterSpacing: "0.14em", marginBottom: "0.35rem" }}>ОБЗОР_СЕТИ · СОСТАВ_ТОПЛИВА</div>
+      <div style={{ display: "flex", gap: "0.75rem", alignItems: "stretch" }}>
         <FuelMixDonut regions={regions} />
         <div style={{ flex: 1 }}>
           <RegionMonitor regions={regions} />
@@ -581,9 +584,11 @@ export function AnalyticsTab({ onNavigate }: Props) {
           </div>
         </div>
       </div>
+      </div>
 
       {/* Region selector */}
       <div style={{ padding: "0 1rem 0.75rem" }}>
+        <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.43rem", letterSpacing: "0.14em", marginBottom: "0.35rem" }}>ФИЛЬТР_РЕГИОНОВ · ЗОНА_ПОИСКА</div>
         <div style={{ position: "relative" }}>
           <div style={{ position: "absolute", left: "0.65rem", top: "50%", transform: "translateY(-50%)", fontFamily: "'JetBrains Mono',monospace", color: "#a855f7", fontSize: "0.6rem", pointerEvents: "none", zIndex: 1 }}>
             ▸
@@ -672,7 +677,10 @@ export function AnalyticsTab({ onNavigate }: Props) {
 
       {/* Regional index cards */}
       <div style={{ padding: "0 1rem 0.75rem" }}>
-        <p style={{ color: "#9ca3af", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 0.6rem" }}>Индекс по регионам</p>
+        <div style={{ marginBottom: "0.6rem" }}>
+          <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.46rem", letterSpacing: "0.14em", marginBottom: "0.1rem" }}>РЕГИОНАЛЬНЫЙ_ИНДЕКС · {filtered.length}_ЗОНЫ</div>
+          <p style={{ color: "#9ca3af", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.05em", margin: 0, fontWeight: 700 }}>Индекс по регионам</p>
+        </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
           {filtered.map(([region, d]) => (
             <RegionCard key={region} region={region} data={d} isFav={isFavorite(region)} onToggleFav={() => isFavorite(region) ? removeFavorite(region) : addFavorite(region)} />
@@ -684,7 +692,10 @@ export function AnalyticsTab({ onNavigate }: Props) {
       <div style={{ padding: "0 1rem 0.5rem" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.65rem" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <p style={{ color: "#9ca3af", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.06em", margin: 0 }}>Распределение статусов</p>
+            <div>
+              <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.46rem", letterSpacing: "0.14em", marginBottom: "0.1rem" }}>СТАТУС_РАСПРЕДЕЛЕНИЕ</div>
+              <p style={{ color: "#9ca3af", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.06em", margin: 0, fontWeight: 700 }}>Распределение статусов</p>
+            </div>
             <span style={{ background: "#a855f715", border: "1px solid #a855f730", borderRadius: "4px", color: "#a855f7", fontSize: "0.55rem", fontWeight: 700, padding: "0.1rem 0.35rem", fontFamily: "'JetBrains Mono',monospace" }}>
               {filtered.length} регионов
             </span>

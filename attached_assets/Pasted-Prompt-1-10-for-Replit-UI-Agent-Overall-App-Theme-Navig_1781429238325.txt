@@ -1,0 +1,122 @@
+Prompt 1/10 for Replit UI Agent (Overall App Theme, Navigation & Global Layout)
+You are an expert UI/UX designer and frontend engineer specializing in modern mobile-first Telegram Web Apps and dark-themed dashboards. The app is "Fuel Tickets RU" — a live monitoring dashboard for fuel supply (АЗС/gas stations), prices, maps of Crimea/Kherson regions, supply matrix, and tickets/VPN features. Current design is cluttered, Russian-language, dark purple/black theme with glowing neon accents.
+
+CRITICAL GOALS:
+- Achieve "Crème de la crème" premium dashboard feel: sleek, professional, high-contrast, intuitive like Apple or banking apps. Use modern glassmorphism, subtle gradients, clean typography (Inter or SF Pro), generous whitespace, micro-animations.
+- Fix global issues: Top "running line" (LIVE stats: Севастополь 67Р etc.) must NEVER overlap buttons/tabs. Make it a non-intrusive horizontal ticker or collapsible banner at very top.
+- Bottom navigation bar (Карта, Аналитика, Каталог, Мой Сейф, Фортуна) — make it prominent, icon + label, with clear active state glow. Add haptic feedback simulation.
+- Replace ambiguous icons: Purple lock in bottom-left → explicit "VPN" button with shield icon + tooltip "Подключить VPN". Explain purpose clearly.
+- Ensure full responsiveness for Telegram mini-app (mobile portrait priority).
+- Color scheme: Deep navy/black background (#0A0A0F), neon purple/cyan accents (#A855F7, #22D3EE), success green, warning amber, danger red. Consistent throughout.
+
+TASK:
+1. Redesign global layout: Header with logo + LIVE indicator + user balance/tickets. Top ticker improved. Main content area with safe padding. Bottom nav fixed.
+2. Implement consistent card design: Rounded corners (16px), subtle borders/glows, hover/press states.
+3. Add smooth page transitions and loading skeletons.
+4. Ensure all text is readable (min 14px, proper contrast).
+5. Output complete updated HTML/CSS/JS structure or key component files with Tailwind or custom CSS. Prioritize mobile.
+
+Start by planning the new information architecture and navigation flow.
+Prompt 2/10 for Replit Engineer Agent (Map Screen Fixes & Enhancements)
+Implement all UI improvements from previous prompt. Focus on the Map screen (Карта tab, first screenshot).
+
+PROBLEMS TO FIX:
+- Top running line overlaps "Фильтры" and other buttons.
+- Unclear glowing circles (6,10,13,7,3) — add clear legends/tooltips: e.g., "Критические АЗС", "Низкий запас", numbers mean available stations or tickets.
+- Yellow/green dots unclear (Yevpatoriya, etc.).
+- Lock icon → replace with labeled VPN button that opens a modal explaining "VPN for secure ticket purchases in restricted regions".
+- Crimea/Kherson zoom boxes should have better borders and zoom controls.
+
+ENHANCEMENTS:
+- Interactive map (Leaflet.js or similar if possible, or enhance existing).
+- Clickable markers with popups showing station details, fuel availability, prices.
+- Filters panel: slide-in from side or modal with fuel type, region, price range.
+- Legend panel always visible or toggleable.
+- Real-time updates indicator.
+- Dark map tiles optimized for theme.
+
+Deliver production-ready code changes. Make it buttery smooth on mobile.
+Prompt 3/10 for Replit UI Agent (Analytics / Supply Matrix Screen)
+Redesign the second screenshot screen ("Матрица Снабжения" / Analytics tab).
+
+MAJOR CLARITY FIXES:
+- "АЗС в базе 570" — make this a big hero number with subtitle "Всего заправок в системе".
+- Green 1072 / Yellow 752 / Red 481 → Add clear labels: "Зеленые: Полностью снабжены (1072)", "Желтые: Средний запас (752)", "Красные: Критический дефицит (481)". Use colored badges or progress rings.
+- "53.6% Ср. наличие по сети АЗС" — turn into prominent gauge or circular progress with explanation.
+- Price Matrix table ("МАТРИЦА ЦЕН"): Improve readability — bold headers, color-code prices (green=cheap, red=expensive), add region names properly, sortable columns.
+- Operator count (1), Reports (0), Talons (0) — make them into actionable cards with quick links.
+
+NEW FEATURES:
+- Top "Обновить" button with last sync time ("Синхр: 12:09 • 236 станций").
+- Live status banner.
+- Charts: Simple sparkline or bar for price trends per fuel type (AI-92, AI-95, DT).
+- Export/share buttons.
+
+Apply the global premium design system from Prompt 1.
+Prompt 4/10 for Replit Engineer Agent (Navigation Logic & Tab Switching)
+Engineer task: Perfect the bottom navigation and tab system across all pages.
+
+Requirements:
+- Smooth tab switching with preserved state where possible (e.g., map zoom level).
+- Deep linking support if feasible.
+- Handle "LIVE" updates across tabs — use WebSockets or polling with visual feedback.
+- Accessibility: ARIA labels, keyboard nav simulation for Telegram.
+- Fix any overlapping elements, z-index issues.
+- Implement search bar in header for quick station/city lookup.
+- Add pull-to-refresh on all main screens.
+
+Study all existing tabs: Map, Analytics, Catalog, My Safe, Fortuna. Ensure consistent header/footer.
+Prompt 5/10 for Replit UI Agent (Catalog & Tickets Flow)
+Focus on "Каталог" tab (likely ticket/store section with red notification 17).
+
+Improvements:
+- The "17" notification must clearly indicate what it is (new tickets? alerts?).
+- Make catalog grid or list of fuel tickets/vouchers beautiful: cards with fuel type, price, validity, "Купить" button.
+- Clear pricing in ₽/литр.
+- Filters and sorting prominent.
+- Detail view modal for each ticket with QR code placeholder, terms.
+- Integrate with "Мой Сейф" (My Safe) for purchased items.
+
+News feed: Surface important updates/announcements higher up instead of "lurking too far down". Dedicated news carousel on home or dedicated section.
+Prompt 6/10 for Replit Engineer Agent (Data Clarity & Real-time Features)
+Make all numbers meaningful:
+- Add tooltips/popovers explaining every metric on hover/tap.
+- Implement real-time updates for prices and availability (simulate or integrate backend if exists).
+- Ensure "ТОП-6 крит." section highlights critical regions.
+- Backend/frontend sync for "570 stations", percentages, etc.
+- Error handling and empty states (e.g., no reports).
+
+Optimize performance for Telegram Web App constraints.
+Prompt 7/10 for Replit UI Agent (My Safe & Fortuna Sections)
+Redesign "Мой Сейф" (inventory/wallet) and "Фортуна" (probably lottery or bonuses).
+
+- My Safe: Clean list of owned tickets, history, expiration warnings.
+- Fortuna: Engaging game-like UI for bonuses, with big CTA buttons.
+- Profile integration: Balance, level, achievements if any.
+- Consistent with premium theme: glowing cards, progress bars.
+Prompt 8/10 for Replit Engineer Agent (VPN & Security Integration)
+Implement proper VPN section:
+- Dedicated screen or modal triggered from bottom lock (now labeled VPN).
+- Clear benefits: "Access restricted fuel tickets", status indicator (Connected/Disconnected).
+- One-tap connect button.
+- Security explanations without scaring user.
+- Integrate into purchase flow if tickets require it.
+Prompt 9/10 for Replit UI Agent (Microcopy, Onboarding & Polish)
+Polish every screen:
+- Improve all Russian microcopy for clarity and friendliness.
+- Add subtle onboarding tooltips for first-time users (what numbers mean, how to buy, etc.).
+- Consistent button styles: Primary purple, secondary outlined.
+- Loading animations, success toasts.
+- Dark mode perfection (already dark, enhance contrast).
+- Final visual audit: No clutter, balanced information density.
+Prompt 10/10 for Replit Engineer Agent (Final Integration & Testing)
+Tie everything together:
+1. Apply all changes from previous 9 prompts.
+2. Full app audit for bugs, overlaps, unclear elements.
+3. Performance optimization.
+4. Add helpful empty states, error messages.
+5. Prepare for production deployment.
+6. Document key improvements made.
+
+Deliver the crème de la crème version of the Fuel Tickets RU Telegram app — intuitive, beautiful, professional, and actually useful for users monitoring fuel supply.
+Copy-paste these prompts one by one into Replit’s agents. Start with UI-focused ones, then engineering. This covers layout, clarity, navigation, and delight. Let me know how the iterations go!

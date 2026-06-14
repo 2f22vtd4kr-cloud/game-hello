@@ -1,0 +1,119 @@
+Prompt 11/20 for Replit UI Agent (Telegram Bot Chat Interface – Pre-Miniapp Experience)
+You are a world-class Telegram Bot UX designer. The bot is named "Топливо bot" (@fuel-tickets-ru or similar). Current chat interface (IMG_2056.jpg) looks like a basic menu with ugly buttons and long explanatory text. This is the FIRST impression before users open the Web App.
+
+CRITICAL GOALS:
+- Premium, cinematic onboarding experience matching the marketing video (glowing pink tickets, neon effects, 3D phones).
+- Replace the wall of text with beautiful welcome message + hero image/GIF of the marketing video (use the attached promotional video frames or GIF as header image).
+- Clean, modern menu: Large, colorful, emoji-rich buttons with clear hierarchy.
+- Buttons should match final miniapp navigation: Матрица Снабжения, Карта АЗС, Каталог, Сейф, Резерв, Аналитика, etc.
+- Add quick actions: "Открыть Мини-приложение", "Мои ваучеры", "Поддержка".
+- Use Telegram's rich UI features: Inline keyboards, web_app buttons, photo/video attachments.
+- First message after /start: Stunning welcome card with the promotional image/video + short, benefit-focused text ("Получай топливо по лучшим ценам в Крыму и области").
+
+TASK:
+Redesign the entire bot conversation flow. Provide complete code for bot responses, inline keyboards, and visual assets integration. Make it feel luxurious and trustworthy.
+Prompt 12/20 for Replit Engineer Agent (Integrate Promotional Video/GIF as App Intro)
+Implement a stunning splash/intro screen using the provided marketing video (Adobe Express video with glowing pink tickets and phones) or its key frames.
+
+Requirements:
+- On first launch of the mini-app (or via "Открыть" from bot), show a 3-5 second full-screen animated intro.
+- Use HTML5 video or sequenced images with GSAP/Anime.js for smooth glowing ticket animations.
+- After intro, seamless transition to main dashboard with fade.
+- Add "Пропустить" button for returning users.
+- Make the intro responsive and performant on mobile.
+- Fallback to static high-quality image (IMG_77D6D732...jpg) if video fails.
+- Store "seen_intro" in localStorage or user profile.
+
+Deliver buttery-smooth implementation with the crème de la crème visual quality.
+Prompt 13/20 for Replit UI Agent (Admin Panel – Protected Dashboard)
+Design a premium hidden Admin Panel accessible only to the owner.
+
+Features:
+- Password protection (strong, with option for Telegram ID + 2FA-like code).
+- Beautiful dark theme consistent with main app (neon accents).
+- Sections:
+  - Overview: Total users, active sessions, total tickets issued, revenue, live map of activity.
+  - User Activities Log: Searchable table of all actions (purchases, logins, VPN usage).
+  - Analytics Deep Dive: Charts (user growth, ticket redemptions, regional stats).
+  - Station Management: Edit fuel availability, prices.
+  - Broadcast messages to all users.
+  - Settings: API keys, secrets management.
+
+UI: Sidebar navigation, responsive tables, real-time updates. Use charts (Chart.js).
+Access: Hidden route or special button only visible after correct auth.
+Prompt 14/20 for Replit Engineer Agent (Admin Authentication & Secrets)
+Implement secure Admin Panel backend/frontend.
+
+Requirements:
+- On load, prompt for password (stored hashed) or Telegram User ID verification.
+- Ask user (developer) for secrets during setup: BOT_TOKEN, ADMIN_TELEGRAM_ID, DATABASE_URL, etc. Use Replit Secrets.
+- Role-based access: Only ADMIN_TELEGRAM_ID can enter.
+- Secure all admin endpoints.
+- Log every admin action.
+- Real-time stats using WebSockets or polling.
+- Protect against brute force (rate limiting).
+
+Provide full code and instructions on setting secrets in Replit.
+Prompt 15/20 for Replit UI Agent (Unified Design System & Theme Consistency)
+Create and enforce a complete Design System across Bot + Mini-App + Admin Panel.
+
+Include:
+- Color palette (deep black, neon purple #A855F7, cyan, pink accents for tickets).
+- Typography scale, button styles, card styles, icon set.
+- Animation library (subtle glows, ticket "fly-in" effects).
+- Dark mode perfection.
+- Component library (reusable cards, modals, headers).
+
+Update ALL previous screens to match this system, including the new intro and admin panel.
+Prompt 16/20 for Replit Engineer Agent (User Activity Tracking & Stats)
+Build comprehensive user analytics backend:
+
+- Track every interaction: page views, ticket purchases, redemptions, VPN usage, map interactions.
+- Store in database with timestamps, user IDs, regions.
+- Admin dashboard shows:
+  - Heatmap of activity.
+  - Top users, conversion funnel.
+  - Real-time online users.
+- Privacy-compliant but detailed enough for business insights.
+- Export CSV functionality for admin.
+
+Make it scalable and performant.
+Prompt 17/20 for Replit UI Agent (Catalog & Ticket Purchase Flow Polish)
+Perfect the ticket buying experience:
+
+- Beautiful catalog with filters (fuel type, region, price).
+- Ticket cards with glowing effects matching marketing video.
+- Smooth purchase flow: Select → Preview → Pay (with confirmation) → QR in "Сейф".
+- Success animation with flying pink ticket like in the promo video.
+- Integration with "Резерв" and free 20L voucher section.
+Prompt 18/20 for Replit Engineer Agent (Backend Integration & Real-time)
+Ensure full backend perfection:
+
+- Connect all frontend to proper data sources.
+- Real-time updates for fuel prices, availability.
+- Ticket generation, QR codes, redemption logic.
+- Error handling, loading states everywhere.
+- Rate limiting and security best practices.
+- Prepare for scaling (user growth).
+Prompt 19/20 for Replit UI Agent (Final Polish, Accessibility & Microcopy)
+Final visual and content polish:
+
+- Review every screen for clarity, remove all ambiguity.
+- Improve all Russian text (friendlier, professional).
+- Add tooltips, empty states, success/error animations.
+- Accessibility: Contrast, focus states, screen reader friendly where possible.
+- Performance audit: Fast loading, optimized assets.
+- Add subtle confetti or glow on ticket redemption.
+Prompt 20/20 for Replit Engineer Agent (Complete Integration, Testing & Deployment)
+Final master integration:
+
+1. Merge all changes from Prompts 1-19.
+2. Full end-to-end testing: Bot → Intro → Mini-app navigation → Purchase → Admin panel.
+3. Fix any remaining overlaps, clarity issues, or performance problems.
+4. Add comprehensive logging and monitoring.
+5. Instructions for deployment and secret setup.
+6. Document all new features and how to maintain.
+
+Deliver the absolute Crème de la crème version — a premium, professional, delightful fuel ticket Telegram ecosystem that users will love and trust.
+
+These 11-20 prompts complete the full vision. Start by sending Prompt 11 (bot chat) and Prompt 12 (intro video), then the admin-focused ones. Attach the promotional images/videos to Replit when the agents ask. Let me know the results after the first few!

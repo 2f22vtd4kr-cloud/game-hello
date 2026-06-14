@@ -252,8 +252,11 @@ function FuelItem({
       {limit && (
         <div style={{ marginBottom: "0.6rem" }}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.2rem" }}>
-            <span style={{ color: "#6b7280", fontSize: "0.7rem" }}>Суточный лимит</span>
-            <span style={{ color: remaining > 0 ? "#9ca3af" : "#ef4444", fontSize: "0.7rem" }}>
+            <div>
+              <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.4rem", letterSpacing: "0.12em", marginBottom: "1px" }}>ЛИМИТ_СУТОЧНЫЙ</div>
+              <span style={{ color: "#6b7280", fontSize: "0.7rem" }}>Суточный лимит</span>
+            </div>
+            <span style={{ color: remaining > 0 ? "#9ca3af" : "#ef4444", fontSize: "0.7rem", fontFamily: "'JetBrains Mono',monospace" }}>
               {limit.used}л / {limit.max}л
             </span>
           </div>
@@ -541,6 +544,28 @@ export function CatalogTab({ initialStationId }: CatalogTabProps) {
 
       {!selectedStation ? (
         <div style={{ padding: "0 1rem" }}>
+          {filteredStations.length === 0 && (
+            <div style={{ textAlign: "center", padding: "3rem 1rem", display: "flex", flexDirection: "column", alignItems: "center", gap: "0.75rem" }}>
+              <div style={{
+                width: "64px", height: "64px", borderRadius: "18px",
+                background: "linear-gradient(135deg,#0d0d18,#14141c)",
+                border: "1px solid #a855f722",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: "1.8rem", boxShadow: "0 0 20px #a855f710",
+              }}>🔍</div>
+              <div>
+                <p style={{ margin: "0 0 0.25rem", color: "#e2e8f0", fontSize: "0.88rem", fontWeight: 700 }}>АЗС не найдены</p>
+                <p style={{ margin: 0, color: "#4b5563", fontSize: "0.72rem" }}>Попробуйте изменить запрос или фильтры</p>
+              </div>
+              <div style={{
+                background: "#0d0d18", border: "1px solid #1e1e2a", borderRadius: "8px",
+                padding: "0.3rem 0.75rem", fontSize: "0.58rem",
+                fontFamily: "'JetBrains Mono',monospace", color: "#374151",
+              }}>
+                SEARCH_RESULT · 0 STATIONS
+              </div>
+            </div>
+          )}
           {filteredStations.slice(0, 50).map((s) => {
             const hasFuel = s.fuel_statuses.some((f) => f.availability_pct > 0);
             const avgAvail = s.fuel_statuses.length
@@ -645,6 +670,7 @@ export function CatalogTab({ initialStationId }: CatalogTabProps) {
                 <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: `linear-gradient(90deg,transparent,${selColor},transparent)` }} />
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.43rem", letterSpacing: "0.14em", marginBottom: "0.18rem" }}>ВЫБРАННАЯ_СТАНЦИЯ · ЗАПРАВКА</div>
                     <p style={{ margin: "0 0 0.15rem", color: "#f1f5f9", fontWeight: 800, fontSize: "0.95rem", letterSpacing: "-0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {selectedStation.name}
                     </p>
@@ -677,6 +703,7 @@ export function CatalogTab({ initialStationId }: CatalogTabProps) {
 
           {/* Payment method selector */}
           <div style={{ marginBottom: "0.25rem" }}>
+            <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.43rem", letterSpacing: "0.14em", marginBottom: "0.1rem" }}>СПОСОБ_ОПЛАТЫ · ШЛЮЗ</div>
             <p style={{ color: "#6b7280", fontSize: "0.68rem", margin: "0 0 0.35rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
               Способ оплаты
             </p>
@@ -725,9 +752,23 @@ export function CatalogTab({ initialStationId }: CatalogTabProps) {
           )}
 
           {selectedStation.fuel_statuses.length === 0 ? (
-            <p style={{ color: "#6b7280", textAlign: "center", padding: "2rem 0" }}>
-              Нет данных по топливу на этой АЗС
-            </p>
+            <div style={{ textAlign: "center", padding: "2.5rem 1rem", display: "flex", flexDirection: "column", alignItems: "center", gap: "0.6rem" }}>
+              <div style={{
+                width: "52px", height: "52px", borderRadius: "14px",
+                background: "linear-gradient(135deg,#0d0d18,#14141c)",
+                border: "1px solid #ef444422",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: "1.5rem",
+              }}>⛽</div>
+              <p style={{ margin: 0, color: "#6b7280", fontSize: "0.78rem" }}>Нет данных по топливу на этой АЗС</p>
+              <div style={{
+                background: "#0d0d18", border: "1px solid #1e1e2a", borderRadius: "8px",
+                padding: "0.3rem 0.75rem", fontSize: "0.58rem",
+                fontFamily: "'JetBrains Mono',monospace", color: "#374151",
+              }}>
+                FUEL_STATUS · NO_DATA
+              </div>
+            </div>
           ) : (
             selectedStation.fuel_statuses.map((fs) => (
               <FuelItem

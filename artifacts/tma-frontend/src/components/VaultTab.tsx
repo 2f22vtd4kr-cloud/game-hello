@@ -335,7 +335,6 @@ export function VaultTab({ initialPurchaseId }: VaultTabProps) {
           </div>
         </div>
       </div>
-      <style>{`@keyframes tmaPulse{0%,100%{opacity:1}50%{opacity:0.35}}`}</style>
 
       {/* Profile card */}
       {(() => {
@@ -366,6 +365,7 @@ export function VaultTab({ initialPurchaseId }: VaultTabProps) {
               {/* User row */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.6rem" }}>
                 <div>
+                  <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.43rem", letterSpacing: "0.14em", marginBottom: "0.18rem" }}>ПРОФИЛЬ_ОПЕРАТОРА · XP</div>
                   <p style={{ margin: "0 0 0.15rem", color: "#e2e8f0", fontWeight: 700, fontSize: "1rem" }}>
                     {user.username ? `@${user.username}` : `Пользователь #${user.id}`}
                   </p>
@@ -474,8 +474,10 @@ export function VaultTab({ initialPurchaseId }: VaultTabProps) {
       })()}
 
       {loading && (
-        <div style={{ textAlign: "center", padding: "2rem", color: "#6b7280" }}>
-          Загрузка хранилища…
+        <div style={{ padding: "0 1rem 1rem", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+          {[1, 2, 3].map((i) => (
+            <div key={i} style={{ height: "70px", borderRadius: "14px", background: "linear-gradient(90deg,#14141c 25%,#1e1e2a 50%,#14141c 75%)", backgroundSize: "200% 100%", animation: "shimmer 1.5s infinite" }} />
+          ))}
         </div>
       )}
 
@@ -495,7 +497,8 @@ export function VaultTab({ initialPurchaseId }: VaultTabProps) {
       {/* History */}
       {history.length > 0 && (
         <div style={{ padding: "0 1rem 0.5rem" }}>
-          <p style={{ color: "#374151", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0.5rem 0 0.5rem", fontFamily: "'JetBrains Mono',monospace" }}>
+          <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.43rem", letterSpacing: "0.14em", marginBottom: "0.1rem", marginTop: "0.5rem" }}>АРХИВ_ОРДЕРОВ · ИСТОРИЯ</div>
+          <p style={{ color: "#374151", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 0.5rem", fontFamily: "'JetBrains Mono',monospace" }}>
             История · {history.length} ордеров
           </p>
           {history.map((p) => <PurchaseCard key={p.id} purchase={p} />)}
@@ -506,9 +509,12 @@ export function VaultTab({ initialPurchaseId }: VaultTabProps) {
       {subscriptions.length > 0 && (
         <div style={{ padding: "0 1rem 0.75rem" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
-            <p style={{ margin: 0, color: "#a855f7", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>
-              🔔 Подписки · {subscriptions.length} АЗС
-            </p>
+            <div>
+              <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.46rem", letterSpacing: "0.14em", marginBottom: "0.1rem" }}>МОНИТОРИНГ_АЗС · АКТИВНЫЕ</div>
+              <p style={{ margin: 0, color: "#a855f7", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>
+                🔔 Подписки · {subscriptions.length} АЗС
+              </p>
+            </div>
             {subscriptions.length > 3 && (
               <button
                 onClick={() => setShowAllSubs(!showAllSubs)}
@@ -571,6 +577,7 @@ export function VaultTab({ initialPurchaseId }: VaultTabProps) {
       {/* Favorite regions */}
       {favoriteRegions.length > 0 && (
         <div style={{ padding: "0 1rem 0.75rem" }}>
+          <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.43rem", letterSpacing: "0.14em", marginBottom: "0.1rem" }}>ИЗБРАННЫЕ_РЕГИОНЫ · МОНИТОРИНГ</div>
           <p style={{ color: "#eab308", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 0.5rem", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>
             ⭐ Мониторинг · {favoriteRegions.length} регионов
           </p>
@@ -621,9 +628,12 @@ export function VaultTab({ initialPurchaseId }: VaultTabProps) {
       {achievements.length > 0 && (
         <div style={{ padding: "0 1rem 0.75rem" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
-            <p style={{ margin: 0, color: "#f59e0b", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>
-              🏆 Достижения · {achievements.filter(a => a.unlocked).length}/{achievements.length}
-            </p>
+            <div>
+              <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.43rem", letterSpacing: "0.14em", marginBottom: "0.1rem" }}>ДОСТИЖЕНИЯ_СИСТЕМЫ · РАЗБЛОКИРОВАНО</div>
+              <p style={{ margin: 0, color: "#f59e0b", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>
+                🏆 Достижения · {achievements.filter(a => a.unlocked).length}/{achievements.length}
+              </p>
+            </div>
             <button
               onClick={() => setShowAllAch(!showAllAch)}
               style={{ background: "none", border: "none", color: "#a855f7", fontSize: "0.7rem", cursor: "pointer", padding: 0 }}
@@ -711,9 +721,12 @@ export function VaultTab({ initialPurchaseId }: VaultTabProps) {
       {creditHistory.length > 0 && (
         <div style={{ padding: "0 1rem 0.75rem" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.45rem" }}>
-            <p style={{ margin: 0, color: "#db2777", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>
-              ⬡ НейроКредиты · история
-            </p>
+            <div>
+              <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.43rem", letterSpacing: "0.14em", marginBottom: "0.1rem" }}>НЕЙРОКРЕДИТЫ · ТРАНЗАКЦИИ</div>
+              <p style={{ margin: 0, color: "#db2777", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>
+                ⬡ НейроКредиты · история
+              </p>
+            </div>
             <button
               onClick={() => setShowCreditHistory(!showCreditHistory)}
               style={{ background: "none", border: "none", color: "#db2777", fontSize: "0.7rem", cursor: "pointer", padding: 0 }}
@@ -746,9 +759,30 @@ export function VaultTab({ initialPurchaseId }: VaultTabProps) {
       )}
 
       {!loading && purchases.length === 0 && favoriteRegions.length === 0 && subscriptions.length === 0 && achievements.filter(a => a.unlocked).length === 0 && (
-        <div style={{ textAlign: "center", padding: "3rem 2rem", color: "#4b5563" }}>
-          <div style={{ fontSize: "3rem", marginBottom: "0.75rem" }}>🗄️</div>
-          <p style={{ fontSize: "0.85rem" }}>Ваш сейф пуст. Оформите первый ваучер в каталоге.</p>
+        <div style={{ textAlign: "center", padding: "3.5rem 2rem 2rem", display: "flex", flexDirection: "column", alignItems: "center", gap: "0.75rem" }}>
+          <div style={{
+            width: "72px", height: "72px", borderRadius: "20px",
+            background: "linear-gradient(135deg,#14141c,#1a1428)",
+            border: "1px solid #a855f722",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: "2rem",
+            boxShadow: "0 0 32px #a855f710",
+          }}>
+            🗄️
+          </div>
+          <div>
+            <p style={{ margin: 0, color: "#e2e8f0", fontSize: "0.9rem", fontWeight: 700 }}>Сейф пуст</p>
+            <p style={{ margin: "0.3rem 0 0", color: "#4b5563", fontSize: "0.75rem", lineHeight: 1.5 }}>
+              Оформите первый ваучер в каталоге,<br />чтобы начать копить XP и историю операций.
+            </p>
+          </div>
+          <div style={{
+            background: "#0d0d18", border: "1px solid #a855f722", borderRadius: "10px",
+            padding: "0.5rem 1rem", fontSize: "0.68rem",
+            fontFamily: "'JetBrains Mono',monospace", color: "#4b5563", letterSpacing: "0.06em",
+          }}>
+            VAULT_STATUS · EMPTY · AWAITING_FIRST_VOUCHER
+          </div>
         </div>
       )}
     </div>

@@ -2800,6 +2800,122 @@ async def health_check():
     return {"status": "healthy", "service": "tma-backend"}
 
 
+# ──────────────────────────────────────────────────────────────────
+#  Admin endpoints
+# ──────────────────────────────────────────────────────────────────
+
+@app.get("/api/admin/stats")
+def get_admin_stats(db: Session = Depends(get_db)):
+    """Extended stats for the admin panel."""
+    from sqlalchemy import text as _text
+    import os as _os
+
+    def _count(q: str) -> int:
+        return db.execute(_text(q)).scalar() or 0
+
+    total_stations = _count("SELECT count(*) FROM gas_stations")
+    total_users = _count("SELECT count(*) FROM users")
+    total_purchases = _count("SELECT count(*) FROM purchase_history")
+    reports_24h = _count(
+        "SELECT count(*) FROM station_reports WHERE created_at >= datetime('now','-24 hours')"
+    )
+
+    # Crisis zones: regions where avg availability < 25%
+    rows = db.execute(_text("""
+        SELECT gs.region, avg(fs.availability_pct) AS avg_pct
+        FROM gas_stations gs
+        LEFT JOIN fuel_statuses fs ON fs.station_id = gs.id
+        GROUP BY gs.region
+    """)).fetchall()
+
+    crisis_zones = [row[0] for row in rows if (row[1] or 0) < 25]
+
+    # DB file size
+    db_path = "tma.db"
+    db_size_mb = 0.0
+    if _os.path.exists(db_path):
+        db_size_mb = _os.path.getsize(db_path) / (1024 * 1024)
+
+    return {
+        "stations_total": total_stations,
+        "users_total": total_users,
+        "vouchers_total": total_purchases,
+        "reports_24h": reports_24h,
+        "crisis_zones": crisis_zones,
+        "scheduler_running": scheduler.running,
+        "db_size_mb": round(db_size_mb, 3),
+        "generated_at": _now().isoformat(),
+    }
+
+
+@app.post("/api/admin/trigger/{job_name}")
+async def admin_trigger_job(job_name: str, db: Session = Depends(get_db)):
+    """Manually trigger a background job."""
+    from tma_backend.database import _generate_snapshot
+
+    if job_name == "simulate":
+        # Shift availability on a random subset of stations
+        stations = db.query(GasStation).all()
+        changed = 0
+        for st in random.sample(stations, min(30, len(stations))):
+            for fs in st.fuel_statuses:
+                delta = random.randint(-8, 8)
+                fs.availability_pct = max(0, min(100, fs.availability_pct + delta))
+                fs.status = "green" if fs.availability_pct >= 60 else ("yellow" if fs.availability_pct >= 25 else "red")
+                changed += 1
+        db.commit()
+        return {"ok": True, "job": "simulate", "changed": changed}
+    elif job_name == "analytics":
+        _generate_snapshot(db)
+        return {"ok": True, "job": "analytics"}
+    elif job_name == "cleanup":
+        cutoff = _now() - timedelta(days=7)
+        deleted = db.query(StationReport).filter(StationReport.created_at < cutoff).delete()
+        db.commit()
+        return {"ok": True, "job": "cleanup", "deleted": deleted}
+    elif job_name == "prices":
+        # Regenerate price multipliers by creating new price events
+        regions = db.execute(__import__("sqlalchemy").text("SELECT DISTINCT region FROM gas_stations")).scalars().all()
+        for region in random.sample(list(regions), min(5, len(regions))):
+            for fuel_type in ["АИ-92", "АИ-95", "ДТ"]:
+                evt = FuelPriceEvent(
+                    region=region,
+                    fuel_type=fuel_type,
+                    reason="Admin price refresh",
+                    multiplier=round(random.uniform(0.95, 1.15), 3),
+                    expires_at=_now() + timedelta(hours=6),
+                    created_at=_now(),
+                )
+                db.add(evt)
+        db.commit()
+        return {"ok": True, "job": "prices"}
+    else:
+        raise HTTPException(status_code=404, detail=f"Unknown job: {job_name}")
+
+
+@app.post("/api/admin/crisis/reset")
+def admin_reset_crisis(payload: dict = None, db: Session = Depends(get_db)):
+    """Reset crisis availability in a specific region or all regions."""
+    region = (payload or {}).get("region")
+    q = db.query(FuelStatus).join(GasStation)
+    if region:
+        q = q.filter(GasStation.region == region)
+    statuses = q.all()
+    for fs in statuses:
+        if fs.availability_pct < 30:
+            fs.availability_pct = random.randint(40, 75)
+            fs.status = "yellow" if fs.availability_pct < 60 else "green"
+    db.commit()
+    return {"ok": True, "affected": len(statuses), "region": region}
+
+
+@app.post("/api/admin/db/reseed")
+async def admin_reseed_db(db: Session = Depends(get_db)):
+    """Re-run the seeder to refresh station data."""
+    seed_db(db)
+    return {"ok": True, "message": "Reseed complete"}
+
+
 FRONTEND_DIST = os.path.join(
     os.path.dirname(__file__), "..", "artifacts", "tma-frontend", "dist"
 )
