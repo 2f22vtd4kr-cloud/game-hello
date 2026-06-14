@@ -2821,11 +2821,15 @@ async def successful_payment_handler(update: Update, context: ContextTypes.DEFAU
 
 async def conflict_error_handler(update: object, context) -> None:
     if isinstance(context.error, Conflict):
-        logger.error(
-            "Конфликт: другой экземпляр бота уже запущен с этим токеном. "
-            "Завершение работы, чтобы уступить активному экземпляру."
+        logger.warning(
+            "Конфликт (409): другой экземпляр бота уже запущен. "
+            "Ожидание 15 секунд перед повторной попыткой..."
         )
-        os._exit(1)
+        await asyncio.sleep(15)
+
+
+_conflict_retry_count = 0
+_MAX_CONFLICT_RETRIES = 10
 
 
 def _polling_error_cb(error: Exception) -> None:
@@ -2833,12 +2837,23 @@ def _polling_error_cb(error: Exception) -> None:
     This is the only reliable interception point for 409 Conflict in PTB 20.x
     because run_polling swallows the exception internally and retries forever.
     """
+    global _conflict_retry_count
     if isinstance(error, Conflict):
-        logger.error(
-            "Конфликт (409): другой экземпляр бота уже запущен. "
-            "Завершение процесса немедленно."
+        _conflict_retry_count += 1
+        if _conflict_retry_count >= _MAX_CONFLICT_RETRIES:
+            logger.error(
+                "Конфликт (409): слишком много попыток (%d). Завершение.",
+                _conflict_retry_count,
+            )
+            os._exit(1)
+        logger.warning(
+            "Конфликт (409): попытка %d/%d — ожидание 15 с...",
+            _conflict_retry_count, _MAX_CONFLICT_RETRIES,
         )
-        os._exit(1)
+        import time
+        time.sleep(15)
+    else:
+        _conflict_retry_count = 0
 
 
 async def _run_bot_polling(app: Application) -> None:
