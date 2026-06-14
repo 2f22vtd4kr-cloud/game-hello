@@ -2794,11 +2794,21 @@ async def prices_websocket(websocket: WebSocket):
         _price_ws_clients.discard(websocket)
 
 
+@app.get("/health")
+@app.get("/api/health")
+async def health_check():
+    return {"status": "healthy", "service": "tma-backend"}
+
+
 FRONTEND_DIST = os.path.join(
     os.path.dirname(__file__), "..", "artifacts", "tma-frontend", "dist"
 )
 if os.path.isdir(FRONTEND_DIST):
     app.mount("/", StaticFiles(directory=FRONTEND_DIST, html=True), name="frontend")
+else:
+    @app.get("/")
+    async def root_fallback():
+        return {"status": "running", "note": "frontend dist not built yet"}
 
 
 if __name__ == "__main__":

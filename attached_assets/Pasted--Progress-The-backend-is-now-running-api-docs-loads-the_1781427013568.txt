@@ -1,0 +1,66 @@
+✅ Progress: The backend is now running! ( /api/docs loads the Swagger UI)
+But the root / still shows the Replit “no previewable artifacts” because:
+	•	The React frontend build (artifacts/tma-frontend/dist) is not being served (or wasn’t built successfully in the deployment).
+	•	Replit’s proxy/healthcheck expects the app to serve content on the exposed port (8080).
+Quick Fix — Update These Two Files Again
+1. `.replit` — Force clean build + simplify (remove old workflows that may confuse Replit)
+Replace the entire .replit with this clean version:
+modules = ["nodejs-20", "python-3.12", "web"]
+
+[deployment]
+router = "application"
+deploymentTarget = "autoscale"
+build = ["bash", "-c", "rm -rf artifacts/tma-frontend/dist artifacts/api-server && pip install -r requirements.txt && pnpm install --frozen-lockfile && pnpm --filter @workspace/tma-frontend run build"]
+run = ["bash", "start.sh"]
+
+[deployment.postBuild]
+args = ["pnpm", "store", "prune"]
+env = { "CI" = "true" }
+
+[userenv.production]
+TMA_PORT = "8080"
+
+[[ports]]
+localPort = 8080
+externalPort = 80
+
+[nix]
+channel = "stable-25_05"
+2. Add a health check route (helps Replit recognize the app)
+In tma_backend/main.py, before the static mount, add this:
+# Health check for Replit deployment
+@app.get("/health")
+@app.get("/api/health")
+async def health_check():
+    return {"status": "healthy", "service": "tma-backend"}
+(Place it after the other routes, before the FRONTEND_DIST mount.)
+3. start.sh (your current one is good — just add a small improvement)
+#!/bin/bash
+
+echo "=== Starting TMA Application on Replit Autoscale ==="
+
+# Clean old processes
+pkill -f "python bot.py" || true
+pkill -f "tma_backend.main" || true
+
+# Bot in background (polling)
+echo "Starting Telegram Bot (polling)..."
+unset REPLIT_DEPLOYMENT
+python bot.py &
+
+echo "Starting FastAPI Backend (serves React frontend) on port ${TMA_PORT:-8080}..."
+exec python -m tma_backend.main
+4. Redeploy Steps
+	1	Commit & push the changes above.
+	2	In Replit Shell run: rm -rf artifacts/tma-frontend/dist node_modules ~/.cache/pnpm
+	3	
+	4	Go to Tools → Publishing → Autoscale → Redeploy.
+	5	Watch the Deployment Logs for:
+	◦	pnpm --filter @workspace/tma-frontend run build success
+	◦	Starting FastAPI Backend...
+	◦	Uvicorn running on 8080
+	◦	No errors about missing dist/
+After redeploy, root URL should show your React app, and /api/docs should still work.
+
+If it still fails, paste the last 30-50 lines of the new deployment logs here. The most common remaining issue is the frontend dist folder not being generated or the mount path failing silently.
+We’re extremely close — the backend is alive. One more clean redeploy should fix it.

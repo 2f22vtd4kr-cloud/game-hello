@@ -14,5 +14,9 @@ unset REPLIT_DEPLOYMENT
 python bot.py &
 BOT_PID=$!
 
-echo "Starting FastAPI Backend (serves React frontend) on port ${TMA_PORT:-8080}..."
+# Force port 5000 — Replit's deployment proxy expects this port
+# (matches the localPort=5000 -> externalPort=80 mapping in .replit)
+export TMA_PORT=5000
+
+echo "Starting FastAPI Backend (serves React frontend) on port ${TMA_PORT}..."
 exec python -m tma_backend.main
