@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { notify } from "@/lib/haptic";
 
 interface Toast {
   id: string;
@@ -38,6 +39,12 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: () => void }) 
   const cfg = TYPE_CONFIG[toast.type];
   const dur = toast.duration ?? 4000;
   const [pct, setPct] = useState(100);
+
+  useEffect(() => {
+    if (toast.type === "error")        notify("error");
+    else if (toast.type === "success") notify("success");
+    else if (toast.type === "warning") notify("warning");
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const start = Date.now();
