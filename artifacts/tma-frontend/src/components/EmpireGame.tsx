@@ -428,6 +428,31 @@ function BuildingDetailSheet({
   );
 }
 
+// ── Level tier system ─────────────────────────────────────────────────────────
+// Tier 0: unbuilt | 1: basic (1-4) | 2: improved (5-9) | 3: grand (10-19) | 4: legendary (20+)
+
+function getLevelTier(level: number): 0 | 1 | 2 | 3 | 4 {
+  if (level === 0) return 0;
+  if (level < 5)   return 1;
+  if (level < 10)  return 2;
+  if (level < 20)  return 3;
+  return 4;
+}
+
+// Emoji sizes grow per tier
+const TIER_EMOJI_SIZE   = ["1.55rem", "1.85rem", "2.15rem", "2.55rem", "3.0rem"] as const;
+// Top-area min-height grows per tier
+const TIER_TOP_HEIGHT   = [68, 78, 90, 104, 118] as const;
+// Stars shown below the emoji
+const TIER_STARS        = [0, 0, 1, 2, 3] as const;
+// Small corner decorations (stage-specific, tier 2+)
+const TIER_CORNERS: Record<number, Record<2|3|4, [string, string]>> = {
+  1: { 2: ["🌿","🌾"], 3: ["🌳","🌲"], 4: ["✨","🌟"] },
+  2: { 2: ["⚒️","🪙"], 3: ["🏰","🛡️"], 4: ["✨","👑"] },
+  3: { 2: ["💡","⚡"], 3: ["🏙️","💎"], 4: ["✨","💎"] },
+  4: { 2: ["💰","📊"], 3: ["💎","🏆"], 4: ["✨","👑"] },
+};
+
 // ── Building card ─────────────────────────────────────────────────────────────
 
 function BuildingCard({
@@ -447,127 +472,247 @@ function BuildingCard({
   onInfo: () => void;
   loading: boolean;
 }) {
-  const rate = productionPerHour(def, level, prestige);
-  const cost = upgradeCost(def, level);
+  const rate      = productionPerHour(def, level, prestige);
+  const cost      = upgradeCost(def, level);
   const canAfford = availableXp >= cost;
-  const stage = STAGES.find((s) => s.stage === def.stage)!;
-  const theme = CARD_THEMES[def.stage];
+  const stage     = STAGES.find((s) => s.stage === def.stage)!;
+  const theme     = CARD_THEMES[def.stage];
+  const tier      = getLevelTier(level);
+
+  // Visual parameters driven by tier
+  const emojiSize  = TIER_EMOJI_SIZE[tier];
+  const topHeight  = TIER_TOP_HEIGHT[tier];
+  const starCount  = TIER_STARS[tier];
+  const corners    = tier >= 2 ? TIER_CORNERS[def.stage][tier as 2|3|4] : null;
+
+  // Card border & shadow escalate with tier
+  const tierBorderWidth = tier >= 4 ? "3px" : tier >= 3 ? "2.5px" : "2px";
+  const tierBorderColor = tier >= 3 ? "#d4a820" : tier >= 2 ? theme.border + "dd" : theme.border;
+  const tierShadow = tier === 4
+    ? `0 0 0 1px #d4a820, 0 6px 22px rgba(0,0,0,0.38), 0 2px 6px rgba(0,0,0,0.22), 0 0 20px #d4a82044`
+    : tier === 3
+    ? `0 0 0 1px ${stage.color}66, 0 5px 18px rgba(0,0,0,0.32), 0 1px 5px rgba(0,0,0,0.2)`
+    : tier >= 1
+    ? `0 4px 14px rgba(0,0,0,0.26), 0 1px 4px rgba(0,0,0,0.16)`
+    : `0 2px 8px rgba(0,0,0,0.16)`;
+
+  // Banner gets a shimmer shimmer at tier 3+
+  const bannerStyle = tier >= 3
+    ? `${theme.banner}, linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.18) 50%, transparent 60%)`
+    : theme.banner;
 
   return (
     <motion.div
       whileTap={{ scale: 0.95 }}
       style={{
         borderRadius: "12px",
-        border: `2px solid ${theme.border}`,
+        border: `${tierBorderWidth} solid ${tierBorderColor}`,
         overflow: "hidden",
-        boxShadow: level > 0
-          ? `0 4px 14px rgba(0,0,0,0.28), 0 1px 4px rgba(0,0,0,0.18)`
-          : `0 2px 8px rgba(0,0,0,0.18)`,
-        opacity: level === 0 && !canAfford ? 0.72 : 1,
+        boxShadow: tierShadow,
+        opacity: tier === 0 && !canAfford ? 0.68 : 1,
         position: "relative",
       }}
     >
+      {/* ── Legendary outer glow ring ── */}
+      {tier === 4 && (
+        <motion.div
+          animate={{ opacity: [0.6, 0.15, 0.6] }}
+          transition={{ repeat: Infinity, duration: 2.5, ease: "easeInOut" }}
+          style={{
+            position: "absolute", inset: -3, borderRadius: "14px",
+            border: "2px solid #f59e0b",
+            pointerEvents: "none", zIndex: 10,
+          }}
+        />
+      )}
+
       {/* ── Illustrated top area ── */}
       <div
         onClick={onInfo}
         style={{
           background: theme.topBg,
-          padding: "12px 6px 8px",
+          padding: tier >= 3 ? "14px 6px 10px" : "10px 6px 7px",
           display: "flex", flexDirection: "column", alignItems: "center",
           position: "relative",
-          minHeight: "76px",
+          minHeight: `${topHeight}px`,
           cursor: "pointer",
+          overflow: "hidden",
         }}
       >
-        {/* Terrain dot texture */}
+        {/* Terrain dot texture — denser at higher tiers */}
         <div style={{
           position: "absolute", inset: 0, pointerEvents: "none",
-          backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.055) 1px, transparent 1px)",
-          backgroundSize: "9px 9px",
+          backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px)",
+          backgroundSize: tier >= 2 ? "7px 7px" : "10px 10px",
         }} />
 
-        {/* Active shimmer */}
-        {level > 0 && (
+        {/* Tier 2+: radial ground highlight */}
+        {tier >= 2 && (
+          <div style={{
+            position: "absolute", bottom: 0, left: "50%", transform: "translateX(-50%)",
+            width: "80%", height: "40%", borderRadius: "50%",
+            background: "rgba(255,255,255,0.06)",
+            filter: "blur(6px)",
+            pointerEvents: "none",
+          }} />
+        )}
+
+        {/* Active glow pulse — intensity grows with tier */}
+        {tier >= 1 && (
           <motion.div
-            animate={{ opacity: [0.5, 0.1, 0.5] }}
-            transition={{ repeat: Infinity, duration: 3 + def.stage * 0.5, ease: "easeInOut" }}
+            animate={{ opacity: [tier * 0.12, 0.04, tier * 0.12] }}
+            transition={{ repeat: Infinity, duration: 3 + def.stage * 0.4, ease: "easeInOut" }}
             style={{
               position: "absolute", inset: 0, pointerEvents: "none",
-              background: `radial-gradient(ellipse at 50% 90%, ${stage.color}50 0%, transparent 65%)`,
+              background: `radial-gradient(ellipse at 50% 85%, ${stage.color}70 0%, transparent 68%)`,
             }}
           />
         )}
 
+        {/* Legendary sweep shimmer */}
+        {tier === 4 && (
+          <motion.div
+            animate={{ x: ["-120%", "120%"] }}
+            transition={{ repeat: Infinity, duration: 3.5, ease: "linear", repeatDelay: 1.5 }}
+            style={{
+              position: "absolute", top: 0, bottom: 0,
+              width: "40%",
+              background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.14), transparent)",
+              pointerEvents: "none",
+            }}
+          />
+        )}
+
+        {/* Corner decorations at tier 2+ */}
+        {corners && (
+          <>
+            <div style={{
+              position: "absolute", top: 3, left: 3,
+              fontSize: tier === 4 ? "0.9rem" : "0.7rem",
+              lineHeight: 1, zIndex: 2, pointerEvents: "none",
+              filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.5))",
+            }}>
+              {corners[0]}
+            </div>
+            <div style={{
+              position: "absolute", bottom: tier >= 1 ? 22 : 3, right: 3,
+              fontSize: tier === 4 ? "0.9rem" : "0.7rem",
+              lineHeight: 1, zIndex: 2, pointerEvents: "none",
+              filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.5))",
+            }}>
+              {corners[1]}
+            </div>
+          </>
+        )}
+
         {/* Level badge — top right */}
-        {level > 0 && (
+        {tier >= 1 && (
           <div style={{
             position: "absolute", top: 4, right: 4,
-            background: "rgba(0,0,0,0.45)",
-            border: "1px solid rgba(255,255,255,0.22)",
+            background: tier >= 3 ? "rgba(212,168,32,0.5)" : "rgba(0,0,0,0.42)",
+            border: `1px solid ${tier >= 3 ? "rgba(255,220,80,0.5)" : "rgba(255,255,255,0.22)"}`,
             borderRadius: "5px", padding: "1px 5px",
-            fontSize: "0.52rem", fontWeight: 900,
-            color: "#fff", fontFamily: "'JetBrains Mono', monospace",
-            zIndex: 2,
+            fontSize: "0.5rem", fontWeight: 900,
+            color: tier >= 3 ? "#fff8dc" : "#fff",
+            fontFamily: "'JetBrains Mono', monospace",
+            zIndex: 3,
           }}>
             {level}
           </div>
         )}
 
-        {/* Building emoji */}
-        <div style={{
-          fontSize: level === 0 ? "1.7rem" : "2.1rem",
-          lineHeight: 1,
-          filter: level === 0
-            ? "grayscale(50%) brightness(0.8)"
-            : "drop-shadow(0 3px 5px rgba(0,0,0,0.5))",
-          zIndex: 1,
-          marginBottom: level > 0 ? "2px" : 0,
-        }}>
+        {/* ─── Main building emoji — grows with tier ─── */}
+        <motion.div
+          key={`emoji-tier-${tier}`}
+          initial={{ scale: 0.7, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 280, damping: 18 }}
+          style={{
+            fontSize: emojiSize,
+            lineHeight: 1,
+            zIndex: 2,
+            filter: tier === 0
+              ? "grayscale(60%) brightness(0.7)"
+              : tier >= 4
+              ? "drop-shadow(0 4px 8px rgba(0,0,0,0.6)) drop-shadow(0 0 12px rgba(245,158,11,0.5))"
+              : tier >= 3
+              ? "drop-shadow(0 3px 7px rgba(0,0,0,0.55)) drop-shadow(0 0 6px rgba(255,255,255,0.2))"
+              : "drop-shadow(0 3px 5px rgba(0,0,0,0.5))",
+            marginBottom: starCount > 0 ? "4px" : tier >= 1 ? "2px" : 0,
+          }}
+        >
           {buildingEmoji(def, level)}
-        </div>
+        </motion.div>
+
+        {/* Star tier indicators */}
+        {starCount > 0 && (
+          <div style={{ display: "flex", gap: "1px", zIndex: 2, marginBottom: "2px" }}>
+            {Array.from({ length: starCount }).map((_, i) => (
+              <motion.span
+                key={i}
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: i * 0.08, type: "spring", stiffness: 300 }}
+                style={{
+                  fontSize: tier === 4 ? "0.65rem" : "0.55rem",
+                  filter: tier === 4
+                    ? "drop-shadow(0 0 4px rgba(255,200,0,0.9))"
+                    : "drop-shadow(0 1px 2px rgba(0,0,0,0.4))",
+                }}
+              >
+                {tier === 4 ? "🌟" : "⭐"}
+              </motion.span>
+            ))}
+          </div>
+        )}
 
         {/* Income rate pill */}
-        {level > 0 && (
+        {tier >= 1 && (
           <div style={{
-            fontSize: "0.48rem", fontWeight: 800,
-            color: "#d1fae5",
+            fontSize: "0.46rem", fontWeight: 800,
+            color: tier >= 3 ? "#fef9c3" : "#d1fae5",
             fontFamily: "'JetBrains Mono', monospace",
-            background: "rgba(0,0,0,0.32)",
+            background: tier >= 3 ? "rgba(180,120,0,0.45)" : "rgba(0,0,0,0.32)",
             borderRadius: "4px", padding: "1px 5px",
-            border: "1px solid rgba(255,255,255,0.12)",
-            zIndex: 1,
+            border: `1px solid ${tier >= 3 ? "rgba(255,220,80,0.3)" : "rgba(255,255,255,0.12)"}`,
+            zIndex: 2,
           }}>
             +{fmtCoins(rate)}/ч
           </div>
         )}
       </div>
 
-      {/* ── Name banner ── */}
+      {/* ── Name banner — more ornate at tier 3+ ── */}
       <div style={{
-        background: theme.banner,
-        padding: "4px 4px",
+        background: bannerStyle,
+        padding: tier >= 3 ? "5px 4px" : "4px 4px",
         textAlign: "center",
-        borderTop: "1px solid rgba(255,255,255,0.18)",
-        borderBottom: `1.5px solid ${theme.border}`,
-        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.18), inset 0 -1px 0 rgba(0,0,0,0.12)",
+        borderTop: `1px solid ${tier >= 3 ? "rgba(255,220,80,0.25)" : "rgba(255,255,255,0.18)"}`,
+        borderBottom: `${tier >= 3 ? "2px" : "1.5px"} solid ${tier >= 3 ? "#d4a820" : theme.border}`,
+        boxShadow: tier >= 3
+          ? "inset 0 1px 0 rgba(255,230,100,0.25), inset 0 -1px 0 rgba(0,0,0,0.18)"
+          : "inset 0 1px 0 rgba(255,255,255,0.18), inset 0 -1px 0 rgba(0,0,0,0.12)",
       }}>
         <div style={{
-          fontWeight: 900, fontSize: "0.58rem",
-          color: theme.bannerText,
+          fontWeight: 900,
+          fontSize: tier >= 3 ? "0.62rem" : "0.58rem",
+          color: tier >= 3 && def.stage !== 2 && def.stage !== 3 ? theme.bannerText : theme.bannerText,
           lineHeight: 1.2,
-          letterSpacing: "0.01em",
+          letterSpacing: tier >= 3 ? "0.02em" : "0.01em",
           overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+          textShadow: tier >= 4 ? "0 1px 3px rgba(0,0,0,0.3)" : "none",
         }}>
-          {def.name}
+          {tier === 4 ? `👑 ${def.name}` : def.name}
         </div>
       </div>
 
-      {/* ── Parchment action area ── */}
+      {/* ── Parchment action area — richer at higher tiers ── */}
       <div style={{
-        background: theme.parch,
+        background: tier >= 3
+          ? `linear-gradient(180deg, ${theme.parch.replace("linear-gradient(180deg, ", "").replace(")", "").split(", ")[0]} 0%, ${stage.color}18 100%)`
+          : theme.parch,
         padding: "6px 5px 7px",
       }}>
-        {/* Build / upgrade button */}
         <motion.button
           whileTap={{ scale: 0.95 }}
           onClick={onUpgrade}
@@ -576,24 +721,28 @@ function BuildingCard({
             width: "100%",
             padding: "5px 2px",
             background: canAfford
-              ? `linear-gradient(135deg, ${stage.color} 0%, ${stage.color}cc 100%)`
+              ? tier >= 3
+                ? `linear-gradient(135deg, #d4a820 0%, #f5c518 50%, #b8860b 100%)`
+                : `linear-gradient(135deg, ${stage.color} 0%, ${stage.color}cc 100%)`
               : "linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)",
-            color: "#fff",
+            color: canAfford && tier >= 3 ? "#3a1e00" : "#fff",
             border: canAfford
-              ? "1.5px solid rgba(255,255,255,0.22)"
+              ? tier >= 3 ? "1.5px solid rgba(255,230,80,0.4)" : "1.5px solid rgba(255,255,255,0.22)"
               : "1.5px solid rgba(0,0,0,0.08)",
             borderRadius: "7px",
             fontSize: "0.5rem",
-            fontWeight: 800,
+            fontWeight: 900,
             cursor: canAfford && !loading ? "pointer" : "not-allowed",
-            boxShadow: canAfford ? `0 2px 8px ${stage.color}55` : "none",
+            boxShadow: canAfford
+              ? tier >= 3 ? `0 2px 10px rgba(212,168,32,0.55)` : `0 2px 8px ${stage.color}55`
+              : "none",
             letterSpacing: "0.01em",
             display: "flex", alignItems: "center", justifyContent: "center", gap: "2px",
           }}
         >
           {loading ? "..." : (
             <>
-              <span>{level === 0 ? "🏗️" : "⬆️"}</span>
+              <span>{tier === 0 ? "🏗️" : tier >= 3 ? "⬆️" : "⬆️"}</span>
               <span>{fmtCoins(cost)}XP</span>
             </>
           )}
