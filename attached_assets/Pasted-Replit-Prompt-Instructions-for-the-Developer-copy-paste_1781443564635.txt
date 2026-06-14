@@ -1,0 +1,54 @@
+Replit Prompt / Instructions for the Developer (copy-paste this):
+
+New Task: Add Haptic Feedback to Buttons
+Goal: Make the app feel more native by adding subtle haptic (vibration) feedback when users tap buttons — especially the new bottom navigation emojis and all main action buttons.
+Implementation:
+	1	Access Telegram WebApp HapticFeedback (already available via the Telegram Mini App SDK): const tg = window.Telegram.WebApp;
+	2	const haptic = tg.HapticFeedback;
+	3	
+	4	Add haptic feedback to all major buttons (on click/tap): Recommended haptic types:
+	◦	Main action buttons (buy, confirm, submit, etc.): impactOccurred('medium') or 'heavy'
+	◦	Bottom navigation tabs: impactOccurred('light') or selectionChanged()
+	◦	Success actions: notificationOccurred('success')
+	◦	Error / cancel: notificationOccurred('error')
+Example code to add:
+// Utility function (add this in your main JS / component)
+function triggerHaptic(type = 'medium') {
+  if (window.Telegram?.WebApp?.HapticFeedback) {
+    const h = window.Telegram.WebApp.HapticFeedback;
+    
+    if (type === 'success' || type === 'error' || type === 'warning') {
+      h.notificationOccurred(type);
+    } else if (type === 'selection') {
+      h.selectionChanged();
+    } else {
+      h.impactOccurred(type); // light / medium / heavy / rigid / soft
+    }
+  }
+}
+
+// Example: Bottom navigation buttons
+document.querySelectorAll('.bottom-nav button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    triggerHaptic('light');        // or 'selection'
+    // existing navigation logic...
+  });
+});
+
+// Example: General action buttons
+document.querySelectorAll('button, .btn, .action-button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    triggerHaptic('medium');
+    // existing click handler...
+  });
+});
+	3	Best places to apply:
+	◦	Bottom nav (Карта, Данные, Каталог, Сейф, Фортуна)
+	◦	All big action buttons (especially in Каталог)
+	◦	Any toggle / selection elements
+	4	Safety: Always check if HapticFeedback exists before calling it (works on supported Telegram clients only).
+Please implement haptic feedback on all interactive buttons and redeploy.
+Test it inside Telegram on a real device (iOS/Android) — it should feel much more responsive.
+Let me know when it’s done!
+
+Paste this into Replit. It should be a quick and clean addition.

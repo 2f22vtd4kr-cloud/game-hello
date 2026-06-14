@@ -1,0 +1,44 @@
+Replit Prompt / Instructions for the Developer (copy-paste this into Replit Agent or your chat):
+
+Issue: There is a long dark horizontal bar at the top (the LIVE stats bar with “LIVE 9”, “67Р -0%”, “92 область 54Р -0%”, “95 область”, etc.) that is overlapping/hiding the buttons behind it. The buttons need to be moved lower (increase top margin/padding) and made fully visible.
+Task: Fix the UI so buttons are visible below the top stats bar.
+Files to check/edit (most likely):
+	•	tma_backend/ or root frontend files (look for index.html, App.tsx/App.vue, or main CSS/stylesheet)
+	•	Any file containing .header, .top-bar, .live-bar, .stats-bar, or similar classes
+	•	Global CSS / Tailwind / custom styles
+Specific changes needed:
+	1	Find the top bar (the dark semi-transparent bar with LIVE indicator and price stats).
+	◦	It probably has position: fixed or sticky with high z-index.
+	2	Move buttons down: /* Add or increase this */
+	3	.buttons-container,
+	4	.action-buttons,
+	5	.main-content,
+	6	button, 
+	7	.btn-group {
+	8	    margin-top: 80px !important;   /* or higher — adjust as needed */
+	9	    padding-top: 70px !important;
+	10	}
+	11	 Or if using Tailwind:   
+	12	 
+	13	Ensure proper layering: .top-bar {
+	14	    z-index: 50;           /* keep bar on top */
+	15	}
+	16	
+	17	.buttons-container {
+	18	    position: relative;
+	19	    z-index: 10;
+	20	    margin-top: 90px;      /* push buttons below the bar */
+	21	}
+	22	
+	23	Make sure the bar has correct height: .live-bar, .top-stats {
+	24	    height: 60px;          /* or whatever its actual height is */
+	25	    padding: 8px 12px;
+	26	}
+	27	
+Quick test steps:
+	•	Reload the app after changes: https://fuel-tickets-ru–nazarzicurat.replit.app
+	•	Check on mobile (Telegram Mini App view) — the bar often takes more space there.
+	•	Use browser dev tools (F12) → inspect the overlapping buttons → see which class is causing the overlap.
+Please implement this fix and redeploy. Let me know when it’s done so I can test!
+
+You can paste the above directly into Replit’s AI chat/agent. It should quickly locate the relevant CSS/components and fix the button visibility.

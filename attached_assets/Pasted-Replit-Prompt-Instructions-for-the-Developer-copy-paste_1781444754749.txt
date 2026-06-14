@@ -1,0 +1,80 @@
+Replit Prompt / Instructions for the Developer (copy-paste this):
+
+Task: Add Fuel Price Prediction AI Feature
+Goal: Add a smart “Прогноз цен” (Price Prediction) section, preferably in the “Данные” tab or as a new card in the main Матрица view. Make it feel like a real AI feature.
+Implementation Details:
+	1	Simple AI Prediction Logic (client-side for speed):
+	◦	Use historical price data (store last 7–14 days in localStorage or fetch from your backend).
+	◦	Basic trend-based forecast:
+	▪	Linear trend + small random noise (simulate ML).
+	▪	Or use a very lightweight moving average + momentum.
+	◦	Predict next 24h / 3 days / 7 days for main fuels (А95, ДТ, etc.).
+	2	UI Placement:
+	◦	In “Данные” tab: Add a new card “🤖 AI Прогноз цен”
+	◦	Show:
+	▪	Current price
+	▪	Predicted price in 24h / 3 days
+	▪	Trend arrow (↑↓→) with color (green/red)
+	▪	Confidence % (fake or calculated: 65–85%)
+	▪	“Last updated” + Refresh button
+	3	Example Code (TypeScript/React style):
+// In Data/Analytics component or new PredictionCard.tsx
+const [predictions, setPredictions] = useState({});
+
+const generatePrediction = (currentPrice: number, fuelType: string) => {
+  haptic.trigger('light');
+  
+  // Simple "AI" forecast: trend + noise
+  const trend = (Math.random() - 0.45) * 0.8; // slight downward bias
+  const predicted24h = Math.round((currentPrice * (1 + trend)) * 100) / 100;
+  const confidence = 72 + Math.floor(Math.random() * 13);
+  
+  return {
+    current: currentPrice,
+    predicted24h,
+    trend: predicted24h > currentPrice ? 'up' : 'down',
+    confidence,
+    lastUpdated: new Date()
+  };
+};
+
+// Auto-refresh predictions together with prices
+useEffect(() => {
+  // Call when prices update
+  const newPreds = {};
+  Object.keys(currentPrices).forEach(key => {
+    newPreds[key] = generatePrediction(currentPrices[key], key);
+  });
+  setPredictions(newPreds);
+}, [currentPrices]);
+UI Example:
+  
+🤖 AI Прогноз цен
+  {Object.entries(predictions).map(([fuel, pred]) => (
+    
+      
+        {fuel}
+        
+Сейчас: {pred.current} ₽
+      
+      
+        
+          {pred.trend === 'up' ? '↑' : '↓'} {pred.predicted24h} ₽
+        
+        
+через 24ч • {pred.confidence}%
+      
+    
+  ))}
+  
+    🔄 Обновить прогноз
+  
+
+	4	Enhance with existing real-time features (from previous task):
+	◦	Tie predictions to the auto-refresh every 45s.
+	◦	Add price highlight animation when prediction updates.
+Payment Secrets Reminder: Make sure CRYPTOBOT_API_TOKEN and Telegram Stars / Bot token are configured in Replit Secrets and used correctly for all payments.
+Please implement the AI Price Prediction feature, integrate it into the “Данные” tab, and redeploy.
+Let me know when it’s live — I want to test the predictions!
+
+Paste this into Replit Agent. It’s a lightweight but impressive-looking AI feature that fits the app perfectly.

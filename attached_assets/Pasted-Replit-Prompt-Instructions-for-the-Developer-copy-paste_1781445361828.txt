@@ -1,0 +1,80 @@
+Replit Prompt / Instructions for the Developer (copy-paste this):
+
+Task: Enhance Historical Fuel Price Chart (All 4 Improvements)
+Goal: Significantly upgrade the existing historical fuel price chart in the “Данные” tab.
+Required Enhancements:
+	1	Make it more prominent
+	◦	Larger, full-width chart
+	◦	Show data for last 7 / 14 / 30 days (with tabs or selector)
+	2	Support multiple fuel types on one chart
+	◦	Lines for A95, ДТ, А92, etc.
+	◦	Color-coded lines (purple, green, orange, etc.)
+	◦	Legend to toggle visibility of each fuel type
+	3	Improve interactivity
+	◦	Tooltips showing exact price + date on hover/tap
+	◦	Zoom / pan support
+	◦	Click on point → highlight price change
+	4	Stronger connection to AI Predictions
+	◦	Show predicted prices as dashed lines or markers on the chart
+	◦	Display AI confidence next to the prediction point
+	◦	Button “🤖 Обновить прогноз” that refreshes both chart and predictions
+Implementation Example (using Chart.js – recommended if already in project, or Recharts):
+// In Data/Analytics tab
+import { Line } from 'react-chartjs-2'; // or your current charting lib
+
+const HistoricalChart = () => {
+  const [period, setPeriod] = useState<'7' | '14' | '30'>('14');
+  const [selectedFuels, setSelectedFuels] = useState(['A95', 'DT']);
+
+  const chartData = {
+    labels: historicalData.dates,
+    datasets: selectedFuels.map((fuel, index) => ({
+      label: fuel,
+      data: historicalData[fuel],
+      borderColor: ['#a855f7', '#22c55e', '#f59e0b'][index],
+      borderWidth: 3,
+      tension: 0.4,
+      // Dashed line for prediction
+      borderDash: fuel === 'prediction' ? [5, 5] : undefined,
+    }))
+  };
+
+  return (
+    
+      
+        
+📈 История цен
+        
+          {['7', '14', '30'].map(d => (
+             setPeriod(d as any)} className={`px-4 py-2 rounded-xl ${period === d ? 'bg-purple-600' : 'bg-zinc-800'}`}>
+              {d} дней
+            
+          ))}
+        
+      
+
+       `${ctx.dataset.label}: ${ctx.parsed.y} ₽`
+            }
+          },
+          legend: { position: 'top' }
+        },
+        scales: { y: { beginAtZero: false } }
+      }} />
+
+      {/* AI Prediction Overlay */}
+      
+        🤖 AI Прогноз на 24ч: 68.9 ₽ 
+        (82% confidence)
+      
+    
+  );
+};
+Additional Requirements:
+	•	Tie chart updates to the existing 45-second auto-refresh.
+	•	Keep price change alerts, highlights, and haptic feedback.
+	•	Add the disclaimer from previous tasks near the chart.
+	•	Ensure dynamic ticket pricing remains in sync.
+Please enhance the historical fuel price chart with all 4 improvements (prominence, multi-fuel, interactivity, AI integration) and redeploy.
+Let me know when it’s live so I can check the new chart!
+
+Paste the entire block into Replit Agent. This will give you a much stronger analytics section.

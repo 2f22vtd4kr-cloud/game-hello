@@ -74,7 +74,7 @@ function QRModal({ hash, onClose }: { hash: string; onClose: () => void }) {
         {/* Header */}
         <div style={{ marginBottom: "1rem" }}>
           <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#a855f7", fontSize: "0.5rem", letterSpacing: "0.2em", marginBottom: "0.25rem" }}>
-            МАТРИЦА СНАБЖЕНИЯ · ТОПЛИВНЫЙ ВАУЧЕР
+            ⛽️ ТОПЛИВНЫЙ ВАУЧЕР
           </div>
           <p style={{ color: "#e2e8f0", fontWeight: 700, fontSize: "0.9rem", margin: 0 }}>
             Предъявите QR контролёру

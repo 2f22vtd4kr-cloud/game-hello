@@ -6,8 +6,8 @@ interface Props {
 }
 
 const TAGLINES = [
-  "МАТРИЦА СНАБЖЕНИЯ АКТИВИРОВАНА",
-  "СКАНИРОВАНИЕ 236 СТАНЦИЙ...",
+  "⛽️ ТОПЛИВНАЯ СЕТЬ АКТИВИРОВАНА",
+  "СКАНИРОВАНИЕ 500+ СТАНЦИЙ...",
   "ДАННЫЕ ОБНОВЛЯЮТСЯ В РЕАЛЬНОМ ВРЕМЕНИ",
   "ДОБРО ПОЖАЛОВАТЬ В СЕТЬ",
 ];
@@ -20,12 +20,10 @@ export function IntroSplash({ onDone }: Props) {
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    // Cycle taglines
     intervalRef.current = setInterval(() => {
       setTaglineIdx((i) => (i + 1) % TAGLINES.length);
     }, 900);
 
-    // Progress bar
     const startTime = Date.now();
     const duration = 3200;
     progressRef.current = setInterval(() => {
@@ -77,22 +75,20 @@ export function IntroSplash({ onDone }: Props) {
 
           {/* Corner decorations */}
           {[
-            { top: 16, left: 16, rotate: 0 },
-            { top: 16, right: 16, rotate: 90 },
-            { bottom: 16, right: 16, rotate: 180 },
-            { bottom: 16, left: 16, rotate: 270 },
-          ].map((pos, i) => (
-            <div key={i} style={{
-              position: "absolute",
-              width: 32, height: 32,
-              ...pos,
-              zIndex: 2,
-            }}>
-              <svg viewBox="0 0 32 32" fill="none" style={{ width: "100%", height: "100%", transform: `rotate(${pos.rotate}deg)` }}>
+            { top: 16, left: 16, deg: 0 },
+            { top: 16, right: 16, deg: 90 },
+            { bottom: 16, right: 16, deg: 180 },
+            { bottom: 16, left: 16, deg: 270 },
+          ].map((pos, i) => {
+            const { deg, ...rest } = pos;
+            return (
+            <div key={i} style={{ position: "absolute", width: 32, height: 32, ...rest, zIndex: 2 }}>
+              <svg viewBox="0 0 32 32" fill="none" style={{ width: "100%", height: "100%", transform: `rotate(${deg}deg)` }}>
                 <path d="M2 30 L2 2 L30 2" stroke="#a855f7" strokeWidth="1.5" strokeLinecap="round" strokeOpacity="0.6" />
               </svg>
             </div>
-          ))}
+          );
+          })}
 
           {/* Phase: GIF intro */}
           <AnimatePresence mode="wait">
@@ -122,9 +118,7 @@ export function IntroSplash({ onDone }: Props) {
                       src="/intro.gif"
                       alt="intro"
                       style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = "none";
-                      }}
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                     />
                   </motion.div>
                   {/* Orbital ring */}
@@ -132,8 +126,7 @@ export function IntroSplash({ onDone }: Props) {
                     animate={{ rotate: 360 }}
                     transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
                     style={{
-                      position: "absolute",
-                      inset: -10,
+                      position: "absolute", inset: -10,
                       borderRadius: "50%",
                       border: "1px solid transparent",
                       borderTopColor: "#a855f7",
@@ -156,23 +149,20 @@ export function IntroSplash({ onDone }: Props) {
                     marginBottom: "0.5rem",
                     opacity: 0.8,
                   }}>
-                    СИСТЕМА · v2.0 · КРЫМ
+                    СИСТЕМА · v2.0
                   </div>
                   <h1 style={{
-                    fontSize: "1.5rem",
+                    fontSize: "2rem",
                     fontWeight: 900,
                     background: "linear-gradient(135deg, #a855f7, #db2777, #06b6d4)",
                     WebkitBackgroundClip: "text",
                     WebkitTextFillColor: "transparent",
                     backgroundClip: "text",
-                    margin: "0 0 0.25rem",
+                    margin: "0 0 0.1rem",
                     lineHeight: 1.1,
                   }}>
-                    ТОПЛИВНЫЙ УЗЕЛ
+                    ⛽️ Топливо
                   </h1>
-                  <p style={{ color: "#475569", fontSize: "0.75rem", margin: 0 }}>
-                    Матрица Снабжения
-                  </p>
                 </motion.div>
 
                 {/* Cycling tagline */}
@@ -240,15 +230,8 @@ export function IntroSplash({ onDone }: Props) {
                   <img
                     src="/promo.jpeg"
                     alt="promo"
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "cover",
-                      opacity: 0.7,
-                    }}
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = "none";
-                    }}
+                    style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.7 }}
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                   />
                   {/* Gradient overlay */}
                   <div style={{
@@ -284,7 +267,7 @@ export function IntroSplash({ onDone }: Props) {
                       transition={{ delay: 0.4 }}
                       style={{ color: "#9ca3af", fontSize: "0.8rem", marginBottom: "1.5rem" }}
                     >
-                      236 станций · 23 региона · данные в реальном времени
+                      500+ станций · 23 региона · данные в реальном времени
                     </motion.p>
                     <motion.button
                       initial={{ opacity: 0, scale: 0.9 }}
@@ -292,9 +275,14 @@ export function IntroSplash({ onDone }: Props) {
                       transition={{ delay: 0.6, type: "spring", stiffness: 280, damping: 20 }}
                       onClick={handleSkip}
                       className="btn-neon"
-                      style={{ width: "100%", maxWidth: "280px", padding: "0.9rem", fontSize: "0.95rem" }}
+                      style={{
+                        width: "100%", maxWidth: "280px",
+                        padding: "0.9rem",
+                        fontSize: "2.5rem",
+                        lineHeight: 1,
+                      }}
                     >
-                      ⚡ Открыть Матрицу
+                      ⛽️
                     </motion.button>
                   </div>
                 </div>

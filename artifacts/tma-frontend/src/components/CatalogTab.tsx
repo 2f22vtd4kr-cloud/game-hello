@@ -300,6 +300,19 @@ function FuelItem({
         </p>
       )}
 
+      {/* Disclaimer */}
+      <div style={{
+        background: "rgba(245,158,11,0.05)",
+        border: "1px solid rgba(245,158,11,0.12)",
+        borderRadius: "8px",
+        padding: "0.4rem 0.55rem",
+        marginBottom: "0.6rem",
+      }}>
+        <p style={{ margin: 0, color: "#4b5563", fontSize: "0.56rem", lineHeight: 1.5 }}>
+          ⚠️ Цены на талоны обновляются в реальном времени. Оплата по актуальной цене на момент покупки. Возврат средств невозможен.
+        </p>
+      </div>
+
       <motion.button
         disabled={buying || !withinLimit || !available}
         onClick={handleBuy}

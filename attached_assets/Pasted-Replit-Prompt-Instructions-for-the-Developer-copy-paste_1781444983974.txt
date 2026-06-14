@@ -1,0 +1,77 @@
+Replit Prompt / Instructions for the Developer (copy-paste this):
+
+Task: Implement Dynamic Fuel Ticket Pricing
+Goal: Make fuel ticket prices (A95, ДТ, etc.) fully dynamic — pulled from the same live price source used in the map/analytics, and update in real-time across Каталог, ticket purchase screens, and Матрица.
+1. Central Price Service (recommended)
+Create or update a price hook / service:
+// src/services/priceService.ts  or similar
+let currentPrices = {
+  A95: 67.4,
+  DT: 54.8,
+  // add other fuels
+};
+
+export const fetchLatestPrices = async () => {
+  try {
+    // Use your existing API endpoint or mock for now
+    const res = await fetch('/api/prices' || 'https://your-api.com/fuel-prices');
+    const data = await res.json();
+    
+    currentPrices = { ...currentPrices, ...data };
+    return currentPrices;
+  } catch (e) {
+    console.warn('Using fallback prices');
+    return currentPrices;
+  }
+};
+
+export const getTicketPrice = (fuelType: string, liters: number = 20) => {
+  const pricePerLiter = currentPrices[fuelType] || 60;
+  return Math.round(pricePerLiter * liters * 100) / 100;
+};
+2. Integrate with Existing Real-Time System
+Update your price refresh function (from previous tasks):
+const refreshPrices = async () => {
+  haptic.trigger('medium');
+  setIsRefreshing(true);
+  
+  const newPrices = await fetchLatestPrices();
+  setCurrentPrices(newPrices);
+  setLastUpdated(new Date());
+  
+  // Trigger highlight animation on all price elements
+  document.querySelectorAll('.fuel-price, .ticket-price').forEach(el => {
+    el.classList.add('price-updated');
+    setTimeout(() => el.classList.remove('price-updated'), 1800);
+  });
+};
+3. Update Каталог / Ticket Cards
+{/* In Catalog or Ticket selection */}
+
+  
+A95 20Л
+  
+    {currentPrices.A95} ₽/л
+  
+  
+    Итого: {getTicketPrice('A95', 20)} ₽
+  
+
+4. Payment Flow
+Ensure the purchase button uses the dynamic price:
+const handleBuyTicket = async (fuelType: string, liters: number) => {
+  const totalPrice = getTicketPrice(fuelType, liters);
+  haptic.trigger('heavy');
+  
+  // Proceed with CryptoBot / Telegram Stars payment using totalPrice
+  // Use your configured CRYPTOBOT_API_TOKEN and Telegram Stars
+};
+Additional Requirements:
+	•	Tie ticket prices to the 45-second auto-refresh.
+	•	Add “Last updated” timestamp near ticket prices.
+	•	Keep payment secrets (CRYPTOBOT_API_TOKEN, bot token for Stars) properly set in Replit Secrets.
+	•	Add the AI Prediction disclaimer from previous task.
+Please implement dynamic fuel ticket pricing across the catalog and purchase flow, integrate with existing real-time refresh, and redeploy.
+Let me know when it’s live so I can test the dynamic prices on tickets!
+
+Paste this directly into Replit Agent. It builds on the previous real-time work and makes ticket pricing fully dynamic.

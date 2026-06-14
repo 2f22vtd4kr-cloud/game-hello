@@ -1,0 +1,92 @@
+Replit Prompt / Instructions for the Developer (copy-paste this):
+
+Task: Implement Price Change Alerts + Fix Station Statistics Inconsistency
+1. Fix Station Count Mismatch (Critical)
+Problem from screenshot: Green (1057) + Yellow (788) + Red (460) = 2305 stations in categories, but total “АЗС В БАЗЕ” shows 5700. The numbers don’t add up.
+Fix:
+	•	Make sure the colored categories are subsets of the total.
+	•	Update logic so green + yellow + red ≤ total stations.
+	•	Recommended realistic split:
+	◦	Green (good prices/online): ~1057
+	◦	Yellow (average): ~788
+	◦	Red (outdated/high): ~460
+	◦	Total in DB: Keep or update to 5700+ (or calculate dynamically from actual data)
+Code adjustment example:
+// In stats calculation
+const totalStations = 5700; // or fetched from DB/API
+
+const stats = {
+  total: totalStations,
+  green: 1057,
+  yellow: 788,
+  red: 460,
+  // Ensure sum doesn't exceed total
+  other: totalStations - (1057 + 788 + 460)
+};
+Update the UI card to reflect accurate numbers.
+2. Implement Price Change Alerts
+Features:
+	•	Detect significant price changes (≥ 0.5₽ or 1%)
+	•	Show in-app notification banner (top or toast)
+	•	Optional: Telegram push notification if user enabled
+	•	Visual highlight + haptic feedback on changed prices
+	•	“Price Alert” section in Данные tab
+Implementation:
+// Price change detection (in priceService or refresh function)
+let previousPrices = {};
+
+const checkPriceChanges = (newPrices: any) => {
+  const alerts = [];
+  
+  Object.keys(newPrices).forEach(fuel => {
+    const oldPrice = previousPrices[fuel];
+    const newPrice = newPrices[fuel];
+    
+    if (oldPrice) {
+      const change = ((newPrice - oldPrice) / oldPrice) * 100;
+      if (Math.abs(change) >= 1) {  // 1%+ change
+        alerts.push({
+          fuel,
+          change: change.toFixed(1),
+          direction: change > 0 ? 'up' : 'down',
+          old: oldPrice,
+          new: newPrice
+        });
+        
+        haptic.trigger(change > 0 ? 'heavy' : 'medium');
+      }
+    }
+  });
+  
+  if (alerts.length > 0) {
+    showPriceAlertBanner(alerts);
+  }
+  
+  previousPrices = { ...newPrices };
+};
+
+// Banner component
+const showPriceAlertBanner = (alerts: any[]) => {
+  // Show temporary toast or banner at top
+  const banner = document.createElement('div');
+  banner.className = 'fixed top-4 left-1/2 -translate-x-1/2 bg-red-500/90 text-white px-6 py-3 rounded-2xl z-50 flex items-center gap-3';
+  banner.innerHTML = `
+    ⚠️ Цены изменились!
+    ${alerts.map(a => `${a.fuel}: ${a.direction === 'up' ? '↑' : '↓'} ${a.change}%`).join(' • ')}
+  `;
+  document.body.appendChild(banner);
+  
+  setTimeout(() => banner.remove(), 5000);
+};
+Integration:
+	•	Call checkPriceChanges(newPrices) inside refreshPrices() after fetching new data.
+	•	Add a toggle in Settings: “Уведомления об изменении цен”
+	•	Show recent alerts in Данные tab.
+Please:
+	•	Fix the station stats so colored categories don’t exceed total.
+	•	Implement price change detection + visual/haptic alerts.
+	•	Tie it into the existing 45s auto-refresh and dynamic pricing.
+	•	Keep payment secrets properly configured.
+Redeploy and let me know when it’s live — especially test the alerts when prices change.
+
+Paste the entire prompt into Replit Agent. It addresses both issues directly.

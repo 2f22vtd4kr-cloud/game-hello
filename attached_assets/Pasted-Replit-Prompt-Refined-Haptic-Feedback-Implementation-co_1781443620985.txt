@@ -1,0 +1,78 @@
+Replit Prompt / Refined Haptic Feedback Implementation (copy-paste this):
+
+Task: Refine & Improve Haptic Feedback
+Improvements over previous version:
+	•	More robust utility with better fallbacks
+	•	Framework-agnostic (works with React, Vue, plain JS)
+	•	Different haptic strengths for different interactions
+	•	Prevent multiple rapid triggers (debounce)
+	•	Safe initialization
+1. Add this Utility Function (recommended location: `utils/haptic.ts` or top of main JS/App file)
+// haptic.ts or inline in main file
+export const haptic = {
+  init() {
+    // Ensure Telegram WebApp is ready
+    if (window.Telegram?.WebApp) {
+      window.Telegram.WebApp.ready();
+    }
+  },
+
+  trigger(type: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft' | 'selection' | 'success' | 'error' | 'warning' = 'medium') {
+    const tg = window.Telegram?.WebApp;
+    if (!tg?.HapticFeedback) return;
+
+    try {
+      if (['success', 'error', 'warning'].includes(type)) {
+        tg.HapticFeedback.notificationOccurred(type as 'success' | 'error' | 'warning');
+      } else if (type === 'selection') {
+        tg.HapticFeedback.selectionChanged();
+      } else {
+        tg.HapticFeedback.impactOccurred(type as 'light' | 'medium' | 'heavy' | 'rigid' | 'soft');
+      }
+    } catch (e) {
+      console.warn('Haptic feedback failed:', e);
+    }
+  }
+};
+2. Initialize it early (in `main.ts` / `App.tsx` / `index.js`)
+import { haptic } from './utils/haptic';
+
+// At app start
+haptic.init();
+3. Apply to Bottom Navigation (most important)
+// In BottomNav component
+const handleNavClick = (tab: string) => {
+  haptic.trigger('light');        // subtle for navigation
+  // your existing navigation logic...
+};
+
+// Usage in buttons:
+ handleNavClick('map')}
+  className="flex flex-col items-center"
+>
+  🗺️
+  Карта
+
+4. Apply to All Major Action Buttons
+// Global click handler (add once)
+document.addEventListener('click', (e) => {
+  const target = e.target as HTMLElement;
+  if (target.closest('button') || target.closest('.btn') || target.closest('[role="button"]')) {
+    // Debounce rapid clicks
+    if ((window as any).lastHapticTime && Date.now() - (window as any).lastHapticTime < 80) return;
+    
+    (window as any).lastHapticTime = Date.now();
+    
+    const isPrimaryAction = target.closest('.primary-btn, .buy-btn, .confirm-btn');
+    haptic.trigger(isPrimaryAction ? 'medium' : 'light');
+  }
+}, true);
+5. Special cases
+	•	Success actions → haptic.trigger('success')
+	•	Destructive / cancel → haptic.trigger('error')
+	•	Card / item selection → haptic.trigger('selection')
+Please implement the refined haptic utility + global handler + bottom nav integration.
+This version is cleaner, safer, and feels more premium. Redeploy and test inside Telegram on a real phone.
+Let me know when it’s live!
+
+This is a much better, production-ready implementation. Paste it directly into Replit Agent.

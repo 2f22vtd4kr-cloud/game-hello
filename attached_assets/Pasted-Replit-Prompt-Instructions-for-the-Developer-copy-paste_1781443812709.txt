@@ -1,0 +1,64 @@
+Replit Prompt / Instructions for the Developer (copy-paste this):
+
+Task: Add Haptic Feedback to the Minigame (“Фортуна” / Slot Machine)
+Goal: Make the Фортуна tab (slot machine / gambling minigame) feel much more satisfying and premium with proper vibration feedback on all key interactions.
+Specific Haptic Recommendations for Minigame:
+	1	Spin Button (main action) → heavy or medium impact
+	2	Winning / Big Win → success notification + heavy impact
+	3	Losing / Spin End → light or medium impact
+	4	Bet / Amount selection → selectionChanged() or light
+	5	Any clickable element in the game (symbols, multipliers, etc.) → light
+Refined Code to Add / Update:
+// Use the haptic utility from before
+import { haptic } from './utils/haptic';
+
+// Inside the Фортуна / Minigame component
+
+// Example: Spin button
+const handleSpin = () => {
+  haptic.trigger('heavy');           // Strong feedback when spinning
+  // ... existing spin logic
+  
+  // After spin result
+  setTimeout(() => {
+    if (isWin) {
+      haptic.trigger('success');
+      // Optional: extra heavy vibration for big wins
+      if (bigWin) haptic.trigger('heavy');
+    } else {
+      haptic.trigger('medium');
+    }
+  }, 800); // adjust timing to match animation
+};
+
+// Bet adjustment buttons
+const changeBet = (amount: number) => {
+  haptic.trigger('light');
+  // ... logic
+};
+
+// Symbol / Reel click or hover (if any)
+const onSymbolClick = () => {
+  haptic.trigger('selection');
+};
+Global Enhancement (recommended):
+Add this in the minigame file to catch most interactions automatically:
+useEffect(() => {
+  const gameContainer = document.getElementById('fortuna-game'); // or your game root
+  
+  const handleClick = (e: MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.closest('button') || target.closest('.spin-btn') || target.closest('.bet-btn')) {
+      const isSpin = target.closest('.spin-btn');
+      haptic.trigger(isSpin ? 'heavy' : 'light');
+    }
+  };
+  
+  gameContainer?.addEventListener('click', handleClick);
+  return () => gameContainer?.removeEventListener('click', handleClick);
+}, []);
+Please implement strong haptic feedback specifically for the Фортуна minigame interactions (especially spin and win states) and redeploy.
+This will make the game feel much more engaging on mobile.
+Let me know when it’s ready to test!
+
+Paste the above into Replit. It focuses specifically on the minigame as requested.

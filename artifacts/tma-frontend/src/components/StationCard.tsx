@@ -285,7 +285,7 @@ export function StationCard({ station, onClose }: Props) {
           <button
             onClick={() => {
               const fuels = station.fuel_statuses.map(f => `${f.fuel_type}: ${f.availability_pct}%`).join(", ");
-              const text = encodeURIComponent(`⛽ ${station.name}\n📍 ${station.region} — ${station.address}\n${fuels}\n\nМатрица Снабжения`);
+              const text = encodeURIComponent(`⛽ ${station.name}\n📍 ${station.region} — ${station.address}\n${fuels}\n\n⛽️ Топливо`);
               const url = `https://t.me/share/url?url=${encodeURIComponent("https://t.me/")}&text=${text}`;
               window.open(url, "_blank");
             }}

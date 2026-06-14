@@ -1,0 +1,67 @@
+Replit Prompt / Instructions for the Developer (copy-paste this):
+
+Task: Improve Real-Time Price Tracking + Payment Configuration
+1. Enhance Real-Time / Dynamic Price Tracking
+Implement all 4 improvements:
+	•	Auto-refresh every 45 seconds (with small loading spinner/indicator)
+	•	“Last updated” timestamp (e.g., “Обновлено 2 мин назад”)
+	•	Visual highlight — prices in map and catalog should briefly blink/glow (green/red) when they change
+	•	Manual Refresh button (🔄) with haptic feedback
+Implementation Guidelines:
+// Add these in your price fetching service / context
+const [lastUpdated, setLastUpdated] = useState(new Date());
+const [isRefreshing, setIsRefreshing] = useState(false);
+
+const refreshPrices = async () => {
+  haptic.trigger('medium');
+  setIsRefreshing(true);
+  
+  try {
+    await fetchLatestPrices(); // your existing API call
+    setLastUpdated(new Date());
+    
+    // Trigger highlight animation on price elements
+    document.querySelectorAll('.price').forEach(el => {
+      el.classList.add('price-updated');
+      setTimeout(() => el.classList.remove('price-updated'), 1500);
+    });
+  } catch (e) {
+    haptic.trigger('error');
+  } finally {
+    setIsRefreshing(false);
+  }
+};
+
+// Auto-refresh
+useEffect(() => {
+  const interval = setInterval(refreshPrices, 45000);
+  return () => clearInterval(interval);
+}, []);
+
+// CSS for highlight
+.price-updated {
+  animation: priceFlash 1.5s ease;
+}
+@keyframes priceFlash {
+  0% { color: #22c55e; text-shadow: 0 0 12px #22c55e; }
+  100% { color: inherit; text-shadow: none; }
+}
+	•	Add a 🔄 Refresh button near the top of “Данные”, Map, and Каталог tabs.
+	•	Show Обновлено ${timeAgo} next to prices.
+2. Payment Configuration (Critical)
+Ensure Replit asks for and properly uses these Secrets / Environment Variables:
+	•	CRYPTOBOT_API_TOKEN — for CryptoBot payments
+	•	TELEGRAM_STARS_TOKEN or BOT_TOKEN — for Telegram Stars payments
+	•	Any other API keys (price data source, etc.)
+Important Requirements:
+	•	All payments must go to your CryptoBot account.
+	•	Telegram Stars payments must go to your Telegram account.
+	•	Never hardcode tokens — always use process.env.REACT_APP_... or Replit Secrets.
+	•	In Replit Dashboard → Secrets, make sure the developer adds them.
+Please confirm all payment flows route correctly to the owner’s accounts.
+
+Please implement the price tracking improvements first, then verify payment secrets are properly configured and documented.
+Redeploy after changes.
+Let me know when it’s live so I can test the auto-refresh and highlights!
+
+Paste the entire block above into Replit Agent. It covers everything you asked for.

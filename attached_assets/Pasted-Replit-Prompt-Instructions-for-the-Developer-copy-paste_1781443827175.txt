@@ -1,0 +1,49 @@
+Replit Prompt / Instructions for the Developer (copy-paste this):
+
+Task: Add Haptic Feedback for Win / Lose + XP in Фортуна Minigame
+Context: XP system for wins/losses is already implemented. Now enhance it with proper haptic feedback.
+Requirements:
+	•	When player wins (gains XP) → strong positive haptic (success + heavy)
+	•	When player loses (no XP or XP loss) → subtle negative haptic (medium or error)
+	•	Trigger right after XP is updated/calculated
+Updated Code for Minigame (Фортуна):
+// Inside your spin/result handler where XP is already being updated
+const handleSpinResult = (result: { isWin: boolean; xpGain: number; ... }) => {
+  // Existing spin logic...
+
+  // After reels stop and XP is calculated
+  if (result.isWin && result.xpGain > 0) {
+    haptic.trigger('success');     // Positive notification
+    setTimeout(() => haptic.trigger('heavy'), 100); // Extra strong feel
+    
+    // Optional: longer vibration for big wins
+    if (result.xpGain >= 50) {
+      setTimeout(() => haptic.trigger('heavy'), 300);
+    }
+  } else {
+    // Loss case
+    haptic.trigger('medium');      // or 'error' for stronger negative feel
+  }
+};
+Alternative – If you already have an `updateXP()` function:
+// Enhance existing XP update function
+const updateXP = (amount: number) => {
+  // ... your existing XP logic ...
+
+  if (amount > 0) {
+    haptic.trigger('success');
+    haptic.trigger('heavy');
+  } else if (amount < 0) {
+    haptic.trigger('error');
+  } else {
+    haptic.trigger('medium'); // neutral / small loss
+  }
+};
+Best Placement:
+	•	Right after the win/loss condition is evaluated and XP is added/subtracted.
+	•	Sync with any win animation or confetti effect.
+Please add haptic feedback tied to the existing Win/Lose + XP logic in the Фортуна minigame and redeploy.
+This will make winning feel rewarding and losing feel responsive.
+Let me know when it’s live so I can test the vibrations on actual wins and losses!
+
+Paste directly into Replit. This targets the already-implemented XP system.

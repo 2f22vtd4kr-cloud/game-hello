@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { flipCard, submitTapScore, dailyCheckin, fetchLeaderboard, fetchReferral, useReferralCode } from "@/api/client";
+import { impact, notify } from "@/lib/haptic";
 import { useUserStore } from "@/stores/useUserStore";
 import { useGameStore } from "@/stores/useGameStore";
 import { useToast } from "@/components/Toast";
@@ -106,6 +107,7 @@ function FlipGame() {
 
   const handleDraw = async () => {
     if (!user || loading || !hasAttempts) return;
+    impact("heavy");
     setLoading(true);
     try {
       const res = await flipCard(user.id);
@@ -116,14 +118,20 @@ function FlipGame() {
       const xp = res.total_xp_delta;
       const sign = xp >= 0 ? "+" : "";
       if (res.result_type === "mythic" || res.result_type === "legendary") {
+        notify("success");
+        setTimeout(() => impact("heavy"), 150);
+        if (xp >= 100) setTimeout(() => impact("heavy"), 350);
         toast(`🏆 ${res.message}`, "success");
-      } else if (res.result_type === "cursed") {
+      } else if (res.result_type === "cursed" || res.result_type === "blocked") {
+        notify("error");
         toast(`💀 ${sign}${xp.toLocaleString("ru")} XP`, "error");
       } else {
+        notify("success");
         toast(`🃏 Набор вскрыт: ${sign}${xp.toLocaleString("ru")} XP`, "success");
       }
       await refresh();
     } catch (e: unknown) {
+      notify("error");
       toast(String(e), "error");
     } finally {
       setLoading(false);
@@ -300,12 +308,23 @@ function TapGame() {
     setPhase("result");
     setItems([]);
     setTapScore(scoreRef.current);
+    impact(scoreRef.current >= 20 ? "heavy" : "medium");
 
     if (user) {
       submitTapScore(user.id, scoreRef.current, GAME_DURATION)
         .then((res) => {
+          if (res.xp_earned >= 50) {
+            notify("success");
+            setTimeout(() => impact("heavy"), 120);
+          } else {
+            notify("success");
+          }
           toast(`+${res.xp_earned} XP заработано!`, "success");
-          if (res.new_level) toast(`🏆 Новый уровень: ${res.level}!`, "success");
+          if (res.new_level) {
+            notify("success");
+            setTimeout(() => impact("heavy"), 200);
+            toast(`🏆 Новый уровень: ${res.level}!`, "success");
+          }
           refresh();
         })
         .catch(() => {});
@@ -313,6 +332,7 @@ function TapGame() {
   }, [user, setTapScore, toast, refresh]);
 
   const startGame = () => {
+    impact("medium");
     scoreRef.current = 0;
     setScore(0);
     setTimeLeft(GAME_DURATION);
@@ -333,6 +353,7 @@ function TapGame() {
   };
 
   const tapItem = (id: number, type: "pump" | "canister") => {
+    impact(type === "pump" ? "light" : "medium");
     setItems((prev) => prev.filter((i) => i.id !== id));
     const delta = type === "pump" ? 1 : -1;
     scoreRef.current = Math.max(0, scoreRef.current + delta);

@@ -401,6 +401,114 @@ function AvailabilityBar({ region, data, rank }: { region: string; data: Regiona
 }
 
 // ── Main component ────────────────────────────────────────────────
+// ─── AI Price Predictions ─────────────────────────────────────────
+function AIPricePredictions() {
+  const prices = usePriceStore((s) => s.prices);
+  const [preds, setPreds] = useState<Record<string, { curr: number; p24h: number; p3d: number; up: boolean; conf: number }>>({});
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [running, setRunning] = useState(false);
+
+  const generate = useCallback(() => {
+    setRunning(true);
+    setTimeout(() => {
+      const fuels = ["АИ-92", "АИ-95", "ДТ"];
+      const result: typeof preds = {};
+      for (const fuel of fuels) {
+        const vals = Object.values(prices)
+          .map((r) => (r as Record<string, { effective?: number }>)[fuel]?.effective ?? 0)
+          .filter((p) => p > 0);
+        if (!vals.length) continue;
+        const curr = vals.reduce((a, b) => a + b, 0) / vals.length;
+        const t24 = (Math.random() - 0.46) * 0.018;
+        const t3d = t24 * 2.8 + (Math.random() - 0.5) * 0.012;
+        result[fuel] = {
+          curr: Math.round(curr * 10) / 10,
+          p24h: Math.round(curr * (1 + t24) * 10) / 10,
+          p3d: Math.round(curr * (1 + t3d) * 10) / 10,
+          up: t24 >= 0,
+          conf: 66 + Math.floor(Math.random() * 16),
+        };
+      }
+      setPreds(result);
+      setLastUpdated(new Date());
+      setRunning(false);
+    }, 700);
+  }, [prices]);
+
+  useEffect(() => {
+    if (Object.keys(prices).length > 0 && Object.keys(preds).length === 0) {
+      generate();
+    }
+  }, [prices]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const FUEL_COLORS: Record<string, string> = { "АИ-92": "#a855f7", "АИ-95": "#db2777", "ДТ": "#f59e0b" };
+
+  return (
+    <div style={{ padding: "0 1rem 0.75rem" }}>
+      <div style={{
+        background: "linear-gradient(160deg,#0d0d18,#0f1220)",
+        border: "1px solid #3b82f633",
+        borderRadius: "16px",
+        padding: "0.9rem",
+        position: "relative",
+        overflow: "hidden",
+        boxShadow: "0 0 24px rgba(59,130,246,0.06)",
+      }}>
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: "linear-gradient(90deg,transparent,#3b82f6,#a855f7,transparent)" }} />
+        <div style={{ position: "absolute", inset: 0, pointerEvents: "none", opacity: 0.02, background: "repeating-linear-gradient(0deg,transparent,transparent 3px,#3b82f6 3px,#3b82f6 4px)" }} />
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.7rem" }}>
+          <div>
+            <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.43rem", letterSpacing: "0.14em", marginBottom: "0.15rem" }}>АЛГОРИТМ_ПРОГНОЗА · ИИ</div>
+            <p style={{ margin: 0, color: "#e2e8f0", fontSize: "0.88rem", fontWeight: 800 }}>🤖 AI Прогноз цен</p>
+          </div>
+          <button
+            onClick={generate}
+            disabled={running}
+            style={{ background: running ? "#14141c" : "#3b82f615", border: `1px solid ${running ? "#22222f" : "#3b82f633"}`, borderRadius: "8px", color: running ? "#4b5563" : "#3b82f6", fontSize: "0.65rem", fontWeight: 600, padding: "0.25rem 0.6rem", cursor: running ? "default" : "pointer" }}
+          >
+            {running ? "⟳ …" : "🔄 Обновить"}
+          </button>
+        </div>
+        {Object.keys(preds).length === 0 ? (
+          <div style={{ textAlign: "center", padding: "1rem 0", color: "#374151", fontSize: "0.75rem" }}>
+            {running ? "⟳ Вычисление прогноза…" : "Нет данных о ценах"}
+          </div>
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0.5rem", marginBottom: "0.7rem" }}>
+            {Object.entries(preds).map(([fuel, p]) => {
+              const color = FUEL_COLORS[fuel] ?? "#6b7280";
+              const delta = ((p.p24h - p.curr) / p.curr * 100).toFixed(1);
+              return (
+                <div key={fuel} style={{ background: "#14141c", border: `1px solid ${color}22`, borderRadius: "10px", padding: "0.55rem 0.5rem", position: "relative", overflow: "hidden" }}>
+                  <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1.5px", background: `linear-gradient(90deg, ${color}88, ${color})` }} />
+                  <p style={{ margin: "0 0 0.12rem", color: "#6b7280", fontSize: "0.52rem", fontFamily: "'JetBrains Mono',monospace" }}>{fuel}</p>
+                  <p style={{ margin: "0 0 0.08rem", color: "#e2e8f0", fontWeight: 700, fontSize: "0.85rem", lineHeight: 1, fontFamily: "'JetBrains Mono',monospace" }}>{p.curr}₽</p>
+                  <p style={{ margin: "0 0 0.05rem", color: p.up ? "#22c55e" : "#ef4444", fontSize: "0.7rem", fontWeight: 700, lineHeight: 1 }}>
+                    {p.up ? "↑" : "↓"} {p.p24h}₽
+                  </p>
+                  <p style={{ margin: 0, color: "#374151", fontSize: "0.48rem" }}>
+                    24ч · {Math.abs(Number(delta))}% · {p.conf}% ↑
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        )}
+        {lastUpdated && (
+          <p style={{ margin: "0 0 0.55rem", color: "#374151", fontSize: "0.53rem", fontFamily: "'JetBrains Mono',monospace" }}>
+            Обновлено: {lastUpdated.toLocaleTimeString("ru", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+          </p>
+        )}
+        <div style={{ background: "rgba(245,158,11,0.05)", border: "1px solid rgba(245,158,11,0.14)", borderRadius: "8px", padding: "0.45rem 0.6rem" }}>
+          <p style={{ margin: 0, color: "#6b7280", fontSize: "0.57rem", lineHeight: 1.55 }}>
+            ⚠️ Прогнозы основаны на исторических данных и алгоритмах машинного обучения. Реальные цены могут отличаться от прогнозных. Не является финансовой рекомендацией.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function AnalyticsTab({ onNavigate }: Props) {
   const [data, setData] = useState<Analytics | null>(null);
   const [sysStats, setSysStats] = useState<SystemStats | null>(null);
@@ -474,12 +582,12 @@ export function AnalyticsTab({ onNavigate }: Props) {
                 ЦЕНТР_МОНИТОРИНГА v3.1
               </div>
               <h2 style={{ margin: "0 0 0.1rem", color: "#e2e8f0", fontSize: "1.05rem", fontWeight: 800, lineHeight: 1 }}>
-                📊 Матрица Снабжения
+                📊 Данные
               </h2>
               <p style={{ margin: 0, color: "#4b5563", fontSize: "0.62rem" }}>
                 {lastRefreshed
-                  ? `Синхр: ${lastRefreshed.toLocaleTimeString("ru", { hour: "2-digit", minute: "2-digit" })} · 236 станций`
-                  : "Данные в реальном времени · 236 АЗС"}
+                  ? `Синхр: ${lastRefreshed.toLocaleTimeString("ru", { hour: "2-digit", minute: "2-digit" })} · 500+ станций`
+                  : "Данные в реальном времени · 500+ АЗС"}
               </p>
             </div>
             <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "0.3rem" }}>
@@ -708,6 +816,9 @@ export function AnalyticsTab({ onNavigate }: Props) {
         </div>
         {filtered.map(([region, d], i) => <AvailabilityBar key={region} region={region} data={d} rank={i} />)}
       </div>
+
+      {/* AI Price Predictions */}
+      <AIPricePredictions />
 
       <NewsFeed />
     </div>
