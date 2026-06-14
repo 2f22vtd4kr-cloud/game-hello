@@ -249,6 +249,12 @@ export default function App() {
     <ErrorBoundary>
       <ToastContainer />
 
+      {/* Deep Field — nebula background blobs */}
+      <div aria-hidden style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none", overflow: "hidden" }}>
+        <div style={{ position: "absolute", top: "-10%", right: "-15%", width: 360, height: 360, background: "rgba(168,85,247,0.08)", borderRadius: "50%", filter: "blur(120px)" }} />
+        <div style={{ position: "absolute", bottom: "-10%", left: "-15%", width: 400, height: 400, background: "rgba(219,39,119,0.05)", borderRadius: "50%", filter: "blur(120px)" }} />
+      </div>
+
       {/* Price change alert banners — slide in from top when fuel moves ≥1% */}
       <PriceAlertBanner
         alerts={priceAlerts}
@@ -285,7 +291,7 @@ export default function App() {
         onClick={() => { setVpnTroubleshooter(false); setShowVpn(true); }}
         title="VPN-доступ"
         style={{
-          position: "fixed", bottom: "calc(env(safe-area-inset-bottom, 0px) + 82px)", left: "12px",
+          position: "fixed", bottom: "calc(env(safe-area-inset-bottom, 0px) + 104px)", left: "12px",
           zIndex: 9500,
           width: "38px", height: "38px",
           borderRadius: "50%",
@@ -351,7 +357,7 @@ export default function App() {
         position: "relative",
         overflow: "hidden",
         paddingTop: `${TICKER_H + 8}px`,
-        paddingBottom: navVisible ? "60px" : "0px",
+        paddingBottom: navVisible ? "96px" : "0px",
         transition: "padding-bottom 0.3s",
         zIndex: 1,
       }}>

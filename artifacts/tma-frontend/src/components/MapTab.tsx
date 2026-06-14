@@ -589,16 +589,24 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
               left: 0,
               right: 0,
               zIndex: 1001,
-              maxHeight: "70vh",
-              overflowY: "auto",
-              borderRadius: "20px 20px 0 0",
-              boxShadow: "0 -8px 40px rgba(0,0,0,0.7)",
+              borderRadius: "64px 64px 0 0",
+              background: "linear-gradient(90deg, #a855f7, #db2777)",
+              padding: "2px 2px 0",
+              boxShadow: "0 -12px 50px rgba(168,85,247,0.2), 0 -4px 24px rgba(0,0,0,0.8)",
             }}
           >
-            <StationCard
-              station={selectedStation}
-              onClose={() => selectStation(null)}
-            />
+            <div style={{
+              background: "rgba(8,8,20,0.97)",
+              borderRadius: "62px 62px 0 0",
+              maxHeight: "70vh",
+              overflowY: "auto",
+              backdropFilter: "blur(24px)",
+            }}>
+              <StationCard
+                station={selectedStation}
+                onClose={() => selectStation(null)}
+              />
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
