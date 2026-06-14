@@ -25,6 +25,15 @@ if DATABASE_URL:
         pool_pre_ping=True,
         pool_size=5,
         max_overflow=10,
+        # Recycle connections every 5 min so SSL-dropped connections don't linger.
+        pool_recycle=300,
+        # TCP keepalives so the OS detects dead SSL connections within 60 s.
+        connect_args={
+            "keepalives": 1,
+            "keepalives_idle": 30,
+            "keepalives_interval": 10,
+            "keepalives_count": 5,
+        },
     )
     logger.info("Using PostgreSQL database.")
 else:
