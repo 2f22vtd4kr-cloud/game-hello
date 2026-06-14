@@ -1,11 +1,16 @@
 #!/bin/bash
 # Do NOT use 'set -e' — bot failure must not kill FastAPI in production
 
-echo "=== Starting TMA Application on Replit Autoscale ==="
+echo "=== TMA Production Start (Autoscale) ==="
 
-# Run bot in background (polling mode to avoid unreachable webhook port)
+# Clean old processes if any stale ones exist
+pkill -f "python bot.py" 2>/dev/null || true
+pkill -f "tma_backend.main" 2>/dev/null || true
+sleep 1
+
+# Bot in background — force polling (safer on Replit)
 echo "Starting Telegram Bot (polling)..."
-unset REPLIT_DEPLOYMENT  # Force polling + clean stale webhook if any
+unset REPLIT_DEPLOYMENT
 python bot.py &
 BOT_PID=$!
 

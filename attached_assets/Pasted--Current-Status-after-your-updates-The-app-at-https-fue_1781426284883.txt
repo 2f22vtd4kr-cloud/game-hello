@@ -1,0 +1,72 @@
+✅ Current Status (after your updates)
+The app at https://fuel-tickets-ru–golovioshka.replit.app still shows:
+404 — Not Found This deployment has no previewable artifacts.
+Why it’s still broken
+	1	.replit is mostly correct now (good job — build + run use start.sh).
+	2	But Replit still has an old deployment running (the Node.js api-server one from earlier commits).
+	3	The new build isn’t fully taking over, or the FastAPI process isn’t being recognized properly by Replit’s proxy/health checks.
+	4	start.sh still has set -e (bad for production) and defaults to port 8000 instead of 8080.
+	5	artifacts/api-server folder still exists (old cruft).
+
+Immediate Fix (Do This Now)
+1. Update `.replit` (replace the entire file)
+modules = ["nodejs-20", "python-3.12", "web"]
+
+[deployment]
+router = "application"
+deploymentTarget = "autoscale"
+build = ["bash", "-c", "rm -rf artifacts/tma-frontend/dist artifacts/api-server && pip install -r requirements.txt && pnpm install --frozen-lockfile && pnpm --filter @workspace/tma-frontend run build"]
+run = ["bash", "start.sh"]
+
+[deployment.postBuild]
+args = ["pnpm", "store", "prune"]
+env = { "CI" = "true" }
+
+[userenv.production]
+TMA_PORT = "8080"
+
+[[ports]]
+localPort = 8080
+externalPort = 80
+
+[nix]
+channel = "stable-25_05"
+2. Update `start.sh` (replace entire file)
+#!/bin/bash
+
+echo "=== TMA Production Start (Autoscale) ==="
+
+# Clean old processes if any
+pkill -f "python bot.py" || true
+pkill -f "tma_backend.main" || true
+
+# Bot in background — force polling (safer on Replit)
+echo "Starting Telegram Bot (polling)..."
+unset REPLIT_DEPLOYMENT
+python bot.py &
+BOT_PID=$!
+
+echo "Starting FastAPI + React SPA on port ${TMA_PORT:-8080}..."
+exec python -m tma_backend.main
+3. Clean old artifacts (in Replit Shell)
+rm -rf artifacts/tma-frontend/dist artifacts/api-server node_modules ~/.cache/pnpm
+4. Redeploy on Replit
+	1	Go to Tools → Publishing
+	2	Make sure Autoscale is selected
+	3	Click Redeploy (or Publish again)
+	4	Watch Deployment Logs carefully
+
+What to look for in logs
+Success looks like:
+	•	pnpm --filter @workspace/tma-frontend run build completes
+	•	Starting Telegram Bot (polling)...
+	•	Starting FastAPI...
+	•	Uvicorn binding to 0.0.0.0:8080
+	•	No api-server or Node.js mentions
+If it still fails, copy-paste the latest 50 lines of deployment logs here.
+
+Quick Test After Redeploy:
+	•	Root URL should show your React app
+	•	/api/docs should show FastAPI docs
+	•	Bot should respond in Telegram
+Push these changes, redeploy, and tell me what the logs say. We’re very close — this is the classic “old deployment ghost” issue on Replit.
