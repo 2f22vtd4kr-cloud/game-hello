@@ -344,7 +344,7 @@ export default function App() {
         title="VPN-доступ"
         style={{
           position: "fixed",
-          bottom: navVisible ? "calc(env(safe-area-inset-bottom, 0px) + 80px)" : "calc(env(safe-area-inset-bottom, 0px) + 16px)",
+          bottom: "calc(env(safe-area-inset-bottom, 0px) + 80px)",
           left: "12px",
           zIndex: 9500,
           width: "38px", height: "38px",
@@ -356,7 +356,7 @@ export default function App() {
           display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
           fontSize: "1rem",
           gap: "1px",
-          transition: "bottom 0.3s, border-color 0.4s",
+          transition: "border-color 0.4s",
         }}
       >
         <span style={{ fontSize: "1rem", lineHeight: 1 }}>🎉</span>
@@ -369,7 +369,7 @@ export default function App() {
         title={navVisible ? "Скрыть навигацию" : "Показать навигацию"}
         style={{
           position: "fixed",
-          bottom: navVisible ? "calc(env(safe-area-inset-bottom, 0px) + 80px)" : "calc(env(safe-area-inset-bottom, 0px) + 10px)",
+          bottom: "calc(env(safe-area-inset-bottom, 0px) + 80px)",
           left: "50%",
           transform: "translateX(-50%)",
           zIndex: 10001,
@@ -380,7 +380,6 @@ export default function App() {
           cursor: "pointer",
           display: "flex", alignItems: "center", justifyContent: "center", gap: "4px",
           backdropFilter: "blur(12px)",
-          transition: "bottom 0.3s",
         }}
       >
         <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.38rem", color: "#4b5563", letterSpacing: "0.08em" }}>
@@ -395,7 +394,7 @@ export default function App() {
         title="Мой кошелёк"
         style={{
           position: "fixed",
-          bottom: navVisible ? "calc(env(safe-area-inset-bottom, 0px) + 80px)" : "calc(env(safe-area-inset-bottom, 0px) + 16px)",
+          bottom: "calc(env(safe-area-inset-bottom, 0px) + 80px)",
           right: "12px",
           zIndex: 9500,
           width: "38px", height: "38px",
@@ -406,7 +405,6 @@ export default function App() {
           cursor: "pointer",
           display: "flex", alignItems: "center", justifyContent: "center",
           fontSize: "1rem",
-          transition: "bottom 0.3s",
         }}
       >
         💼
@@ -488,8 +486,7 @@ export default function App() {
         position: "relative",
         overflow: "hidden",
         paddingTop: `${TICKER_H + 8}px`,
-        paddingBottom: navVisible ? "96px" : "0px",
-        transition: "padding-bottom 0.3s",
+        paddingBottom: "96px",
         zIndex: 1,
       }}>
         <MapTab
