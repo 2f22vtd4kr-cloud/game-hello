@@ -20,6 +20,7 @@ export function MarketTicker() {
   const connected = usePriceStore((s) => s.connected);
   const [news, setNews] = useState<NewsItem[]>([]);
   const [flashIdx, setFlashIdx] = useState(-1);
+  const [paused, setPaused] = useState(false);
   const prevConnected = useRef(connected);
 
   useEffect(() => {
@@ -165,12 +166,22 @@ export function MarketTicker() {
       }} />
 
       {/* Scrolling track */}
-      <div style={{ flex: 1, overflow: "hidden", height: "100%", display: "flex", alignItems: "center", position: "relative" }}>
+      <div
+        style={{ flex: 1, overflow: "hidden", height: "100%", display: "flex", alignItems: "center", position: "relative", cursor: paused ? "default" : "pointer" }}
+        onMouseEnter={() => setPaused(true)}
+        onMouseLeave={() => setPaused(false)}
+        onTouchStart={() => setPaused(true)}
+        onTouchEnd={() => setTimeout(() => setPaused(false), 1200)}
+      >
         <div
           style={{
             display: "flex", alignItems: "center", gap: "0",
             whiteSpace: "nowrap",
-            animation: `tickerScroll ${speed}s linear infinite`,
+            animationName: "tickerScroll",
+            animationDuration: `${speed}s`,
+            animationTimingFunction: "linear",
+            animationIterationCount: "infinite",
+            animationPlayState: paused ? "paused" : "running",
             willChange: "transform",
           }}
         >
