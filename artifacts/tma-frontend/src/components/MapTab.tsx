@@ -559,7 +559,7 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
       {/* Map legend — bottom-left */}
       <div style={{
         position: "absolute",
-        bottom: navVisible ? "calc(env(safe-area-inset-bottom, 0px) + 5.5rem)" : "calc(env(safe-area-inset-bottom, 0px) + 1rem)",
+        bottom: navVisible ? "calc(env(safe-area-inset-bottom, 0px) + 8.5rem)" : "calc(env(safe-area-inset-bottom, 0px) + 4rem)",
         left: "0.75rem",
         zIndex: 1000,
         background: "rgba(8,8,20,0.88)",
