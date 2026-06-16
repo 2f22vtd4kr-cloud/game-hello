@@ -303,6 +303,37 @@ class Empire(Base):
     created_at = Column(DateTime(timezone=True), default=_now)
 
 
+class StationNote(Base):
+    """Personal user note for a gas station."""
+    __tablename__ = "station_notes"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(BigInteger, nullable=False, index=True)
+    station_id = Column(Integer, ForeignKey("gas_stations.id"), nullable=False, index=True)
+    body = Column(Text, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=_now, onupdate=_now)
+    created_at = Column(DateTime(timezone=True), default=_now)
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "station_id", name="uq_note_user_station"),
+    )
+
+
+class PriceSnapshot(Base):
+    """Hourly avg price snapshot per fuel type — used for sparkline history."""
+    __tablename__ = "price_snapshots"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    fuel_type = Column(String, nullable=False)
+    avg_price = Column(Float, nullable=False)
+    min_price = Column(Float, nullable=False)
+    max_price = Column(Float, nullable=False)
+    region_count = Column(Integer, default=0)
+    snapped_at = Column(DateTime(timezone=True), default=_now, index=True)
+
+    __table_args__ = (Index("ix_price_snapshot_fuel_time", "fuel_type", "snapped_at"),)
+
+
 class RegionFavorite(Base):
     """User-starred region for monitoring in Мой Сейф."""
     __tablename__ = "region_favorites"

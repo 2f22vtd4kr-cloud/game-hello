@@ -8,7 +8,9 @@ import { useStationStore } from "@/stores/useStationStore";
 import { useVaultStore } from "@/stores/useVaultStore";
 import { useToast } from "@/components/Toast";
 import { StationLogo } from "@/components/StationLogo";
+import { FuelCalculatorModal } from "@/components/FuelCalculatorModal";
 import { impact, notify } from "@/lib/haptic";
+import { useFavoritesStore } from "@/stores/useFavoritesStore";
 import type { GasStation, LimitsMap } from "@/types";
 import { FUEL_LABELS } from "@/types";
 
@@ -334,11 +336,16 @@ export function CatalogTab({ initialStationId }: CatalogTabProps) {
   const { add: toast } = useToast();
   const getPrice = usePriceStore((s) => s.getPrice);
 
+  const { favoriteStations, isStationFavorite, toggleStationFavorite } = useFavoritesStore();
+  const [compareStation, setCompareStation] = useState<GasStation | null>(null);
+  const [showCompare, setShowCompare] = useState(false);
+
   const [selectedStation, setSelectedStation] = useState<GasStation | null>(null);
   const [limits, setLimits] = useState<LimitsMap | null>(null);
   const [blockReason, setBlockReason] = useState<string | null>(null);
+  const [showCalculator, setShowCalculator] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortMode, setSortMode] = useState<"name" | "availability" | "queue">("availability");
+  const [sortMode, setSortMode] = useState<"name" | "availability" | "queue" | "price">("availability");
   const [payMethod, setPayMethod] = useState<PayMethod>("stars");
   const [pendingConfirm, setPendingConfirm] = useState<PendingConfirm | null>(null);
   const [purchasing, setPurchasing] = useState(false);
@@ -397,6 +404,11 @@ export function CatalogTab({ initialStationId }: CatalogTabProps) {
     [...arr].sort((a, b) => {
       if (sortMode === "name") return a.name.localeCompare(b.name, "ru");
       if (sortMode === "queue") return a.queue_cars - b.queue_cars;
+      if (sortMode === "price") {
+        const pA = getPrice(a.region, "АИ-92")?.effective ?? 999;
+        const pB = getPrice(b.region, "АИ-92")?.effective ?? 999;
+        return pA - pB;
+      }
       const avgA = a.fuel_statuses.length ? a.fuel_statuses.reduce((s, f) => s + f.availability_pct, 0) / a.fuel_statuses.length : 0;
       const avgB = b.fuel_statuses.length ? b.fuel_statuses.reduce((s, f) => s + f.availability_pct, 0) / b.fuel_statuses.length : 0;
       return avgB - avgA;
@@ -503,6 +515,9 @@ export function CatalogTab({ initialStationId }: CatalogTabProps) {
           <PaymentConfirmModal pending={pendingConfirm} onConfirm={handleConfirmPurchase} onCancel={() => { impact("light"); setPendingConfirm(null); }} />
         )}
       </AnimatePresence>
+      <AnimatePresence>
+        {showCalculator && <FuelCalculatorModal onClose={() => setShowCalculator(false)} />}
+      </AnimatePresence>
 
       {/* ── Header ── */}
       <div style={{ padding: "12px 12px 8px" }}>
@@ -521,6 +536,11 @@ export function CatalogTab({ initialStationId }: CatalogTabProps) {
               </p>
             </div>
             <div style={{ display: "flex", gap: "6px", alignItems: "center", flexShrink: 0, marginLeft: "8px" }}>
+              <button
+                onClick={() => { impact("light"); setShowCalculator(true); }}
+                title="Калькулятор расхода"
+                style={{ background: "rgba(168,85,247,0.1)", border: "1px solid rgba(168,85,247,0.3)", borderRadius: "10px", color: "#a855f7", fontSize: "1.1rem", padding: "4px 9px", cursor: "pointer", lineHeight: 1 }}
+              >🧮</button>
               <div style={{
                 display: "flex", alignItems: "center", gap: "4px",
                 background: "rgba(52,211,153,0.1)", border: "1px solid rgba(52,211,153,0.25)",
@@ -628,20 +648,58 @@ export function CatalogTab({ initialStationId }: CatalogTabProps) {
       {/* ── Sort row ── */}
       <div style={{ padding: "0 1rem 0.5rem", display: "flex", gap: "0.35rem", alignItems: "center" }}>
         <span style={{ color: "#4b5563", fontSize: "0.65rem", marginRight: "0.1rem" }}>Сорт:</span>
-        {(["availability", "name", "queue"] as const).map((mode) => (
+        {(["availability", "name", "queue", "price"] as const).map((mode) => (
           <button key={mode} onClick={() => setSortMode(mode)} style={{
             background: sortMode === mode ? "rgba(168,85,247,0.2)" : "none",
             border: `1px solid ${sortMode === mode ? "#a855f7" : "#22222f"}`,
             borderRadius: "6px", color: sortMode === mode ? "#a855f7" : "#6b7280",
             fontSize: "0.67rem", padding: "0.2rem 0.45rem", cursor: "pointer",
           }}>
-            {mode === "availability" ? "Наличие" : mode === "name" ? "Назв." : "Очередь"}
+            {mode === "availability" ? "Наличие" : mode === "name" ? "Назв." : mode === "queue" ? "Очередь" : "Цена↑"}
           </button>
         ))}
         <span style={{ marginLeft: "auto", color: "#4b5563", fontSize: "0.65rem" }}>
           {filteredStations.length.toLocaleString("ru")} АЗС
         </span>
       </div>
+
+      {/* ── Favorites strip ── */}
+      {!selectedStation && !searchQuery && favoriteStations.length > 0 && (
+        <div style={{ padding: "0 1rem 0.65rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginBottom: "0.45rem" }}>
+            <span style={{ fontFamily: "'JetBrains Mono',monospace", color: "#f59e0b", fontSize: "0.46rem", letterSpacing: "0.14em" }}>ИЗБРАННОЕ</span>
+            <span style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.46rem" }}>({favoriteStations.length})</span>
+            <div style={{ flex: 1, height: "1px", background: "linear-gradient(90deg,#f59e0b22,transparent)" }} />
+          </div>
+          <div style={{ display: "flex", gap: "0.4rem", overflowX: "auto", paddingBottom: "0.25rem" }}>
+            {favoriteStations.map((id) => {
+              const s = stations.find((st) => st.id === id);
+              if (!s) return null;
+              const avg = s.fuel_statuses.length ? Math.round(s.fuel_statuses.reduce((acc, f) => acc + f.availability_pct, 0) / s.fuel_statuses.length) : 0;
+              const color = avg >= 60 ? "#22c55e" : avg >= 25 ? "#eab308" : "#ef4444";
+              return (
+                <motion.div key={s.id} whileTap={{ scale: 0.95 }} onClick={() => setSelectedStation(s)} style={{
+                  flexShrink: 0, minWidth: "110px", maxWidth: "130px",
+                  background: "linear-gradient(160deg,#0a0a14,#14100a)",
+                  border: "1px solid #f59e0b30", borderRadius: "12px",
+                  padding: "0.5rem 0.6rem", cursor: "pointer",
+                  position: "relative", overflow: "hidden",
+                  boxShadow: "0 0 10px #f59e0b0a",
+                }}>
+                  <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: "linear-gradient(90deg,transparent,#f59e0b,transparent)" }} />
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.2rem" }}>
+                    <span style={{ fontSize: "0.65rem" }}>⭐</span>
+                    <button onClick={(e) => { e.stopPropagation(); toggleStationFavorite(s.id); }} style={{ background: "none", border: "none", cursor: "pointer", color: "#374151", fontSize: "0.55rem", padding: 0 }}>✕</button>
+                  </div>
+                  <p style={{ margin: "0 0 0.1rem", fontFamily: "'JetBrains Mono',monospace", color, fontSize: "1.0rem", fontWeight: 800, lineHeight: 1 }}>{avg}%</p>
+                  <p style={{ margin: 0, color: "#e2e8f0", fontSize: "0.62rem", fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.name}</p>
+                  <p style={{ margin: "0.1rem 0 0", color: "#4b5563", fontSize: "0.55rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.network || "АЗС"}</p>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* ── Top-5 availability strip (only default view) ── */}
       {!selectedStation && !searchQuery && sortMode === "availability" && (
@@ -790,6 +848,19 @@ export function CatalogTab({ initialStationId }: CatalogTabProps) {
                         </div>
                       )}
                       </div>
+                      {/* Compare button */}
+                      {selectedStation && selectedStation.id !== s.id && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setCompareStation(s); setShowCompare(true); }}
+                          style={{
+                            background: compareStation?.id === s.id ? "rgba(59,130,246,0.15)" : "none",
+                            border: `1px solid ${compareStation?.id === s.id ? "#3b82f6" : "#22222f"}`,
+                            borderRadius: "6px", color: compareStation?.id === s.id ? "#3b82f6" : "#374151",
+                            fontSize: "0.6rem", padding: "0.15rem 0.35rem", cursor: "pointer", flexShrink: 0,
+                            marginTop: "0.25rem",
+                          }}
+                        >⇌ Сравнить</button>
+                      )}
                     </div>
                   </motion.div>
                 );
@@ -848,10 +919,18 @@ export function CatalogTab({ initialStationId }: CatalogTabProps) {
       ) : (
         /* ── Selected station detail ── */
         <div style={{ padding: "0 1rem" }}>
-          <button
-            onClick={() => { setSelectedStation(null); setLimits(null); }}
-            style={{ background: "none", border: "none", color: "#a855f7", fontSize: "0.82rem", cursor: "pointer", padding: "0.25rem 0", marginBottom: "0.5rem", display: "flex", alignItems: "center", gap: "0.3rem" }}
-          >← Назад к списку</button>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
+            <button
+              onClick={() => { setSelectedStation(null); setLimits(null); }}
+              style={{ background: "none", border: "none", color: "#a855f7", fontSize: "0.82rem", cursor: "pointer", padding: "0.25rem 0", display: "flex", alignItems: "center", gap: "0.3rem" }}
+            >← Назад</button>
+            {compareStation && showCompare && (
+              <button
+                onClick={() => setShowCompare(false)}
+                style={{ marginLeft: "auto", background: "rgba(59,130,246,0.12)", border: "1px solid #3b82f644", borderRadius: "6px", color: "#3b82f6", fontSize: "0.65rem", padding: "0.2rem 0.5rem", cursor: "pointer" }}
+              >✕ Сравнение</button>
+            )}
+          </div>
 
           {(() => {
             const selAvg = selectedStation.fuel_statuses.length ? Math.round(selectedStation.fuel_statuses.reduce((a, f) => a + f.availability_pct, 0) / selectedStation.fuel_statuses.length) : 0;

@@ -155,6 +155,9 @@ export const buyVpnCrypto = (userId: number, chatId: number, planId: string) =>
   });
 
 // Dynamic prices
+export const fetchPriceHistory = (hours = 24) =>
+  req<{ history: Record<string, Array<{ t: string; avg: number; min: number; max: number }>> }>(`/prices/history?hours=${hours}`);
+
 export const fetchPrices = (region?: string) =>
   req<import("@/types").PricesMap>(region ? `/prices/${encodeURIComponent(region)}` : "/prices");
 
@@ -318,6 +321,32 @@ export interface EmpirePrestigeResult {
 export const prestigeEmpire = (userId: number) =>
   req<EmpirePrestigeResult>(`/empire/${userId}/prestige`, { method: "POST" });
 
+// Empire full-state sync (client-side game → backend persistence)
+export const loadEmpireFullState = (userId: number) =>
+  req<{ state: Record<string, unknown> | null }>(`/empire/${userId}/state`);
+
+export const syncEmpireFullState = (userId: number, state: Record<string, unknown>) =>
+  req<{ ok: boolean; synced_at: string }>(`/empire/${userId}/sync`, {
+    method: "POST",
+    body: JSON.stringify({ state }),
+  });
+
+// Station notes (personal user annotations)
+export const fetchUserNotes = (userId: number) =>
+  req<{ notes: Array<{ id: number; station_id: number; station_name: string; station_region: string; body: string; updated_at: string | null }> }>(`/users/${userId}/notes`);
+
+export const fetchStationNote = (stationId: number, userId: number) =>
+  req<{ body: string; updated_at: string | null }>(`/stations/${stationId}/notes/${userId}`);
+
+export const upsertStationNote = (stationId: number, userId: number, body: string) =>
+  req<{ ok: boolean; body: string }>(`/stations/${stationId}/notes`, {
+    method: "POST",
+    body: JSON.stringify({ user_id: userId, body }),
+  });
+
+export const deleteStationNote = (stationId: number, userId: number) =>
+  req(`/stations/${stationId}/notes/${userId}`, { method: "DELETE" });
+
 // AI Chat
 export const sendAiMessage = (
   message: string,
@@ -330,3 +359,13 @@ export const sendAiMessage = (
 
 export const fetchCrisisForecast = () =>
   req<import("@/types").CrisisForecast[]>("/ai/crisis-forecast");
+
+export const fetchStatsSummary = () =>
+  req<{
+    stations: { total: number; green: number; yellow: number; red: number };
+    overall_pct: number;
+    total_users: number;
+    active_vouchers: number;
+    reports_today: number;
+    status: string;
+  }>("/stats/summary");

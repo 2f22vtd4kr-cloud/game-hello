@@ -4,6 +4,7 @@ import type { BuildingId } from "./buildings";
 import { BUILDINGS } from "./buildings";
 import { SAVE_KEY, LEVEL_THRESHOLDS, GRID_SIZE_BY_LEVEL, AUTOSAVE_INTERVAL_MS, OFFLINE_MULTIPLIER, OFFLINE_MAX_SEC, DAILY_REWARDS, CRISIS_SHOP } from "./constants";
 import { tick } from "./engine";
+import { loadEmpireFullState, syncEmpireFullState } from "@/api/client";
 
 export interface PlacedBuilding {
   uid: string;
@@ -131,7 +132,10 @@ export function getGridSize(level: number): number {
 interface GameStore {
   state: GameState;
   offlineGains: Partial<Record<ResourceId, number>>;
+  lastSyncedUserId: number | null;
   initGame: () => void;
+  syncWithBackend: (userId: number) => Promise<void>;
+  pushToBackend: (userId: number) => Promise<void>;
   tickGame: (dt: number) => void;
   placeBuilding: (id: BuildingId, col: number, row: number) => string | null;
   upgradeBuilding: (uid: string) => void;
@@ -145,6 +149,7 @@ interface GameStore {
 export const useGameStore = create<GameStore>((set, get) => ({
   state: initialState(),
   offlineGains: {},
+  lastSyncedUserId: null,
 
   initGame: () => {
     const saved = loadGame();
@@ -160,6 +165,38 @@ export const useGameStore = create<GameStore>((set, get) => ({
     base.level = getPlayerLevel(base.resources.xp);
     base.lastSaved = Date.now();
     set({ state: base, offlineGains: gains });
+  },
+
+  syncWithBackend: async (userId: number) => {
+    try {
+      const resp = await loadEmpireFullState(userId);
+      if (!resp.state) return; // nothing saved server-side yet
+      const remote = resp.state as Partial<GameState>;
+      const local = get().state;
+      // Prefer whichever state is more recent
+      const remoteTs = (remote.lastSaved as number) ?? 0;
+      if (remoteTs > local.lastSaved + 5000) {
+        // Remote is meaningfully newer — load it and compute offline gains
+        const base = { ...initialState(), ...remote, particles: [], notifications: [] } as GameState;
+        const gains = calcOfflineEarnings(base);
+        for (const [k, v] of Object.entries(gains) as [ResourceId, number][]) {
+          base.resources = { ...base.resources, [k]: (base.resources[k] ?? 0) + v };
+        }
+        base.level = getPlayerLevel(base.resources.xp);
+        base.lastSaved = Date.now();
+        saveGame(base);
+        set({ state: base, offlineGains: gains, lastSyncedUserId: userId });
+      } else {
+        set({ lastSyncedUserId: userId });
+      }
+    } catch { /* backend unavailable — silent fallback to localStorage */ }
+  },
+
+  pushToBackend: async (userId: number) => {
+    try {
+      const { state } = get();
+      await syncEmpireFullState(userId, state as unknown as Record<string, unknown>);
+    } catch { /* silent — localStorage is the source of truth */ }
   },
 
   tickGame: (dt: number) => {

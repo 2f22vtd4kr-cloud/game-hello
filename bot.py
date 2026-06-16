@@ -654,7 +654,7 @@ def fmt_dt(iso: str | None) -> str:
 
 def main_menu_markup() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("⛽ Матрица Снабжения", web_app=WebAppInfo(url=TMA_URL))],
+        [InlineKeyboardButton("⛽ Топливо", web_app=WebAppInfo(url=TMA_URL))],
         [
             InlineKeyboardButton("🗺 Карта АЗС", url=f"https://t.me/{BOT_USERNAME}?startapp=map" if BOT_USERNAME else TMA_URL),
             InlineKeyboardButton("📦 Каталог", url=f"https://t.me/{BOT_USERNAME}?startapp=catalog" if BOT_USERNAME else TMA_URL),
@@ -715,7 +715,7 @@ async def admin_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     context.user_data.clear()
     context.user_data["waiting_admin_password"] = True
     await update.message.reply_text(
-        "⬡ *МАТРИЦА СНАБЖЕНИЯ · КОНТРОЛЁР АЗС*\n"
+        "⬡ *ТОПЛИВО ⛽️ · КОНТРОЛЁР АЗС*\n"
         "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         "🔐 Защищённый вход в систему управления\n\n"
         "Введите пароль администратора:",
@@ -740,7 +740,7 @@ def _build_stats_text() -> str:
     pct = round(s["free_today"] / s["daily_limit"] * 100)
 
     return (
-        f"⬡ *МАТРИЦА СНАБЖЕНИЯ · ДАШБОРД СИСТЕМЫ*\n"
+        f"⬡ *ТОПЛИВО ⛽️ · ДАШБОРД СИСТЕМЫ*\n"
         f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
         f"🗓 `{s['today']}` · Севастополь / Крым\n"
         f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
@@ -789,7 +789,7 @@ async def cancel_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
 
     if not cancelled:
         await update.message.reply_text(
-            "⬡ *МАТРИЦА СНАБЖЕНИЯ · ОТМЕНА ЗАКАЗА*\n"
+            "⬡ *ТОПЛИВО ⛽️ · ОТМЕНА ЗАКАЗА*\n"
             "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
             "📭 У вас нет активных заказов, ожидающих оплаты.",
             parse_mode="Markdown",
@@ -805,7 +805,7 @@ async def cancel_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
 
     plates = ", ".join({r["plate"] for r in cancelled})
     await update.message.reply_text(
-        "⬡ *МАТРИЦА СНАБЖЕНИЯ · ОТМЕНА ЗАКАЗА*\n"
+        "⬡ *ТОПЛИВО ⛽️ · ОТМЕНА ЗАКАЗА*\n"
         "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         f"✅ Заказ успешно отменён\n"
         f"🚗 Госномер: `{plates}`\n\n"
@@ -824,7 +824,7 @@ async def myorders_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
     if not orders["pending"] and not orders["issued"]:
         await update.message.reply_text(
-            "⬡ *МАТРИЦА СНАБЖЕНИЯ · МОИ ЗАКАЗЫ*\n"
+            "⬡ *ТОПЛИВО ⛽️ · МОИ ЗАКАЗЫ*\n"
             "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
             "📭 У вас пока нет оформленных заказов или ваучеров.\n\n"
             "Откройте Каталог АЗС в Матрице Снабжения и оформите первый заказ на топливо.",
@@ -837,7 +837,7 @@ async def myorders_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         return
 
     lines: list[str] = [
-        "⬡ *МАТРИЦА СНАБЖЕНИЯ · МОИ ЗАКАЗЫ*",
+        "⬡ *ТОПЛИВО ⛽️ · МОИ ЗАКАЗЫ*",
         "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
         "",
     ]
@@ -924,7 +924,7 @@ async def news_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     SEVERITY = {"critical": "🔴", "warning": "🟡", "info": "🔵", "success": "🟢"}
     critical_count = sum(1 for i in items if i.get("severity") == "critical")
     lines = [
-        "⬡ *МАТРИЦА СНАБЖЕНИЯ · ЛЕНТА СОБЫТИЙ*",
+        "⬡ *ТОПЛИВО ⛽️ · ЛЕНТА СОБЫТИЙ*",
         "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
     ]
     if critical_count:
@@ -1017,7 +1017,7 @@ async def inline_query_handler(update: Update, context: ContextTypes.DEFAULT_TYP
 async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Comprehensive command reference."""
     text = (
-        "⬡ *МАТРИЦА СНАБЖЕНИЯ · СПРАВОЧНИК*\n"
+        "⬡ *ТОПЛИВО ⛽️ · СПРАВОЧНИК*\n"
         "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         "🗺 *Карта и АЗС*\n"
         "`/tma` — открыть мини-приложение\n"
@@ -1054,7 +1054,7 @@ async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def rules_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     text = (
-        "⬡ *МАТРИЦА СНАБЖЕНИЯ · РЕГЛАМЕНТ ТОПЛИВА*\n"
+        "⬡ *ТОПЛИВО ⛽️ · РЕГЛАМЕНТ ТОПЛИВА*\n"
         "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         "📜 Официальный регламент Правительства Севастополя\n\n"
         "🕘 *Расписание заправок:*\n"
@@ -1079,7 +1079,7 @@ async def rules_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def map_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(
-        "⬡ *МАТРИЦА СНАБЖЕНИЯ · КАРТА АЗС*\n"
+        "⬡ *ТОПЛИВО ⛽️ · КАРТА АЗС*\n"
         "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         "🗺 Интерактивная карта с *236 АЗС* в реальном времени\n\n"
         "• Наличие топлива (АИ-92, АИ-95, ДТ)\n"
@@ -1117,7 +1117,7 @@ async def subscriptions_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 
     if not subs:
         await update.message.reply_text(
-            "⬡ *МАТРИЦА СНАБЖЕНИЯ · ПОДПИСКИ*\n"
+            "⬡ *ТОПЛИВО ⛽️ · ПОДПИСКИ*\n"
             "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
             "🔕 Нет активных подписок на АЗС.\n\n"
             "Откройте Матрицу, найдите АЗС на карте и нажмите 🔔 — "
@@ -1130,7 +1130,7 @@ async def subscriptions_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         return
 
     lines = [
-        "⬡ *МАТРИЦА СНАБЖЕНИЯ · ПОДПИСКИ*",
+        "⬡ *ТОПЛИВО ⛽️ · ПОДПИСКИ*",
         "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
         "",
     ]
@@ -1180,10 +1180,10 @@ async def tma_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "vault": "🗄️ Мой Сейф",
         "reserve": "🎮 Игры & Резерв",
     }
-    tab_label = tab_names.get(tab, "Матрица Снабжения")
+    tab_label = tab_names.get(tab, "Топливо ⛽️")
 
     await update.message.reply_text(
-        "⬡ *МАТРИЦА СНАБЖЕНИЯ · ОТКРЫТЬ ПРИЛОЖЕНИЕ*\n"
+        "⬡ *ТОПЛИВО ⛽️ · ОТКРЫТЬ ПРИЛОЖЕНИЕ*\n"
         "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         f"🔗 Раздел: *{tab_label}*\n\n"
         "• 236 АЗС в реальном времени · Карта\n"
@@ -1215,7 +1215,7 @@ async def menu_navigation(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     if data == "main_menu":
         context.user_data.clear()
         await query.edit_message_text(
-            "⬡ *ТОПЛИВНЫЙ УЗЕЛ · МАТРИЦА СНАБЖЕНИЯ*\n"
+            "⬡ *ТОПЛИВО ⛽️ · ТОПЛИВО ⛽️*\n"
             "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
             "🔌 `СИСТЕМА_ОНЛАЙН` · Севастополь / Крым\n"
             "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
@@ -1626,11 +1626,11 @@ async def menu_navigation(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
                             await query.edit_message_text(
                                 "🔕 *Подписка успешно отменена.*\n\n"
                                 "Вы больше не будете получать уведомления об этой АЗС.\n"
-                                "Чтобы снова подписаться — откройте Матрицу Снабжения.",
+                                "Чтобы снова подписаться — откройте Топливо ⛽️.",
                                 parse_mode="Markdown",
                                 reply_markup=InlineKeyboardMarkup([[
                                     InlineKeyboardButton(
-                                        "⛽ Матрица Снабжения",
+                                        "⛽ Топливо",
                                         web_app=WebAppInfo(url=TMA_URL),
                                     ),
                                 ], [
@@ -1778,7 +1778,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             context.user_data["pending_redeem_serial"] = serial
 
             await update.message.reply_text(
-                "⬡ *МАТРИЦА СНАБЖЕНИЯ · ДАННЫЕ ВАУЧЕРА*\n"
+                "⬡ *ТОПЛИВО ⛽️ · ДАННЫЕ ВАУЧЕРА*\n"
                 "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
                 f"┌─ Ваучер №: `{serial}`\n"
                 f"├─ Топливо: *{fuel_l}*\n"
@@ -1841,7 +1841,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
                 return
 
             caption = (
-                "⬡ *МАТРИЦА СНАБЖЕНИЯ · ВАУЧЕР ВЫДАН*\n"
+                "⬡ *ТОПЛИВО ⛽️ · ВАУЧЕР ВЫДАН*\n"
                 "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
                 f"┌─ Серийный номер: `{payload}`\n"
                 f"└─ Госномер ТС: `{plate}`\n\n"
@@ -1915,7 +1915,7 @@ async def post_init(application: Application) -> None:
     logger.info("Webhook сброшен (drop_pending_updates=True).")
     await application.bot.set_my_commands([
         BotCommand("start",         "Главное меню и выбор квот"),
-        BotCommand("tma",           "Открыть Матрицу Снабжения (мини-приложение)"),
+        BotCommand("tma",           "Открыть Топливо ⛽️ (мини-приложение)"),
         BotCommand("map",           "Карта остатков топлива АЗС"),
         BotCommand("myorders",      "Мои заказы и ваучеры"),
         BotCommand("subscriptions", "Мои подписки на АЗС (уведомления)"),
@@ -1971,7 +1971,7 @@ async def buystars_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
     markup = InlineKeyboardMarkup(rows)
     await update.message.reply_text(
-        "⬡ *МАТРИЦА СНАБЖЕНИЯ · ОПЛАТА ЗВЁЗДАМИ*\n"
+        "⬡ *ТОПЛИВО ⛽️ · ОПЛАТА ЗВЁЗДАМИ*\n"
         "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         "⭐ Покупка топливного ваучера за Telegram Stars\n"
         "Оплата в один клик прямо в Telegram — без внешних сервисов.\n\n"
@@ -2040,7 +2040,7 @@ async def vpn_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         ])
     rows.append([InlineKeyboardButton("🛡 Открыть в Матрице Снабжения", url=tma_deep_link("vault"))])
     await update.message.reply_text(
-        "⬡ *МАТРИЦА СНАБЖЕНИЯ · VPN-ДОСТУП*\n"
+        "⬡ *ТОПЛИВО ⛽️ · VPN-ДОСТУП*\n"
         "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         "🔒 Защищённый канал для обхода блокировок\n"
         "Соединение активируется мгновенно после оплаты.\n"
@@ -2161,7 +2161,7 @@ async def mystats_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     nc_line = f"⬡ НейроКредиты: *{nc:,}* NC\n".replace(",", "\u202f")
 
     text = (
-        f"⬡ *МАТРИЦА СНАБЖЕНИЯ · ПРОФИЛЬ*\n"
+        f"⬡ *ТОПЛИВО ⛽️ · ПРОФИЛЬ*\n"
         f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
         f"👤 {tg_user.first_name}\n"
         f"🎖 Уровень: *{tier_label}*\n"
@@ -2204,7 +2204,7 @@ async def refer_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     share_link = tma_deep_link("reserve")
 
     await update.message.reply_text(
-        "⬡ *МАТРИЦА СНАБЖЕНИЯ · РЕФЕРАЛЬНАЯ ПРОГРАММА*\n"
+        "⬡ *ТОПЛИВО ⛽️ · РЕФЕРАЛЬНАЯ ПРОГРАММА*\n"
         "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         f"🔗 Поделитесь кодом с другом — вы оба получите *+{xp_per} XP*\n\n"
         f"┌─ Ваш код: `{code}`\n"
@@ -2238,15 +2238,15 @@ async def price_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                 data = await resp.json()
     except Exception as exc:
         await update.message.reply_text(
-            f"⚠️ Не удалось получить котировки: {exc}\n\nОткройте Матрицу для актуальных цен.",
+            f"⚠️ Не удалось получить котировки: {exc}\n\nОткройте Топливо ⛽️ для актуальных цен.",
             reply_markup=InlineKeyboardMarkup([[
-                InlineKeyboardButton("⛽ Матрица Снабжения", web_app=WebAppInfo(url=TMA_URL))
+                InlineKeyboardButton("⛽ Топливо", web_app=WebAppInfo(url=TMA_URL))
             ]]),
         )
         return
 
     lines = [
-        "⬡ *МАТРИЦА СНАБЖЕНИЯ · КОТИРОВКИ ГСМ*",
+        "⬡ *ТОПЛИВО ⛽️ · КОТИРОВКИ ГСМ*",
         "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
     ]
     crisis_count = 0
@@ -2312,7 +2312,7 @@ async def checkin_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         total_xp = data.get("total_xp", 0)
         lvl = data.get("level", "—")
         await update.message.reply_text(
-            f"⬡ *МАТРИЦА СНАБЖЕНИЯ · ЧЕК-ИН*\n"
+            f"⬡ *ТОПЛИВО ⛽️ · ЧЕК-ИН*\n"
             f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
             f"✅ Бонус уже получен сегодня.\n\n"
             f"⚡ XP: *{total_xp:,}* · {lvl}\n".replace(",", "\u202f") +
@@ -2335,7 +2335,7 @@ async def checkin_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             streak_line = f"🔥 Серия *{streak}* дня — продолжайте!\n"
         dots = "🟡" * min(streak, 7) + "⬛" * max(0, 7 - streak)
         await update.message.reply_text(
-            f"⬡ *МАТРИЦА СНАБЖЕНИЯ · ЧЕК-ИН*\n"
+            f"⬡ *ТОПЛИВО ⛽️ · ЧЕК-ИН*\n"
             f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
             f"🎯 +*{xp_awarded} XP* начислено!\n"
             f"⚡ Всего XP: *{total_xp:,}*\n".replace(",", "\u202f") +
@@ -2354,7 +2354,7 @@ async def checkin_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 async def nearest_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Ask for user location to find the nearest green stations."""
     await update.message.reply_text(
-        "⬡ *МАТРИЦА СНАБЖЕНИЯ · БЛИЖАЙШИЕ АЗС*\n"
+        "⬡ *ТОПЛИВО ⛽️ · БЛИЖАЙШИЕ АЗС*\n"
         "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         "📍 Отправьте геолокацию — определим ближайшие АЗС с топливом.",
         parse_mode="Markdown",
@@ -2400,7 +2400,7 @@ async def handle_location(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     nearest = stations[:3]
 
     lines = [
-        "⬡ *МАТРИЦА СНАБЖЕНИЯ · БЛИЖАЙШИЕ АЗС*",
+        "⬡ *ТОПЛИВО ⛽️ · БЛИЖАЙШИЕ АЗС*",
         "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
         "",
     ]
@@ -2428,7 +2428,7 @@ async def handle_location(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     )
     if buttons:
         await update.message.reply_text(
-            "⬡ *МАТРИЦА СНАБЖЕНИЯ · ОТКРЫТЬ НА КАРТЕ*\n"
+            "⬡ *ТОПЛИВО ⛽️ · ОТКРЫТЬ НА КАРТЕ*\n"
             "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
             parse_mode="Markdown",
             reply_markup=InlineKeyboardMarkup(buttons),
@@ -2459,7 +2459,7 @@ async def find_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     if not stations:
         await update.message.reply_text(
-            "⬡ *МАТРИЦА СНАБЖЕНИЯ · ПОИСК АЗС*\n"
+            "⬡ *ТОПЛИВО ⛽️ · ПОИСК АЗС*\n"
             "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
             f"🔍 По запросу «{query}» ничего не найдено.\n\n"
             "Попробуйте другое название или откройте карту.",
@@ -2471,7 +2471,7 @@ async def find_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         return
 
     lines = [
-        "⬡ *МАТРИЦА СНАБЖЕНИЯ · ПОИСК АЗС*",
+        "⬡ *ТОПЛИВО ⛽️ · ПОИСК АЗС*",
         "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
         f"🔍 Запрос: «{query}»\n",
     ]
@@ -2526,7 +2526,7 @@ async def leaderboard_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
     medals = {1: "🥇", 2: "🥈", 3: "🥉"}
     lines = [
-        "⬡ *МАТРИЦА СНАБЖЕНИЯ · РЕЙТИНГ АГЕНТОВ*",
+        "⬡ *ТОПЛИВО ⛽️ · РЕЙТИНГ АГЕНТОВ*",
         "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
     ]
     for e in entries:
@@ -2590,7 +2590,7 @@ async def status_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
 
     idx_color = "🟢" if int(avg_pct or 0) >= 60 else "🟡" if int(avg_pct or 0) >= 25 else "🔴"
     lines = [
-        "⬡ *МАТРИЦА СНАБЖЕНИЯ · СТАТУС СЕТИ*",
+        "⬡ *ТОПЛИВО ⛽️ · СТАТУС СЕТИ*",
         "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
         f"{idx_color} Индекс наличия: *{avg_pct}%* · {total_st} АЗС",
         f"🟢 {g} норма · 🟡 {y} мало · 🔴 {r} нет",
@@ -2646,7 +2646,7 @@ async def digest_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
 
     if not subs:
         await update.message.reply_text(
-            "⬡ *МАТРИЦА СНАБЖЕНИЯ · ДАЙДЖЕСТ АЗС*\n"
+            "⬡ *ТОПЛИВО ⛽️ · ДАЙДЖЕСТ АЗС*\n"
             "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
             "🔕 У вас нет подписок — дайджест пуст.\n\n"
             "Откройте Матрицу, найдите АЗС на карте и нажмите 🔔 для подписки.",
@@ -2658,7 +2658,7 @@ async def digest_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
         return
 
     lines = [
-        "⬡ *МАТРИЦА СНАБЖЕНИЯ · ДАЙДЖЕСТ АЗС*",
+        "⬡ *ТОПЛИВО ⛽️ · ДАЙДЖЕСТ АЗС*",
         "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
         "",
     ]
@@ -2731,7 +2731,7 @@ async def broadcast_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         try:
             await context.bot.send_message(
                 chat_id=cid,
-                text=f"📢 *Матрица Снабжения — оповещение*\n\n{msg_text}",
+                text=f"📢 *Топливо ⛽️ — оповещение*\n\n{msg_text}",
                 parse_mode="Markdown",
             )
             sent += 1

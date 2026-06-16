@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useVaultStore } from "@/stores/useVaultStore";
 import { useUserStore } from "@/stores/useUserStore";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
-import { fetchReferral, fetchAchievements, fetchUserSubscriptions, unsubscribeFromStation, fetchCreditsBalance } from "@/api/client";
+import { fetchReferral, fetchAchievements, fetchUserSubscriptions, unsubscribeFromStation, fetchCreditsBalance, fetchUserNotes, deleteStationNote } from "@/api/client";
 import type { Achievement } from "@/api/client";
 import type { Purchase, ReferralInfo, Subscription, CreditTx } from "@/types";
 import { FUEL_LABELS, XP_TIER_THRESHOLDS } from "@/types";
@@ -56,7 +56,7 @@ function QRModal({ hash, onClose }: { hash: string; onClose: () => void }) {
       doc.rect(0, 0, 105, 148, "F");
       doc.setTextColor(168, 85, 247);
       doc.setFontSize(10);
-      doc.text("ТОПЛИВНЫЙ УЗЕЛ — ЦИФРОВОЙ ТАЛОН", 10, 14);
+      doc.text("ТОПЛИВО ⛽️ — ЦИФРОВОЙ ТАЛОН", 10, 14);
       doc.setTextColor(220, 220, 240);
       doc.setFontSize(8);
       doc.text(`Код: ${hash}`, 10, 22);
@@ -333,6 +333,8 @@ export function VaultTab({ initialPurchaseId }: VaultTabProps) {
   const [showAllSubs, setShowAllSubs] = useState(false);
   const [creditHistory, setCreditHistory] = useState<CreditTx[]>([]);
   const [showCreditHistory, setShowCreditHistory] = useState(false);
+  const [stationNotes, setStationNotes] = useState<Array<{ id: number; station_id: number; station_name: string; station_region: string; body: string; updated_at: string | null }>>([]);
+  const [showAllNotes, setShowAllNotes] = useState(false);
 
   // Auto-clear highlight ring after 3 seconds
   const highlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -351,10 +353,11 @@ export function VaultTab({ initialPurchaseId }: VaultTabProps) {
       fetchAchievements(user.id).then((d) => setAchievements(d.achievements)).catch(() => {});
       fetchUserSubscriptions(user.id).then((d) => setSubscriptions(d.subscriptions)).catch(() => {});
       fetchCreditsBalance(user.id).then((d) => setCreditHistory(d.history)).catch(() => {});
+      fetchUserNotes(user.id).then((d) => setStationNotes(d.notes)).catch(() => {});
     }
   }, [user, fetch]);
 
-  const { favoriteRegions, removeFavorite: removeFav } = useFavoritesStore();
+  const { favoriteRegions, removeFavorite: removeFav, favoriteStations, toggleStationFavorite } = useFavoritesStore();
   const active = purchases.filter((p) => p.status === "active");
   const history = purchases.filter((p) => p.status !== "active");
 
@@ -568,10 +571,40 @@ export function VaultTab({ initialPurchaseId }: VaultTabProps) {
         </div>
       )}
 
-      {/* History */}
+      {/* History with CSV export */}
       {history.length > 0 && (
         <div style={{ padding: "0 1rem 0.5rem" }}>
-          <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.43rem", letterSpacing: "0.14em", marginBottom: "0.1rem", marginTop: "0.5rem" }}>АРХИВ_ОРДЕРОВ · ИСТОРИЯ</div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.1rem", marginTop: "0.5rem" }}>
+            <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.43rem", letterSpacing: "0.14em" }}>АРХИВ_ОРДЕРОВ · ИСТОРИЯ</div>
+            <button
+              onClick={() => {
+                const rows = [
+                  ["Дата", "АЗС", "Топливо", "Объём", "Сумма", "Статус"],
+                  ...purchases.map((p) => [
+                    new Date(p.created_at).toLocaleDateString("ru-RU"),
+                    p.station_name ?? "",
+                    p.fuel_type,
+                    `${p.volume}л`,
+                    `${p.price} ${p.currency}`,
+                    p.status,
+                  ]),
+                ];
+                const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+                const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url; a.download = `талоны_${new Date().toISOString().slice(0,10)}.csv`;
+                a.click(); URL.revokeObjectURL(url);
+              }}
+              style={{
+                background: "rgba(168,85,247,0.1)", border: "1px solid #a855f722",
+                borderRadius: "6px", color: "#6b7280", fontSize: "0.6rem",
+                padding: "0.15rem 0.45rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.25rem",
+              }}
+            >
+              ↓ CSV
+            </button>
+          </div>
           <p style={{ color: "#374151", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 0.5rem", fontFamily: "'JetBrains Mono',monospace" }}>
             История · {history.length} ордеров
           </p>
@@ -654,6 +687,112 @@ export function VaultTab({ initialPurchaseId }: VaultTabProps) {
               </button>
             </motion.div>
           ))}
+        </div>
+      )}
+
+      {/* Station Notes */}
+      {stationNotes.length > 0 && (
+        <div style={{ padding: "0 1rem 0.75rem" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
+            <div>
+              <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.46rem", letterSpacing: "0.14em", marginBottom: "0.1rem" }}>МОИ_ЗАМЕТКИ · АЗС</div>
+              <p style={{ margin: 0, color: "#db2777", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>
+                📝 Заметки · {stationNotes.length} АЗС
+              </p>
+            </div>
+            {stationNotes.length > 3 && (
+              <button
+                onClick={() => setShowAllNotes(!showAllNotes)}
+                style={{ background: "none", border: "none", color: "#db2777", fontSize: "0.7rem", cursor: "pointer", padding: 0 }}
+              >
+                {showAllNotes ? "Скрыть" : "Все"}
+              </button>
+            )}
+          </div>
+          {(showAllNotes ? stationNotes : stationNotes.slice(0, 3)).map((note) => (
+            <motion.div
+              key={note.id}
+              layout
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              style={{
+                background: "linear-gradient(160deg,#0e0e1a,#110a18)",
+                border: "1px solid #db277720",
+                borderLeft: "3px solid #db277766",
+                borderRadius: "10px",
+                padding: "0.55rem 0.75rem",
+                marginBottom: "0.4rem",
+                position: "relative",
+                overflow: "hidden",
+              }}
+            >
+              <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: "linear-gradient(90deg,#db277733,transparent)" }} />
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "0.5rem" }}>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <p style={{ margin: "0 0 0.15rem", color: "#e2e8f0", fontSize: "0.78rem", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    ⛽ {note.station_name}
+                  </p>
+                  <p style={{ margin: "0 0 0.35rem", color: "#6b7280", fontSize: "0.62rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {note.station_region}
+                  </p>
+                  <p style={{ margin: 0, color: "#9ca3af", fontSize: "0.7rem", lineHeight: 1.4, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                    {note.body}
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    if (!user) return;
+                    deleteStationNote(note.station_id, user.id)
+                      .then(() => setStationNotes((prev) => prev.filter((n) => n.id !== note.id)))
+                      .catch(() => {});
+                  }}
+                  style={{ background: "none", border: "1px solid #ef444420", borderRadius: "6px", color: "#ef444499", fontSize: "0.65rem", padding: "0.25rem 0.45rem", cursor: "pointer", flexShrink: 0, marginLeft: "0.3rem" }}
+                >✕</button>
+              </div>
+              {note.updated_at && (
+                <p style={{ margin: "0.3rem 0 0", color: "#374151", fontSize: "0.55rem" }}>
+                  📅 {new Date(note.updated_at).toLocaleDateString("ru", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                </p>
+              )}
+            </motion.div>
+          ))}
+        </div>
+      )}
+
+      {/* Favorite stations */}
+      {favoriteStations.length > 0 && (
+        <div style={{ padding: "0 1rem 0.75rem" }}>
+          <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.43rem", letterSpacing: "0.14em", marginBottom: "0.1rem" }}>ИЗБРАННЫЕ_АЗС · БЫСТРЫЙ_ДОСТУП</div>
+          <p style={{ color: "#f59e0b", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 0.5rem", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>
+            ⭐ Избранные АЗС · {favoriteStations.length}
+          </p>
+          <div style={{ display: "flex", gap: "0.4rem", overflowX: "auto", paddingBottom: "0.25rem" }}>
+            {favoriteStations.map((id) => {
+              return (
+                <motion.div
+                  key={id}
+                  whileTap={{ scale: 0.95 }}
+                  style={{
+                    flexShrink: 0, minWidth: "100px", maxWidth: "125px",
+                    background: "linear-gradient(160deg,#0a0a14,#14100a)",
+                    border: "1px solid #f59e0b30",
+                    borderRadius: "12px", padding: "0.5rem 0.6rem", cursor: "pointer",
+                    position: "relative", overflow: "hidden",
+                  }}
+                >
+                  <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: "linear-gradient(90deg,transparent,#f59e0b,transparent)" }} />
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: "0.65rem" }}>⭐</span>
+                    <button
+                      onClick={() => toggleStationFavorite(id)}
+                      style={{ background: "none", border: "none", cursor: "pointer", color: "#374151", fontSize: "0.55rem", padding: 0 }}
+                    >✕</button>
+                  </div>
+                  <p style={{ margin: "0.2rem 0 0", color: "#9ca3af", fontSize: "0.62rem", fontFamily: "'JetBrains Mono',monospace" }}>АЗС #{id}</p>
+                </motion.div>
+              );
+            })}
+          </div>
         </div>
       )}
 

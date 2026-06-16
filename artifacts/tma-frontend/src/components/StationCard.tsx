@@ -7,6 +7,9 @@ import {
   checkSubscriptionStatus,
   subscribeToStation,
   unsubscribeFromStation,
+  fetchStationNote,
+  upsertStationNote,
+  deleteStationNote,
 } from "@/api/client";
 import { useUserStore } from "@/stores/useUserStore";
 import { useStationStore } from "@/stores/useStationStore";
@@ -14,10 +17,58 @@ import { useToast } from "@/components/Toast";
 import { StationLogo } from "@/components/StationLogo";
 import { impact, notify } from "@/lib/haptic";
 import { usePriceStore } from "@/stores/usePriceStore";
+import { useFavoritesStore } from "@/stores/useFavoritesStore";
 
 interface Props {
   station: GasStation;
   onClose?: () => void;
+}
+
+function ShareStationButton({ station }: { station: GasStation }) {
+  const { add: toast } = useToast();
+  const [copied, setCopied] = useState(false);
+
+  const handleShare = async () => {
+    const text = `⛽ ${station.name}\n📍 ${station.address}\n🗺️ https://yandex.ru/maps/?ll=${station.lng},${station.lat}&z=16&pt=${station.lng},${station.lat}\n\nТопливо ⛽️ — мониторинг АЗС`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: station.name, text });
+      } else {
+        await navigator.clipboard.writeText(text);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+        toast("📋 Скопировано в буфер", "success");
+      }
+    } catch {
+      try {
+        await navigator.clipboard.writeText(text);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+        toast("📋 Скопировано в буфер", "success");
+      } catch { toast("Не удалось скопировать", "error"); }
+    }
+  };
+
+  return (
+    <button
+      onClick={handleShare}
+      style={{
+        width: "100%",
+        background: copied ? "rgba(34,197,94,0.12)" : "rgba(168,85,247,0.08)",
+        border: `1px solid ${copied ? "#22c55e44" : "#a855f722"}`,
+        borderRadius: "10px",
+        color: copied ? "#22c55e" : "#6b7280",
+        fontSize: "0.75rem",
+        padding: "0.45rem",
+        cursor: "pointer",
+        display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem",
+        transition: "all 0.2s",
+        fontWeight: copied ? 600 : 400,
+      }}
+    >
+      {copied ? "✓ Скопировано" : "🔗 Поделиться АЗС"}
+    </button>
+  );
 }
 
 const ZONE_LABEL: Record<string, { label: string; color: string }> = {
@@ -49,6 +100,9 @@ export function StationCard({ station, onClose }: Props) {
     ? Math.round(station.fuel_statuses.reduce((a, b) => a + b.availability_pct, 0) / station.fuel_statuses.length)
     : 0;
 
+  const { isStationFavorite, toggleStationFavorite } = useFavoritesStore();
+  const isFav = isStationFavorite(station.id);
+
   const handleReport = async (vote: "available" | "unavailable") => {
     if (!user) return;
     impact("light");
@@ -65,6 +119,40 @@ export function StationCard({ station, onClose }: Props) {
 
   const [subStatus, setSubStatus] = useState<SubscriptionStatus | null>(null);
   const [subLoading, setSubLoading] = useState(false);
+
+  // Personal notes
+  const [noteText, setNoteText] = useState("");
+  const [noteSaved, setNoteSaved] = useState("");
+  const [noteEditing, setNoteEditing] = useState(false);
+  const [noteSaving, setNoteSaving] = useState(false);
+  const [noteLoaded, setNoteLoaded] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    fetchStationNote(station.id, user.id)
+      .then((d) => { setNoteSaved(d.body); setNoteText(d.body); setNoteLoaded(true); })
+      .catch(() => setNoteLoaded(true));
+  }, [user, station.id]);
+
+  const handleSaveNote = async () => {
+    if (!user || noteSaving) return;
+    setNoteSaving(true);
+    try {
+      if (noteText.trim()) {
+        await upsertStationNote(station.id, user.id, noteText.trim());
+        setNoteSaved(noteText.trim());
+      } else {
+        await deleteStationNote(station.id, user.id);
+        setNoteSaved("");
+      }
+      setNoteEditing(false);
+      toast("📝 Заметка сохранена", "success");
+    } catch {
+      toast("Не удалось сохранить заметку", "error");
+    } finally {
+      setNoteSaving(false);
+    }
+  };
 
   const refreshSubStatus = useCallback(async () => {
     if (!user) return;
@@ -163,6 +251,29 @@ export function StationCard({ station, onClose }: Props) {
             </div>
           </div>
           <div style={{ display: "flex", gap: "4px", alignItems: "center", flexShrink: 0, marginLeft: "0.5rem" }}>
+            <button
+              onClick={() => {
+                impact("light");
+                toggleStationFavorite(station.id);
+                toast(isFav ? "Удалено из избранного" : "⭐ Добавлено в избранное", isFav ? "info" : "success");
+              }}
+              title={isFav ? "Убрать из избранного" : "В избранное"}
+              style={{ background: "none", border: "none", cursor: "pointer", fontSize: "1.05rem", padding: "0.2rem 0.3rem", opacity: isFav ? 1 : 0.45, transition: "opacity 0.15s, transform 0.15s", transform: isFav ? "scale(1.1)" : "scale(1)" }}
+            >
+              {isFav ? "⭐" : "☆"}
+            </button>
+            <button
+              onClick={() => {
+                const url = `https://yandex.ru/maps/?rtext=~${station.lat},${station.lng}&rtt=auto`;
+                window.open(url, "_blank");
+              }}
+              title="Маршрут на Яндекс Картах"
+              style={{ background: "none", border: "none", cursor: "pointer", fontSize: "1.1rem", padding: "0.2rem 0.3rem", opacity: 0.7, transition: "opacity 0.15s" }}
+              onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
+              onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.7")}
+            >
+              🧭
+            </button>
             <button
               onClick={handleToggleSubscription}
               disabled={subLoading}
@@ -306,6 +417,86 @@ export function StationCard({ station, onClose }: Props) {
             title="Поделиться в Telegram"
           >✈️</button>
         </div>
+      </div>
+
+      {/* Personal notes */}
+      {noteLoaded && (
+        <div style={{ padding: "0.5rem 1rem", borderBottom: "1px solid #0f0f17" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginBottom: "0.4rem" }}>
+            <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.46rem", letterSpacing: "0.14em" }}>МОЯ_ЗАМЕТКА · ЛИЧНАЯ</div>
+            <div style={{ flex: 1, height: "1px", background: "linear-gradient(90deg,#1e1e2a,transparent)" }} />
+            {!noteEditing && (
+              <button
+                onClick={() => setNoteEditing(true)}
+                style={{ background: "none", border: "none", color: "#4b5563", fontSize: "0.65rem", cursor: "pointer", padding: 0 }}
+              >
+                {noteSaved ? "✏️ Ред." : "+ Добавить"}
+              </button>
+            )}
+          </div>
+          {!noteEditing ? (
+            noteSaved ? (
+              <div
+                onClick={() => setNoteEditing(true)}
+                style={{
+                  background: "rgba(168,85,247,0.05)", border: "1px solid #a855f720",
+                  borderRadius: "8px", padding: "0.5rem 0.65rem",
+                  color: "#9ca3af", fontSize: "0.72rem", lineHeight: 1.5,
+                  cursor: "pointer", whiteSpace: "pre-wrap", wordBreak: "break-word",
+                }}
+              >
+                📝 {noteSaved}
+              </div>
+            ) : (
+              <button
+                onClick={() => setNoteEditing(true)}
+                style={{
+                  width: "100%", textAlign: "left",
+                  background: "rgba(255,255,255,0.02)", border: "1px dashed #1e1e2a",
+                  borderRadius: "8px", padding: "0.45rem 0.65rem",
+                  color: "#374151", fontSize: "0.68rem", cursor: "pointer",
+                }}
+              >
+                Добавить личную заметку…
+              </button>
+            )
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+              <textarea
+                value={noteText}
+                onChange={(e) => setNoteText(e.target.value)}
+                maxLength={500}
+                rows={3}
+                placeholder="Личные наблюдения: расписание, очереди, особенности…"
+                autoFocus
+                style={{
+                  width: "100%", boxSizing: "border-box", resize: "none",
+                  background: "#0b0b12", border: "1px solid #a855f744",
+                  borderRadius: "8px", color: "#e2e8f0",
+                  padding: "0.5rem 0.65rem", fontSize: "0.72rem", lineHeight: 1.5,
+                  outline: "none", fontFamily: "inherit",
+                }}
+              />
+              <div style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}>
+                <span style={{ fontSize: "0.55rem", color: "#374151", flex: 1 }}>{noteText.length}/500</span>
+                <button
+                  onClick={() => { setNoteText(noteSaved); setNoteEditing(false); }}
+                  style={{ background: "none", border: "1px solid #1e1e2a", borderRadius: "6px", color: "#4b5563", fontSize: "0.65rem", padding: "0.25rem 0.5rem", cursor: "pointer" }}
+                >Отмена</button>
+                <button
+                  onClick={handleSaveNote}
+                  disabled={noteSaving}
+                  style={{ background: "rgba(168,85,247,0.2)", border: "1px solid #a855f755", borderRadius: "6px", color: "#a855f7", fontSize: "0.65rem", padding: "0.25rem 0.6rem", cursor: "pointer", fontWeight: 700 }}
+                >{noteSaving ? "…" : "Сохранить"}</button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Share station button */}
+      <div style={{ padding: "0 1rem 0.5rem" }}>
+        <ShareStationButton station={station} />
       </div>
 
       {/* Buy vouchers CTA */}

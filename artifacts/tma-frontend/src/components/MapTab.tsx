@@ -9,30 +9,34 @@ import { STATUS_COLORS } from "@/types";
 import { useStationStore } from "@/stores/useStationStore";
 import { useMapStore } from "@/stores/useMapStore";
 import { usePriceStore } from "@/stores/usePriceStore";
+import { useFavoritesStore } from "@/stores/useFavoritesStore";
 import { StationCard } from "@/components/StationCard";
 
 // NOTE: Leaflet default marker icons are fixed globally in src/main.tsx via
 // bundled asset imports.  No CDN URLs needed here — this file only uses
 // L.divIcon() for custom station markers, so no further setup is required.
 
-function createStationIcon(status: string) {
+function createStationIcon(status: string, starred = false) {
   const color = STATUS_COLORS[status] ?? "#9ca3af";
   const pulse = status === "red" ? `<div style="position:absolute;inset:-4px;border-radius:50%;border:1.5px solid ${color};opacity:0.4;animation:mrkPulse 1.8s ease-in-out infinite;"></div>` : "";
+  const starBadge = starred ? `<div style="position:absolute;top:-7px;right:-7px;font-size:9px;line-height:1;z-index:2;filter:drop-shadow(0 0 3px #f59e0b);">⭐</div>` : "";
+  const size = starred ? 20 : 16;
   return L.divIcon({
     html: `<style>@keyframes mrkPulse{0%,100%{transform:scale(1);opacity:0.4}50%{transform:scale(1.55);opacity:0}}</style>
-    <div style="position:relative;width:16px;height:16px;">
+    <div style="position:relative;width:${size}px;height:${size}px;">
       ${pulse}
+      ${starBadge}
       <div style="
-        width:16px;height:16px;border-radius:50%;
+        width:${size}px;height:${size}px;border-radius:50%;
         background:radial-gradient(circle at 35% 30%, ${color}ff, ${color}99);
-        border:1.5px solid rgba(255,255,255,0.35);
-        box-shadow:0 0 12px ${color}99,0 0 4px ${color},0 2px 4px #00000066;
+        border:${starred ? "2px solid #f59e0b" : "1.5px solid rgba(255,255,255,0.35)"};
+        box-shadow:0 0 12px ${color}99,0 0 4px ${color},${starred ? "0 0 8px #f59e0b66," : ""}0 2px 4px #00000066;
         position:relative;z-index:1;
       "></div>
     </div>`,
     className: "",
-    iconSize: [16, 16],
-    iconAnchor: [8, 8],
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
   });
 }
 
@@ -174,7 +178,47 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
     useMapStore();
   const [showFilters, setShowFilters] = useState(false);
   const [showHeatmap, setShowHeatmap] = useState(true);
+  const [geoLoading, setGeoLoading] = useState(false);
+  const [geoError, setGeoError] = useState<string | null>(null);
+  const mapRef = useRef<import("leaflet").Map | null>(null);
   const dragControls = useDragControls();
+
+  function haversineDist(lat1: number, lng1: number, lat2: number, lng2: number) {
+    const R = 6371;
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLng = ((lng2 - lng1) * Math.PI) / 180;
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+
+  const findNearest = () => {
+    if (!navigator.geolocation) { setGeoError("Геолокация не поддерживается"); return; }
+    setGeoLoading(true);
+    setGeoError(null);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setGeoLoading(false);
+        const { latitude, longitude } = pos.coords;
+        const greenStations = stations.filter((s) => {
+          const avg = s.fuel_statuses.length ? s.fuel_statuses.reduce((a, b) => a + b.availability_pct, 0) / s.fuel_statuses.length : 0;
+          return avg >= 25;
+        });
+        const pool = greenStations.length ? greenStations : stations;
+        if (!pool.length) return;
+        const nearest = pool.reduce((best, s) => {
+          const d = haversineDist(latitude, longitude, s.lat, s.lng);
+          const bestD = haversineDist(latitude, longitude, best.lat, best.lng);
+          return d < bestD ? s : best;
+        });
+        mapRef.current?.flyTo([nearest.lat, nearest.lng], 14, { duration: 1.2 });
+        selectStation(nearest.id);
+      },
+      () => { setGeoLoading(false); setGeoError("Нет доступа к геолокации"); setTimeout(() => setGeoError(null), 4000); },
+      { timeout: 8000, maximumAge: 30000 },
+    );
+  };
+
+  const { isStationFavorite } = useFavoritesStore();
 
   // Per-region availability stats for heatmap
   const regionStats = REGION_BOUNDS.map((rb) => {
@@ -275,6 +319,27 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
               }}
             />
           )}
+        </button>
+
+        {/* Geolocation nearest station */}
+        <button
+          onClick={findNearest}
+          disabled={geoLoading}
+          title="Ближайшая АЗС"
+          style={{
+            background: geoLoading ? "rgba(168,85,247,0.15)" : "rgba(20,20,28,0.92)",
+            border: `1px solid ${geoError ? "#ef444455" : geoLoading ? "#a855f755" : "#22222f"}`,
+            borderRadius: "10px",
+            color: geoError ? "#ef4444" : geoLoading ? "#a855f7" : "#e2e8f0",
+            padding: "0.4rem 0.6rem",
+            fontSize: "0.78rem",
+            cursor: geoLoading ? "default" : "pointer",
+            backdropFilter: "blur(12px)",
+            display: "flex", alignItems: "center", gap: "0.2rem",
+            transition: "all 0.2s",
+          }}
+        >
+          {geoLoading ? "⟳" : geoError ? "✗" : "📍"}
         </button>
 
         {/* Heatmap toggle */}
@@ -491,6 +556,28 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
         )}
       </AnimatePresence>
 
+      {/* Map legend — bottom-left */}
+      <div style={{
+        position: "absolute",
+        bottom: navVisible ? "calc(env(safe-area-inset-bottom, 0px) + 5.5rem)" : "calc(env(safe-area-inset-bottom, 0px) + 1rem)",
+        left: "0.75rem",
+        zIndex: 1000,
+        background: "rgba(8,8,20,0.88)",
+        border: "1px solid #1e1e2a",
+        borderRadius: "10px",
+        padding: "0.35rem 0.55rem",
+        backdropFilter: "blur(12px)",
+        display: "flex", flexDirection: "column", gap: "4px",
+        transition: "bottom 0.3s",
+      }}>
+        {([["#22c55e","≥60%"],["#eab308","25–60%"],["#ef4444","<25%"]] as [string,string][]).map(([c,l]) => (
+          <div key={c} style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+            <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: c, boxShadow: `0 0 5px ${c}88`, flexShrink: 0 }} />
+            <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.42rem", color: "#6b7280" }}>{l}</span>
+          </div>
+        ))}
+      </div>
+
       {/* Nav toggle button — bottom-right corner of map */}
       {onNavToggle && (
         <button
@@ -524,6 +611,7 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
         style={{ width: "100%", height: "100%", background: "#050507" }}
         zoomControl={false}
         attributionControl={false}
+        ref={(m) => { if (m) mapRef.current = m; }}
       >
         <TileLayer
           url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
@@ -588,7 +676,7 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
             <Marker
               key={station.id}
               position={[station.lat, station.lng]}
-              icon={createStationIcon(dominantStatus(station))}
+              icon={createStationIcon(dominantStatus(station), isStationFavorite(station.id))}
               eventHandlers={{ click: () => selectStation(station.id) }}
             >
               <Popup

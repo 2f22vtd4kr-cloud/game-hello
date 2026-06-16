@@ -9,6 +9,8 @@ import { CRISIS_EVENTS } from "@/game/events";
 import { renderFrame, getCanvasCoords } from "@/game/renderer";
 import { getUpgradeCost, getProductionRates } from "@/game/engine";
 import { LEVEL_TITLES, DAILY_REWARDS, CRISIS_SHOP, TILE_W, TILE_H } from "@/game/constants";
+import { useUserStore } from "@/stores/useUserStore";
+import { fetchEmpireLeaderboard, type EmpireLeaderboardEntry } from "@/api/client";
 
 function fmtNum(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}М`;
@@ -321,14 +323,91 @@ function OfflineEarningsModal({ gains, onDismiss }: {
   );
 }
 
+function LeaderboardPanel({ onClose, currentUserId }: { onClose: () => void; currentUserId: number | null }) {
+  const [entries, setEntries] = useState<EmpireLeaderboardEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchEmpireLeaderboard()
+      .then(r => setEntries(r.entries))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const medals = ["🥇", "🥈", "🥉"];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.75)", zIndex: 400, display: "flex", alignItems: "flex-end" }}
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
+        transition={{ type: "spring", stiffness: 340, damping: 30 }}
+        onClick={e => e.stopPropagation()}
+        style={{
+          width: "100%", background: "rgba(10,12,20,0.98)", backdropFilter: "blur(20px)",
+          borderTop: "1px solid rgba(255,255,255,0.08)", borderRadius: "20px 20px 0 0",
+          maxHeight: "72vh", overflow: "hidden", display: "flex", flexDirection: "column",
+        }}
+      >
+        <div style={{ width: 36, height: 4, background: "rgba(255,255,255,0.18)", borderRadius: 99, margin: "10px auto 0", flexShrink: 0 }} />
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 16px 12px", flexShrink: 0 }}>
+          <span style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>🏆 Рейтинг Империй</span>
+          <button onClick={onClose} style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "50%", width: 28, height: 28, cursor: "pointer", color: "#fff", fontSize: 14 }}>×</button>
+        </div>
+        <div style={{ overflowY: "auto", flex: 1, padding: "0 12px 24px" }}>
+          {loading ? (
+            <div style={{ textAlign: "center", color: "rgba(255,255,255,0.4)", padding: 32, fontSize: 13 }}>Загрузка…</div>
+          ) : entries.length === 0 ? (
+            <div style={{ textAlign: "center", color: "rgba(255,255,255,0.4)", padding: 32, fontSize: 13 }}>Пока нет игроков — будьте первым!</div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {entries.map(e => {
+                const isMe = currentUserId !== null && e.user_id === currentUserId;
+                return (
+                  <div key={e.user_id} style={{
+                    display: "flex", alignItems: "center", gap: 10,
+                    background: isMe ? "rgba(124,58,237,0.15)" : "rgba(255,255,255,0.04)",
+                    border: `1px solid ${isMe ? "rgba(124,58,237,0.4)" : "rgba(255,255,255,0.07)"}`,
+                    borderRadius: 12, padding: "8px 12px",
+                  }}>
+                    <span style={{ fontSize: 18, minWidth: 24, textAlign: "center" }}>
+                      {e.rank <= 3 ? medals[e.rank - 1] : `#${e.rank}`}
+                    </span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: isMe ? "#c4b5fd" : "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {e.username ? `@${e.username}` : `Игрок ${e.user_id}`}
+                        {isMe && <span style={{ marginLeft: 6, fontSize: 10, color: "#a78bfa" }}>ВЫ</span>}
+                      </div>
+                      <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)" }}>
+                        Ур.{e.empire_level} · {e.prestige_count > 0 ? `⭐×${e.prestige_count} · ` : ""}💰{fmtNum(e.coins)}
+                      </div>
+                    </div>
+                    <div style={{ fontSize: 20 }}>🏭</div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 export function GamesPage() {
-  const { state, offlineGains, initGame, tickGame, placeBuilding, upgradeBuilding, demolishBuilding, claimDailyReward, buyFromCrisisShop, dismissOfflineGains } = useGameStore();
+  const { state, offlineGains, initGame, tickGame, placeBuilding, upgradeBuilding, demolishBuilding, claimDailyReward, buyFromCrisisShop, dismissOfflineGains, syncWithBackend, pushToBackend } = useGameStore();
+  const { user } = useUserStore();
+  const userId = user?.id ?? null;
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const animFrameRef = useRef<number>(0);
   const lastTimeRef = useRef<number>(0);
   const tickTimerRef = useRef<number>(0);
+  const backendSyncRef = useRef<number>(0);
 
   const [tileW, setTileW] = useState(TILE_W);
   const [tileH, setTileH] = useState(TILE_H);
@@ -340,6 +419,7 @@ export function GamesPage() {
   const [showBuildMenu, setShowBuildMenu] = useState(false);
   const [pendingBuildId, setPendingBuildId] = useState<BuildingId | null>(null);
   const [showCrisisShop, setShowCrisisShop] = useState(false);
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [notifications, setNotifications] = useState<{ id: number; text: string; type: string }[]>([]);
 
   const dragRef = useRef({ dragging: false, startX: 0, startY: 0, lastX: 0, lastY: 0, moved: false });
@@ -348,6 +428,16 @@ export function GamesPage() {
   useEffect(() => {
     initGame();
   }, [initGame]);
+
+  // Sync with backend: load remote state on mount, then push every 2 minutes
+  useEffect(() => {
+    if (!userId) return;
+    syncWithBackend(userId);
+    backendSyncRef.current = window.setInterval(() => {
+      pushToBackend(userId);
+    }, 120_000);
+    return () => clearInterval(backendSyncRef.current);
+  }, [userId, syncWithBackend, pushToBackend]);
 
   useEffect(() => {
     const len = state.notifications.length;
@@ -495,6 +585,13 @@ export function GamesPage() {
             👷 {usedWorkers}/{totalWorkers}
           </div>
           <button
+            onClick={() => setShowLeaderboard(true)}
+            style={{ background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.25)", borderRadius: 8, padding: "3px 8px", color: "#f59e0b", fontSize: 13, cursor: "pointer" }}
+            title="Рейтинг"
+          >
+            🏆
+          </button>
+          <button
             onClick={() => setShowCrisisShop(true)}
             style={{ background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 8, padding: "3px 8px", color: "#ef4444", fontSize: 11, fontWeight: 700, cursor: "pointer" }}
           >
@@ -587,6 +684,15 @@ export function GamesPage() {
             tokens={Math.floor(state.resources.crisis_tokens ?? 0)}
             onBuy={(id) => { buyFromCrisisShop(id); setShowCrisisShop(false); }}
             onClose={() => setShowCrisisShop(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showLeaderboard && (
+          <LeaderboardPanel
+            onClose={() => setShowLeaderboard(false)}
+            currentUserId={userId}
           />
         )}
       </AnimatePresence>

@@ -123,7 +123,7 @@ externalPort = 8099
 PAYMENT_METHOD = "auto"
 
 [userenv.production]
-TMA_PORT = "8080"
+TMA_PORT = "8000"
 
 [nix]
 channel = "stable-25_05"

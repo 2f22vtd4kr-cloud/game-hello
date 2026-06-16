@@ -26,7 +26,7 @@ from sqlalchemy.orm import Session
 
 from tma_backend.database import SessionLocal, get_db, init_db, seed_db, _generate_snapshot
 from tma_backend.models import (
-    Empire, RegionFavorite,
+    Empire, RegionFavorite, StationNote, PriceSnapshot,
     AnalyticsSnapshot, DailyLimitTracker, FuelStatus, GasStation,
     PurchaseHistory, ReferralCode, StationReport, Subscription, User,
     UserAchievement, UserCheckin, VpnSession,
@@ -107,7 +107,7 @@ def _seed_news_events(db: Session) -> None:
             severity=ev["severity"],
             fuel_type=ev.get("fuel_type"),
             price_delta_pct=ev.get("price_delta_pct"),
-            source="Матрица Снабжения",
+            source="Топливо ⛽️",
             created_at=now - timedelta(hours=hours_ago),
         ))
     db.commit()
@@ -123,6 +123,8 @@ def _run_migrations() -> None:
         "ALTER TABLE vpn_sessions ADD COLUMN IF NOT EXISTS warned_expiry BOOLEAN NOT NULL DEFAULT FALSE",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS checkin_streak INTEGER NOT NULL DEFAULT 0",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS last_checkin_date TIMESTAMPTZ",
+        # Empire full client-side game state sync
+        "ALTER TABLE empires ADD COLUMN IF NOT EXISTS full_state_json TEXT",
         # Indices for bulk StationReport lookup in /api/stations
         "CREATE INDEX IF NOT EXISTS ix_station_report_station_id ON station_reports (station_id)",
         "CREATE INDEX IF NOT EXISTS ix_station_report_expires_at ON station_reports (expires_at)",
@@ -166,6 +168,7 @@ async def lifespan(app: FastAPI):
     scheduler.add_job(warn_low_stock, "interval", minutes=20, jitter=60)
     scheduler.add_job(expire_vpn_sessions, "interval", minutes=1, jitter=15)
     scheduler.add_job(fluctuate_prices, "interval", minutes=15, jitter=60)
+    scheduler.add_job(snapshot_price_history, "interval", hours=1, jitter=120)
     scheduler.add_job(generate_news_from_availability, "interval", hours=2, jitter=60)
     scheduler.start()
     logger.info("Топливо ⛽️ API запущен (DB init running in background).")
@@ -757,7 +760,7 @@ def send_morning_digest():
             fuel_by_station.setdefault(fs.station_id, []).append(fs)
 
         for chat_id, user_subs in by_chat.items():
-            lines = ["☀️ *Утренний дайджест — Матрица Снабжения*\n"]
+            lines = ["☀️ *Утренний дайджест — Топливо ⛽️*\n"]
             for sub in user_subs[:8]:  # cap at 8 stations per digest
                 station = station_map.get(sub.station_id)
                 if not station:
@@ -845,7 +848,7 @@ def send_weekly_report():
         best3 = scored[:3]
         worst3 = sorted(scored, key=lambda x: x["green_pct"])[:3]
 
-        lines = ["📊 *Еженедельный отчёт — Матрица Снабжения*\n"]
+        lines = ["📊 *Еженедельный отчёт — Топливо ⛽️*\n"]
         lines.append("🟢 *Лучшее снабжение на этой неделе:*")
         for r in best3:
             lines.append(f"  • {r['name']} — {r['green_pct']}% в норме")
@@ -1287,6 +1290,49 @@ def get_top_stations(limit: int = 5, fuel_type: Optional[str] = None, db: Sessio
         }
         for r in rows
     ]
+
+
+@app.get("/api/stations/{station_id}/notes/{user_id}")
+def get_station_note(station_id: int, user_id: int, db: Session = Depends(get_db)):
+    note = db.query(StationNote).filter(
+        StationNote.station_id == station_id,
+        StationNote.user_id == user_id,
+    ).first()
+    return {"body": note.body if note else "", "updated_at": note.updated_at.isoformat() if note else None}
+
+
+@app.post("/api/stations/{station_id}/notes")
+def upsert_station_note(
+    station_id: int,
+    body: dict,
+    db: Session = Depends(get_db),
+):
+    user_id = body.get("user_id")
+    text = (body.get("body") or "").strip()[:500]
+    if not user_id:
+        raise HTTPException(400, detail="user_id required")
+    note = db.query(StationNote).filter(
+        StationNote.station_id == station_id,
+        StationNote.user_id == user_id,
+    ).first()
+    if not note:
+        note = StationNote(station_id=station_id, user_id=user_id, body=text)
+        db.add(note)
+    else:
+        note.body = text
+        note.updated_at = _now()
+    db.commit()
+    return {"ok": True, "body": note.body}
+
+
+@app.delete("/api/stations/{station_id}/notes/{user_id}")
+def delete_station_note(station_id: int, user_id: int, db: Session = Depends(get_db)):
+    db.query(StationNote).filter(
+        StationNote.station_id == station_id,
+        StationNote.user_id == user_id,
+    ).delete()
+    db.commit()
+    return {"ok": True}
 
 
 @app.get("/api/stations/{station_id}", response_model=GasStationOut)
@@ -2424,6 +2470,31 @@ def get_analytics(db: Session = Depends(get_db)):
     )
 
 
+@app.get("/api/users/{user_id}/notes")
+def get_user_notes(user_id: int, db: Session = Depends(get_db)):
+    """Return all station notes written by a user, joined with station name."""
+    notes = (
+        db.query(StationNote, GasStation)
+        .join(GasStation, GasStation.id == StationNote.station_id)
+        .filter(StationNote.user_id == user_id)
+        .order_by(StationNote.updated_at.desc())
+        .all()
+    )
+    return {
+        "notes": [
+            {
+                "id": n.id,
+                "station_id": n.station_id,
+                "station_name": s.name,
+                "station_region": s.region,
+                "body": n.body,
+                "updated_at": n.updated_at.isoformat() if n.updated_at else None,
+            }
+            for n, s in notes
+        ]
+    }
+
+
 @app.get("/api/analytics/trend")
 def get_analytics_trend(region: Optional[str] = None, days: int = 7, db: Session = Depends(get_db)):
     """Hourly-averaged availability trend for a given region and time window."""
@@ -2480,6 +2551,33 @@ def _compute_dynamic_price(db: Session, region: str, fuel_type: str, base_rub: i
         "is_crisis": combined > 1.15,
         "events": [{"reason": e.reason, "multiplier": e.multiplier} for e in events],
     }
+
+
+async def snapshot_price_history():
+    """APScheduler job: every hour, snapshot avg/min/max price per fuel type."""
+    db = SessionLocal()
+    try:
+        from tma_backend.seed_regions import REGIONS, FUEL_PRICES_RUB, FUEL_TYPES
+        for ft in FUEL_TYPES:
+            base = FUEL_PRICES_RUB.get(ft, 55)
+            vals = [_compute_dynamic_price(db, r["name"], ft, base).get("effective", base) for r in REGIONS]
+            vals = [v for v in vals if v and v > 0]
+            if not vals:
+                continue
+            snap = PriceSnapshot(
+                fuel_type=ft,
+                avg_price=sum(vals) / len(vals),
+                min_price=min(vals),
+                max_price=max(vals),
+                region_count=len(vals),
+            )
+            db.add(snap)
+        db.commit()
+    except Exception as exc:
+        logger.error("snapshot_price_history error: %s", exc)
+        db.rollback()
+    finally:
+        db.close()
 
 
 async def fluctuate_prices():
@@ -2706,6 +2804,29 @@ def get_prices(region: Optional[str] = None, db: Session = Depends(get_db)):
             base = FUEL_PRICES_RUB.get(ft, 55)
             result[rname][ft] = _compute_dynamic_price(db, rname, ft, base)
     return result
+
+
+@app.get("/api/prices/history")
+def get_price_history(hours: int = 24, db: Session = Depends(get_db)):
+    """Return per-fuel-type price snapshots for the last N hours (default 24)."""
+    cutoff = _now() - timedelta(hours=max(1, min(hours, 168)))
+    rows = (
+        db.query(PriceSnapshot)
+        .filter(PriceSnapshot.snapped_at >= cutoff)
+        .order_by(PriceSnapshot.snapped_at.asc())
+        .all()
+    )
+    result: dict = {}
+    for r in rows:
+        if r.fuel_type not in result:
+            result[r.fuel_type] = []
+        result[r.fuel_type].append({
+            "t": r.snapped_at.isoformat(),
+            "avg": round(r.avg_price, 2),
+            "min": round(r.min_price, 2),
+            "max": round(r.max_price, 2),
+        })
+    return {"history": result}
 
 
 @app.get("/api/prices/{region_name}")
@@ -2947,6 +3068,36 @@ async def prices_websocket(websocket: WebSocket):
         _price_ws_clients.discard(websocket)
 
 
+@app.get("/api/stats/summary")
+def get_stats_summary(db: Session = Depends(get_db)):
+    """Quick summary stats for dashboard widgets."""
+    from sqlalchemy import text as _text
+
+    def _count(q: str) -> int:
+        return db.execute(_text(q)).scalar() or 0
+
+    total = _count("SELECT count(*) FROM gas_stations")
+    green = _count("SELECT count(DISTINCT station_id) FROM fuel_statuses WHERE availability_pct >= 60")
+    yellow = _count("SELECT count(DISTINCT station_id) FROM fuel_statuses WHERE availability_pct >= 25 AND availability_pct < 60")
+    red = _count("SELECT count(DISTINCT station_id) FROM fuel_statuses WHERE availability_pct < 25")
+    total_users = _count("SELECT count(*) FROM users")
+    active_vouchers = _count("SELECT count(*) FROM purchases WHERE status = 'active'")
+    reports_today = _count("SELECT count(*) FROM crowd_reports WHERE created_at >= date('now')")
+
+    overall_pct = db.execute(_text(
+        "SELECT AVG(availability_pct) FROM fuel_statuses"
+    )).scalar() or 0
+
+    return {
+        "stations": {"total": total, "green": green, "yellow": yellow, "red": red},
+        "overall_pct": round(float(overall_pct), 1),
+        "total_users": total_users,
+        "active_vouchers": active_vouchers,
+        "reports_today": reports_today,
+        "status": "ok",
+    }
+
+
 @app.get("/health")
 @app.get("/api/health")
 async def health_check():
@@ -3139,6 +3290,43 @@ def empire_leaderboard(db: Session = Depends(get_db)):
     for i, e in enumerate(entries[:20]):
         e["rank"] = i + 1
     return {"entries": entries[:20]}
+
+
+@app.get("/api/empire/{user_id}/state")
+def get_empire_state(user_id: int, db: Session = Depends(get_db)):
+    """Return the raw client-side game state JSON saved by the TMA frontend."""
+    emp = db.query(Empire).filter(Empire.user_id == user_id).first()
+    if not emp or not emp.full_state_json:
+        return {"state": None}
+    return {"state": json.loads(emp.full_state_json)}
+
+
+@app.post("/api/empire/{user_id}/sync")
+def sync_empire_state(user_id: int, body: dict, db: Session = Depends(get_db)):
+    """Persist the full client-side game state from the TMA frontend."""
+    emp = _get_or_create_empire(db, user_id)
+    raw = body.get("state")
+    if raw is None:
+        raise HTTPException(400, "Missing 'state' field")
+    state_str = json.dumps(raw)
+    emp.full_state_json = state_str
+    # Mirror XP + coins into Empire model for leaderboard
+    if isinstance(raw, dict):
+        resources = raw.get("resources", {})
+        emp.coins = float(resources.get("coins", emp.coins or 0))
+        # Derive prestige_count from game state
+        emp.prestige_count = int(raw.get("prestige_count", emp.prestige_count or 0))
+        # Store buildings as simple count map for leaderboard _empire_level()
+        placed = raw.get("buildings", [])
+        bmap: dict[str, int] = {}
+        for b in placed:
+            bid = b.get("id", "")
+            if bid:
+                bmap[bid] = bmap.get(bid, 0) + 1
+        emp.buildings_json = json.dumps(bmap)
+        emp.last_collected_at = datetime.now(timezone.utc)
+    db.commit()
+    return {"ok": True, "synced_at": datetime.now(timezone.utc).isoformat()}
 
 
 @app.get("/api/empire/{user_id}")

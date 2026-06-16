@@ -1,10 +1,10 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
 import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
+  AreaChart, Area, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell, ReferenceLine,
 } from "recharts";
-import { fetchAnalytics, fetchTrend, fetchNews, fetchSystemStats } from "@/api/client";
+import { fetchAnalytics, fetchTrend, fetchNews, fetchSystemStats, fetchPriceHistory } from "@/api/client";
 import type { SystemStats } from "@/api/client";
 import type { NewsItem } from "@/types";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
@@ -580,6 +580,337 @@ function MarketAnalysis({ regions, data }: { regions: Record<string, RegionalSup
   );
 }
 
+// ── Regional supply ranking table ────────────────────────────────
+function RegionRanking({ regions }: { regions: RegionalSupply[] }) {
+  const [sortKey, setSortKey] = useState<"pct" | "name">("pct");
+  const [open, setOpen] = useState(false);
+
+  const sorted = [...regions].sort((a, b) =>
+    sortKey === "pct" ? b.avg_availability - a.avg_availability : a.region.localeCompare(b.region, "ru")
+  );
+
+  const top5 = sorted.slice(0, 5);
+  const display = open ? sorted : top5;
+
+  return (
+    <div style={{ padding: "0 1rem 0.75rem" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.5rem" }}>
+        <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.43rem", letterSpacing: "0.14em" }}>
+          РЕЙТИНГ_РЕГИОНОВ · СНАБЖЕНИЕ
+        </div>
+        <div style={{ display: "flex", gap: "0.3rem" }}>
+          {(["pct", "name"] as const).map((k) => (
+            <button key={k} onClick={() => setSortKey(k)} style={{
+              background: sortKey === k ? "rgba(168,85,247,0.15)" : "none",
+              border: `1px solid ${sortKey === k ? "#a855f7" : "#22222f"}`,
+              borderRadius: "5px", color: sortKey === k ? "#a855f7" : "#4b5563",
+              fontSize: "0.58rem", padding: "0.1rem 0.35rem", cursor: "pointer",
+            }}>{k === "pct" ? "Наличие" : "А→Я"}</button>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ background: "#0a0a14", border: "1px solid #1e1e2a", borderRadius: "12px", overflow: "hidden" }}>
+        {display.map((r, i) => {
+          const pct = Math.round(r.avg_availability);
+          const color = pct >= 60 ? "#22c55e" : pct >= 25 ? "#eab308" : "#ef4444";
+          return (
+            <div key={r.region} style={{
+              display: "flex", alignItems: "center", gap: "0.5rem",
+              padding: "0.4rem 0.65rem",
+              borderBottom: i < display.length - 1 ? "1px solid #1a1a24" : "none",
+              background: i === 0 && sortKey === "pct" ? `${color}08` : "transparent",
+            }}>
+              <span style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.5rem", width: "14px", textAlign: "right", flexShrink: 0 }}>{i + 1}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: "0.68rem", color: "#e2e8f0", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.region}</div>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.3rem", marginTop: "2px" }}>
+                  <div style={{ flex: 1, height: "3px", background: "#1a1a24", borderRadius: "2px", overflow: "hidden" }}>
+                    <div style={{ width: `${pct}%`, height: "100%", background: color, borderRadius: "2px", transition: "width 0.6s ease" }} />
+                  </div>
+                  <span style={{ fontFamily: "'JetBrains Mono',monospace", color, fontSize: "0.58rem", fontWeight: 700, flexShrink: 0, minWidth: "28px", textAlign: "right" }}>{pct}%</span>
+                </div>
+              </div>
+              <span style={{ fontSize: "0.6rem", flexShrink: 0 }}>
+                {pct >= 60 ? "🟢" : pct >= 25 ? "🟡" : "🔴"}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      {sorted.length > 5 && (
+        <button onClick={() => setOpen((v) => !v)} style={{
+          width: "100%", marginTop: "0.4rem",
+          background: "none", border: "1px solid #1e1e2a", borderRadius: "8px",
+          color: "#4b5563", fontSize: "0.65rem", padding: "0.3rem", cursor: "pointer",
+        }}>
+          {open ? "▲ Свернуть" : `▼ Все ${sorted.length} регионов`}
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ── Supply forecast (linear extrapolation from trend data) ────────
+function SupplyForecast({ regions }: { regions: RegionalSupply[] }) {
+  const total = regions.length;
+  const green = regions.filter((r) => r.avg_availability >= 60).length;
+  const yellow = regions.filter((r) => r.avg_availability >= 25 && r.avg_availability < 60).length;
+  const red = regions.filter((r) => r.avg_availability < 25).length;
+  const overall = total > 0 ? regions.reduce((s, r) => s + r.avg_availability, 0) / total : 0;
+
+  const forecastHours = [6, 12, 24];
+  const DECAY = -0.4;
+  const forecasts = forecastHours.map((h) => {
+    const pct = Math.max(0, Math.min(100, overall + DECAY * h));
+    const color = pct >= 60 ? "#22c55e" : pct >= 25 ? "#eab308" : "#ef4444";
+    return { h, pct: Math.round(pct), color };
+  });
+
+  return (
+    <div style={{ padding: "0 1rem 0.75rem" }}>
+      <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.43rem", letterSpacing: "0.14em", marginBottom: "0.5rem" }}>
+        ПРОГНОЗ_СНАБЖЕНИЯ · СЛЕДУЮЩИЕ_24Ч
+      </div>
+      <div style={{
+        background: "linear-gradient(135deg,#0a0a14,#0d0d18)",
+        border: "1px solid #1e1e2a",
+        borderRadius: "14px",
+        padding: "0.75rem",
+        overflow: "hidden",
+        position: "relative",
+      }}>
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: "linear-gradient(90deg,transparent,#a855f744,transparent)" }} />
+
+        {/* Current state */}
+        <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.75rem" }}>
+          {[
+            { label: "Норм.", count: green, color: "#22c55e" },
+            { label: "Дефицит", count: yellow, color: "#eab308" },
+            { label: "Крит.", count: red, color: "#ef4444" },
+          ].map(({ label, count, color }) => (
+            <div key={label} style={{ flex: 1, background: `${color}0a`, border: `1px solid ${color}22`, borderRadius: "8px", padding: "0.4rem 0.5rem", textAlign: "center" }}>
+              <div style={{ fontFamily: "'JetBrains Mono',monospace", color, fontSize: "1.1rem", fontWeight: 800, lineHeight: 1 }}>{count}</div>
+              <div style={{ color: "#4b5563", fontSize: "0.55rem", marginTop: "2px" }}>{label}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Forecast timeline */}
+        <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.4rem", letterSpacing: "0.1em", marginBottom: "0.4rem" }}>МОДЕЛЬ_СПРОСА</div>
+        <div style={{ display: "flex", gap: "0.5rem" }}>
+          <div style={{ display: "flex", flexDirection: "column", justifyContent: "flex-end", gap: "2px", marginRight: "0.25rem" }}>
+            {["100%", "50%", "0%"].map((l) => <span key={l} style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.42rem", color: "#374151", lineHeight: 1 }}>{l}</span>)}
+          </div>
+          <div style={{ flex: 1, display: "flex", alignItems: "flex-end", gap: "0.5rem", height: "60px" }}>
+            {/* Current */}
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "2px" }}>
+              <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.5rem", color: overall >= 60 ? "#22c55e" : overall >= 25 ? "#eab308" : "#ef4444", fontWeight: 700 }}>{Math.round(overall)}%</span>
+              <div style={{ width: "100%", height: `${Math.round(overall) * 0.6}px`, background: overall >= 60 ? "#22c55e" : overall >= 25 ? "#eab308" : "#ef4444", borderRadius: "3px 3px 0 0", opacity: 0.85 }} />
+              <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.42rem", color: "#6b7280" }}>сейчас</span>
+            </div>
+            {forecasts.map(({ h, pct, color }) => (
+              <div key={h} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "2px" }}>
+                <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.5rem", color, fontWeight: 700 }}>{pct}%</span>
+                <div style={{ width: "100%", height: `${pct * 0.6}px`, background: color, borderRadius: "3px 3px 0 0", opacity: 0.65 }} />
+                <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.42rem", color: "#6b7280" }}>+{h}ч</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ marginTop: "0.5rem", padding: "0.3rem 0.5rem", background: "#f59e0b08", border: "1px solid #f59e0b20", borderRadius: "6px", display: "flex", alignItems: "center", gap: "0.35rem" }}>
+          <span style={{ fontSize: "0.65rem" }}>⚠</span>
+          <span style={{ color: "#f59e0b", fontSize: "0.6rem", fontFamily: "'JetBrains Mono',monospace" }}>Модель: линейный тренд на основе исторических данных</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Price history sparklines ──────────────────────────────────────
+type PriceHistoryPoint = { t: string; avg: number; min: number; max: number };
+
+function PriceHistoryChart() {
+  const [history, setHistory] = useState<Record<string, PriceHistoryPoint[]>>({});
+  const [activeFuel, setActiveFuel] = useState<string>("АИ-92");
+  const [hours, setHours] = useState(24);
+  const [loading, setLoading] = useState(false);
+  const [empty, setEmpty] = useState(false);
+
+  const FUEL_COLORS: Record<string, string> = { "АИ-92": "#a855f7", "АИ-95": "#db2777", "ДТ": "#f59e0b" };
+  const FUELS = ["АИ-92", "АИ-95", "ДТ"];
+
+  const load = useCallback(async (h: number) => {
+    setLoading(true);
+    try {
+      const d = await fetchPriceHistory(h);
+      setHistory(d.history);
+      setEmpty(Object.values(d.history).every((arr) => arr.length === 0));
+    } catch {} finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { load(hours); }, [hours, load]);
+
+  const data = (history[activeFuel] ?? []).map((p) => ({
+    t: new Date(p.t).toLocaleTimeString("ru", { hour: "2-digit", minute: "2-digit" }),
+    avg: Math.round(p.avg * 10) / 10,
+    min: Math.round(p.min * 10) / 10,
+    max: Math.round(p.max * 10) / 10,
+  }));
+
+  const color = FUEL_COLORS[activeFuel] ?? "#a855f7";
+
+  return (
+    <div style={{ padding: "0 1rem 0.75rem" }}>
+      <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.43rem", letterSpacing: "0.14em", marginBottom: "0.35rem" }}>
+        ИСТОРИЯ_ЦЕН · ПОЧАСОВОЙ_ГРАФИК
+      </div>
+
+      {/* Fuel selector */}
+      <div style={{ display: "flex", gap: "0.3rem", marginBottom: "0.5rem", flexWrap: "wrap" }}>
+        {FUELS.map((f) => (
+          <button
+            key={f}
+            onClick={() => setActiveFuel(f)}
+            style={{
+              background: activeFuel === f ? `${FUEL_COLORS[f]}20` : "#0b0b10",
+              border: `1px solid ${activeFuel === f ? FUEL_COLORS[f] : "#1e1e2a"}`,
+              borderRadius: "8px",
+              color: activeFuel === f ? FUEL_COLORS[f] : "#4b5563",
+              padding: "0.22rem 0.6rem",
+              fontSize: "0.68rem",
+              fontWeight: activeFuel === f ? 700 : 400,
+              cursor: "pointer",
+              transition: "all 0.15s",
+            }}
+          >{f}</button>
+        ))}
+        <div style={{ marginLeft: "auto", display: "flex", gap: "0.25rem" }}>
+          {([12, 24, 48] as const).map((h) => (
+            <button key={h} onClick={() => setHours(h)} style={{ background: hours === h ? "#a855f720" : "#0b0b10", border: `1px solid ${hours === h ? "#a855f7" : "#1e1e2a"}`, borderRadius: "6px", color: hours === h ? "#a855f7" : "#4b5563", padding: "0.22rem 0.45rem", fontSize: "0.62rem", cursor: "pointer" }}>{h}ч</button>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ background: "#0d0d18", border: `1px solid ${color}22`, borderRadius: "14px", padding: "0.9rem 0.75rem 0.5rem", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: `linear-gradient(90deg,transparent,${color},transparent)` }} />
+        {loading ? (
+          <div style={{ height: 120, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <span style={{ color: "#374151", fontFamily: "'JetBrains Mono',monospace", fontSize: "0.65rem" }}>ЗАГРУЗКА…</span>
+          </div>
+        ) : (empty || data.length < 2) ? (
+          <div style={{ height: 120, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "0.3rem" }}>
+            <span style={{ fontSize: "1.5rem" }}>⏳</span>
+            <p style={{ margin: 0, color: "#374151", fontSize: "0.68rem", textAlign: "center" }}>История цен накапливается<br /><span style={{ fontSize: "0.58rem" }}>Первые точки появятся через ~1 час</span></p>
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height={130}>
+            <LineChart data={data} margin={{ top: 4, right: 4, left: -28, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#1e1e2a" />
+              <XAxis dataKey="t" tick={{ fill: "#374151", fontSize: 9 }} stroke="#22222f" interval="preserveStartEnd" />
+              <YAxis tick={{ fill: "#374151", fontSize: 9 }} stroke="#22222f" domain={["auto", "auto"]} />
+              <Tooltip
+                contentStyle={{ background: "#0d0d18", border: `1px solid ${color}33`, borderRadius: "8px", fontSize: "0.72rem" }}
+                labelStyle={{ color: "#9ca3af" }}
+                formatter={(v: number, name: string) => [`${v} ₽/л`, name === "avg" ? "Среднее" : name === "min" ? "Мин" : "Макс"]}
+              />
+              <Line type="monotone" dataKey="min" stroke={`${color}55`} strokeWidth={1} dot={false} strokeDasharray="4 2" />
+              <Line type="monotone" dataKey="avg" stroke={color} strokeWidth={2} dot={false} activeDot={{ r: 4, fill: color }} />
+              <Line type="monotone" dataKey="max" stroke={`${color}88`} strokeWidth={1} dot={false} strokeDasharray="4 2" />
+            </LineChart>
+          </ResponsiveContainer>
+        )}
+        {data.length >= 2 && (
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem", marginTop: "0.3rem" }}>
+            <span style={{ color: `${color}55`, fontSize: "0.55rem" }}>- - мин/макс</span>
+            <span style={{ color, fontSize: "0.55rem" }}>─── среднее</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Fuel price breakdown ──────────────────────────────────────────
+function FuelPriceBreakdown() {
+  const prices = usePriceStore((s) => s.prices);
+  const lastUpdated = usePriceStore((s) => s.lastUpdated);
+
+  const FUELS = ["АИ-92", "АИ-95", "ДТ"];
+  const FUEL_COLORS: Record<string, string> = {
+    "АИ-92": "#a855f7",
+    "АИ-95": "#db2777",
+    "ДТ": "#f59e0b",
+  };
+
+  const stats = FUELS.map((fuel) => {
+    const vals = Object.values(prices)
+      .map((r) => (r as Record<string, { effective?: number }>)[fuel]?.effective ?? 0)
+      .filter((v) => v > 0);
+    if (!vals.length) return { fuel, min: 0, max: 0, avg: 0, count: 0 };
+    const min = Math.min(...vals);
+    const max = Math.max(...vals);
+    const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+    return { fuel, min: Math.round(min * 10) / 10, max: Math.round(max * 10) / 10, avg: Math.round(avg * 10) / 10, count: vals.length };
+  });
+
+  if (!Object.keys(prices).length) return null;
+
+  return (
+    <div style={{ padding: "0 1rem 0.75rem" }}>
+      <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.43rem", letterSpacing: "0.14em", marginBottom: "0.35rem" }}>
+        ЦЕНЫ_ТОПЛИВА · МИН / СРЕД / МАКС ₽/л
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+        {stats.map(({ fuel, min, max, avg, count }) => {
+          const color = FUEL_COLORS[fuel] ?? "#6b7280";
+          const range = max - min || 1;
+          const avgPct = ((avg - min) / range) * 100;
+          return (
+            <div key={fuel} style={{ background: "linear-gradient(135deg,#0d0d18,#11091a)", border: `1px solid ${color}22`, borderRadius: "12px", padding: "0.6rem 0.8rem", position: "relative", overflow: "hidden" }}>
+              <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: `linear-gradient(90deg, transparent, ${color}66, transparent)` }} />
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.4rem" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                  <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: color, boxShadow: `0 0 6px ${color}` }} />
+                  <span style={{ fontFamily: "'JetBrains Mono',monospace", color, fontSize: "0.78rem", fontWeight: 700 }}>{fuel}</span>
+                </div>
+                <span style={{ fontFamily: "'JetBrains Mono',monospace", color: "#4b5563", fontSize: "0.55rem" }}>{count} регионов</span>
+              </div>
+              {/* Range bar */}
+              <div style={{ position: "relative", height: "8px", background: "#050507", borderRadius: "4px", overflow: "hidden", marginBottom: "0.35rem" }}>
+                <div style={{ position: "absolute", inset: 0, background: `linear-gradient(90deg, ${color}22, ${color}44)`, borderRadius: "4px" }} />
+                {/* Avg marker */}
+                <div style={{ position: "absolute", top: 0, bottom: 0, left: `${avgPct}%`, width: "3px", background: color, borderRadius: "2px", boxShadow: `0 0 6px ${color}` }} />
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#22c55e", fontSize: "0.7rem", fontWeight: 700 }}>{min}</div>
+                  <div style={{ color: "#374151", fontSize: "0.48rem" }}>мин</div>
+                </div>
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontFamily: "'JetBrains Mono',monospace", color, fontSize: "0.88rem", fontWeight: 800 }}>{avg}</div>
+                  <div style={{ color: "#6b7280", fontSize: "0.5rem" }}>среднее · ₽/л</div>
+                </div>
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#ef4444", fontSize: "0.7rem", fontWeight: 700 }}>{max}</div>
+                  <div style={{ color: "#374151", fontSize: "0.48rem" }}>макс</div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {lastUpdated && (
+        <p style={{ margin: "0.3rem 0 0", color: "#374151", fontSize: "0.52rem", fontFamily: "'JetBrains Mono',monospace" }}>
+          ⏱ Данные: {lastUpdated.toLocaleTimeString("ru", { hour: "2-digit", minute: "2-digit" })}
+        </p>
+      )}
+    </div>
+  );
+}
+
 // ── Main component ────────────────────────────────────────────────
 // ─── AI Price Predictions ─────────────────────────────────────────
 function AIPricePredictions() {
@@ -872,6 +1203,18 @@ export function AnalyticsTab({ onNavigate }: Props) {
       {/* Live price matrix */}
       <PriceMatrix regions={regions} />
 
+      {/* Fuel price breakdown — min/avg/max per fuel type */}
+      <FuelPriceBreakdown />
+
+      {/* Price history sparkline chart */}
+      <PriceHistoryChart />
+
+      {/* Supply forecast */}
+      <SupplyForecast regions={regions} />
+
+      {/* Regional supply ranking */}
+      <RegionRanking regions={regions} />
+
       {/* Overview: donut + region monitor */}
       <div style={{ padding: "0 1rem 0.75rem" }}>
         <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.43rem", letterSpacing: "0.14em", marginBottom: "0.35rem" }}>ОБЗОР_СЕТИ · СОСТАВ_ТОПЛИВА</div>
@@ -1012,6 +1355,8 @@ function NewsFeed() {
   const [open, setOpen] = useState(true);
   const [lastNewsRefresh, setLastNewsRefresh] = useState<Date | null>(null);
   const [newsLimit, setNewsLimit] = useState(15);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterSeverity, setFilterSeverity] = useState<string>("");
 
   const loadNews = useCallback(async (force = false, limit = newsLimit) => {
     if (!force && news.length > 0 && !open) { setOpen(true); return; }
@@ -1034,6 +1379,20 @@ function NewsFeed() {
   }, [open]);
 
   const criticalCount = news.filter(n => n.severity === "critical").length;
+
+  const displayedNews = news.filter((item) => {
+    if (filterSeverity && item.severity !== filterSeverity) return false;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      return (
+        item.headline.toLowerCase().includes(q) ||
+        item.region.toLowerCase().includes(q) ||
+        (item.body ?? "").toLowerCase().includes(q) ||
+        (item.fuel_type ?? "").toLowerCase().includes(q)
+      );
+    }
+    return true;
+  });
 
   return (
     <div style={{ padding: "0 1rem 1rem" }}>
@@ -1075,12 +1434,61 @@ function NewsFeed() {
 
       {open && news.length > 0 && (
         <div style={{ marginTop: "0.5rem", display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+          {/* Search + severity filter */}
+          <div style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}>
+            <div style={{ position: "relative", flex: 1 }}>
+              <span style={{ position: "absolute", left: "0.55rem", top: "50%", transform: "translateY(-50%)", color: "#374151", fontSize: "0.7rem", pointerEvents: "none" }}>🔍</span>
+              <input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Поиск событий…"
+                style={{
+                  width: "100%",
+                  background: "#0b0b10",
+                  border: "1px solid #1e1e2a",
+                  borderRadius: "8px",
+                  color: "#e2e8f0",
+                  fontSize: "0.7rem",
+                  padding: "0.3rem 0.5rem 0.3rem 1.8rem",
+                  outline: "none",
+                  boxSizing: "border-box",
+                }}
+              />
+            </div>
+            {(["", "critical", "warning", "info"] as const).map((sev) => (
+              <button
+                key={sev}
+                onClick={() => setFilterSeverity(sev)}
+                style={{
+                  background: filterSeverity === sev ? (sev === "critical" ? "#ef444418" : sev === "warning" ? "#f59e0b18" : sev === "info" ? "#3b82f618" : "#a855f718") : "#0b0b10",
+                  border: `1px solid ${filterSeverity === sev ? (SEVERITY_COLOR[sev] ?? "#a855f7") : "#1e1e2a"}`,
+                  borderRadius: "7px",
+                  color: filterSeverity === sev ? (SEVERITY_COLOR[sev] ?? "#a855f7") : "#4b5563",
+                  fontSize: "0.62rem",
+                  padding: "0.28rem 0.45rem",
+                  cursor: "pointer",
+                  fontWeight: filterSeverity === sev ? 700 : 400,
+                  flexShrink: 0,
+                  transition: "all 0.15s",
+                }}
+              >
+                {sev === "" ? "Все" : sev === "critical" ? "🔴" : sev === "warning" ? "🟡" : "🔵"}
+              </button>
+            ))}
+          </div>
+
           {lastNewsRefresh && (
-            <p style={{ color: "#374151", fontSize: "0.6rem", margin: "0 0 0.25rem", textAlign: "right" }}>
+            <p style={{ color: "#374151", fontSize: "0.6rem", margin: "0 0 0.1rem", textAlign: "right" }}>
               Обновлено: {lastNewsRefresh.toLocaleTimeString("ru", { hour: "2-digit", minute: "2-digit" })}
+              {(searchQuery || filterSeverity) && <span style={{ color: "#a855f7" }}> · {displayedNews.length} из {news.length}</span>}
             </p>
           )}
-          {news.map((item) => (
+          {displayedNews.length === 0 && (
+            <div style={{ textAlign: "center", padding: "1.5rem", color: "#374151", fontSize: "0.72rem" }}>
+              Нет событий по фильтру
+            </div>
+          )}
+          {displayedNews.map((item) => (
             <motion.div
               key={item.id}
               initial={{ opacity: 0, y: 6 }}
@@ -1114,7 +1522,7 @@ function NewsFeed() {
               </div>
             </motion.div>
           ))}
-          {news.length >= newsLimit && (
+          {!searchQuery && !filterSeverity && news.length >= newsLimit && (
             <button
               onClick={() => { const next = newsLimit + 15; setNewsLimit(next); loadNews(true, next); }}
               style={{ background: "#14141c", border: "1px solid #22222f", borderRadius: "10px", color: "#9ca3af", fontSize: "0.75rem", padding: "0.6rem", cursor: "pointer", width: "100%" }}
@@ -1124,6 +1532,49 @@ function NewsFeed() {
           )}
         </div>
       )}
+
+      {/* Network reliability summary */}
+      <NetworkReliabilityWidget />
+    </div>
+  );
+}
+
+function NetworkReliabilityWidget() {
+  const { stations } = useStationStore();
+  if (!stations.length) return null;
+
+  const total = stations.length;
+  const withFuel = stations.filter((s) => s.fuel_statuses.some((f) => f.availability_pct > 0)).length;
+  const avgQueue = stations.length ? Math.round(stations.reduce((s, st) => s + st.queue_cars, 0) / stations.length) : 0;
+  const reliabilityPct = Math.round((withFuel / total) * 100);
+  const reliColor = reliabilityPct >= 70 ? "#22c55e" : reliabilityPct >= 40 ? "#eab308" : "#ef4444";
+
+  return (
+    <div style={{ padding: "0 1rem 1.5rem" }}>
+      <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.43rem", letterSpacing: "0.14em", marginBottom: "0.5rem" }}>
+        НАДЁЖНОСТЬ_СЕТИ · ИТОГО
+      </div>
+      <div style={{
+        background: "linear-gradient(135deg,#0a0a14,#0d0d18)",
+        border: "1px solid #1e1e2a", borderRadius: "14px",
+        padding: "0.75rem", display: "flex", gap: "0.5rem",
+        position: "relative", overflow: "hidden",
+      }}>
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: `linear-gradient(90deg,transparent,${reliColor}44,transparent)` }} />
+        {[
+          { label: "Всего АЗС", value: total, color: "#a855f7", suffix: "" },
+          { label: "С топливом", value: withFuel, color: reliColor, suffix: "" },
+          { label: "Надёжность", value: reliabilityPct, color: reliColor, suffix: "%" },
+          { label: "Ср. очередь", value: avgQueue, color: "#6b7280", suffix: "авт" },
+        ].map(({ label, value, color, suffix }) => (
+          <div key={label} style={{ flex: 1, textAlign: "center" }}>
+            <div style={{ fontFamily: "'JetBrains Mono',monospace", color, fontSize: "1.1rem", fontWeight: 800, lineHeight: 1 }}>
+              {value}{suffix}
+            </div>
+            <div style={{ color: "#374151", fontSize: "0.52rem", marginTop: "3px" }}>{label}</div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

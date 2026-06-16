@@ -6,6 +6,7 @@ import { impact, notify } from "@/lib/haptic";
 import { useUserStore } from "@/stores/useUserStore";
 import { useGameStore } from "@/stores/useGameStore";
 import { useToast } from "@/components/Toast";
+import { usePriceStore } from "@/stores/usePriceStore";
 import type { FlipResult, FlipCard, Leaderboard, ReferralInfo } from "@/types";
 import { RARITY_COLORS } from "@/types";
 
@@ -739,6 +740,201 @@ function TapGame() {
   );
 }
 
+// ─── Price Guess Game ─────────────────────────────────────────────
+
+const GUESS_FUELS = ["АИ-92", "АИ-95", "ДТ"] as const;
+type GuessFuel = typeof GUESS_FUELS[number];
+
+const FUEL_COLORS_GUESS: Record<GuessFuel, string> = {
+  "АИ-92": "#a855f7",
+  "АИ-95": "#db2777",
+  "ДТ": "#f59e0b",
+};
+
+function generateQuestion(prices: import("@/types").PricesMap) {
+  const regions = Object.keys(prices);
+  if (regions.length < 2) return null;
+  const fuel = GUESS_FUELS[Math.floor(Math.random() * GUESS_FUELS.length)];
+  const regionA = regions[Math.floor(Math.random() * regions.length)];
+  let regionB = regions[Math.floor(Math.random() * regions.length)];
+  while (regionB === regionA) regionB = regions[Math.floor(Math.random() * regions.length)];
+  const priceA = (prices[regionA] as Record<string, { effective?: number }>)[fuel]?.effective ?? 0;
+  const priceB = (prices[regionB] as Record<string, { effective?: number }>)[fuel]?.effective ?? 0;
+  if (!priceA || !priceB || Math.abs(priceA - priceB) < 0.3) return null;
+  const higher = priceA > priceB ? "A" : "B";
+  return { fuel, regionA, regionB, priceA: Math.round(priceA * 10) / 10, priceB: Math.round(priceB * 10) / 10, higher };
+}
+
+function PriceGuessGame() {
+  const prices = usePriceStore((s) => s.prices);
+  const { add: toast } = useToast();
+
+  type Phase = "idle" | "playing" | "result";
+  const [phase, setPhase] = useState<Phase>("idle");
+  const [question, setQuestion] = useState<ReturnType<typeof generateQuestion>>(null);
+  const [score, setScore] = useState(0);
+  const [streak, setStreak] = useState(0);
+  const [bestStreak, setBestStreak] = useState(0);
+  const [totalPlayed, setTotalPlayed] = useState(0);
+  const [lastCorrect, setLastCorrect] = useState<boolean | null>(null);
+  const [chosen, setChosen] = useState<"A" | "B" | null>(null);
+
+  const startGame = () => {
+    const q = generateQuestion(prices);
+    if (!q) { toast("Нет данных о ценах — попробуйте позже", "warning"); return; }
+    setQuestion(q);
+    setScore(0);
+    setStreak(0);
+    setLastCorrect(null);
+    setChosen(null);
+    setPhase("playing");
+  };
+
+  const nextQuestion = () => {
+    const q = generateQuestion(prices);
+    if (!q) { setPhase("result"); return; }
+    setQuestion(q);
+    setLastCorrect(null);
+    setChosen(null);
+  };
+
+  const handleGuess = (choice: "A" | "B") => {
+    if (!question || chosen) return;
+    impact("medium");
+    const correct = choice === question.higher;
+    setChosen(choice);
+    setLastCorrect(correct);
+    setTotalPlayed((p) => p + 1);
+    if (correct) {
+      const newStreak = streak + 1;
+      setStreak(newStreak);
+      setBestStreak((b) => Math.max(b, newStreak));
+      const bonus = newStreak >= 5 ? 3 : newStreak >= 3 ? 2 : 1;
+      setScore((s) => s + bonus);
+      notify("success");
+      toast(newStreak >= 3 ? `🔥 Серия ×${newStreak}! +${bonus} очка` : "✓ Верно!", "success");
+    } else {
+      setStreak(0);
+      notify("error");
+      toast("✗ Неверно", "error");
+    }
+    setTimeout(() => {
+      if (score >= 9) { setPhase("result"); return; }
+      nextQuestion();
+    }, 1200);
+  };
+
+  if (!Object.keys(prices).length) return null;
+
+  return (
+    <div style={{ padding: "0 1rem 1rem" }}>
+      <div style={{ background: "linear-gradient(160deg,#0d0d18,#0f0a1c)", border: "1px solid #f59e0b22", borderRadius: "16px", overflow: "hidden", position: "relative" }}>
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: "linear-gradient(90deg,transparent,#f59e0b,#a855f7,transparent)" }} />
+        <div style={{ padding: "0.85rem 1rem 0.6rem", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <div>
+            <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.43rem", letterSpacing: "0.14em", marginBottom: "0.15rem" }}>ТОПЛИВНЫЙ_ТРЕЙДЕР · МИНИ_ИГРА</div>
+            <h3 style={{ margin: 0, color: "#e2e8f0", fontSize: "0.9rem", fontWeight: 800 }}>💹 Угадай цену</h3>
+            <p style={{ margin: "0.1rem 0 0", color: "#4b5563", fontSize: "0.62rem" }}>Где дороже? Угадай регион с большей ценой</p>
+          </div>
+          {phase !== "idle" && (
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#f59e0b", fontSize: "1.1rem", fontWeight: 800 }}>{score}</div>
+              <div style={{ color: "#374151", fontSize: "0.52rem" }}>очков</div>
+              {streak >= 2 && <div style={{ color: "#ef4444", fontSize: "0.58rem", fontWeight: 700 }}>🔥 ×{streak}</div>}
+            </div>
+          )}
+        </div>
+
+        <div style={{ padding: "0 1rem 1rem" }}>
+          <AnimatePresence mode="wait">
+            {phase === "idle" && (
+              <motion.div key="idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ textAlign: "center", paddingBottom: "0.25rem" }}>
+                <div style={{ display: "flex", justifyContent: "center", gap: "0.75rem", marginBottom: "0.75rem" }}>
+                  {GUESS_FUELS.map((f) => (
+                    <div key={f} style={{ textAlign: "center" }}>
+                      <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: FUEL_COLORS_GUESS[f], margin: "0 auto 0.2rem", boxShadow: `0 0 8px ${FUEL_COLORS_GUESS[f]}` }} />
+                      <div style={{ fontFamily: "'JetBrains Mono',monospace", color: FUEL_COLORS_GUESS[f], fontSize: "0.62rem", fontWeight: 700 }}>{f}</div>
+                    </div>
+                  ))}
+                </div>
+                {bestStreak > 0 && <p style={{ color: "#f59e0b", fontSize: "0.65rem", margin: "0 0 0.5rem" }}>🏆 Лучшая серия: {bestStreak}</p>}
+                <button
+                  onClick={startGame}
+                  style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)", color: "#000", border: "none", borderRadius: "10px", padding: "0.55rem 1.8rem", fontSize: "0.82rem", fontWeight: 800, cursor: "pointer", boxShadow: "0 0 16px #f59e0b44" }}
+                >
+                  ⚡ Начать игру
+                </button>
+              </motion.div>
+            )}
+
+            {phase === "playing" && question && (
+              <motion.div key={`q-${question.regionA}-${question.regionB}`} initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }}>
+                <div style={{ textAlign: "center", marginBottom: "0.6rem" }}>
+                  <span style={{ background: `${FUEL_COLORS_GUESS[question.fuel as GuessFuel]}20`, border: `1px solid ${FUEL_COLORS_GUESS[question.fuel as GuessFuel]}44`, borderRadius: "8px", color: FUEL_COLORS_GUESS[question.fuel as GuessFuel], fontFamily: "'JetBrains Mono',monospace", fontSize: "0.72rem", fontWeight: 700, padding: "0.2rem 0.65rem" }}>
+                    {question.fuel} — где дороже?
+                  </span>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
+                  {(["A", "B"] as const).map((side) => {
+                    const region = side === "A" ? question.regionA : question.regionB;
+                    const isChosen = chosen === side;
+                    const isCorrect = chosen ? side === question.higher : null;
+                    const bgColor = chosen
+                      ? isChosen
+                        ? lastCorrect ? "#0a1a0a" : "#1a0a0a"
+                        : "#0d0d18"
+                      : "#0d0d18";
+                    const borderColor = chosen
+                      ? isChosen
+                        ? lastCorrect ? "#22c55e" : "#ef4444"
+                        : isCorrect ? "#22c55e44" : "#1e1e2a"
+                      : "#1e1e2a";
+                    return (
+                      <motion.button
+                        key={side}
+                        whileTap={!chosen ? { scale: 0.96 } : {}}
+                        onClick={() => handleGuess(side)}
+                        disabled={!!chosen}
+                        style={{ background: bgColor, border: `1.5px solid ${borderColor}`, borderRadius: "12px", padding: "0.75rem 0.5rem", cursor: chosen ? "default" : "pointer", textAlign: "center", transition: "all 0.2s" }}
+                      >
+                        <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#6b7280", fontSize: "0.5rem", marginBottom: "0.2rem" }}>{side === "A" ? "РЕГИОН А" : "РЕГИОН Б"}</div>
+                        <div style={{ color: "#e2e8f0", fontSize: "0.72rem", fontWeight: 600, lineHeight: 1.3, marginBottom: "0.3rem" }}>
+                          {region.split(" ").slice(-1)[0].slice(0, 16)}
+                        </div>
+                        {chosen && (
+                          <div style={{ fontFamily: "'JetBrains Mono',monospace", color: side === question.higher ? "#22c55e" : "#ef4444", fontSize: "0.85rem", fontWeight: 800 }}>
+                            {side === "A" ? question.priceA : question.priceB} ₽
+                          </div>
+                        )}
+                        {!chosen && <div style={{ color: "#374151", fontSize: "1.1rem" }}>?</div>}
+                      </motion.button>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            )}
+
+            {phase === "result" && (
+              <motion.div key="result" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} style={{ textAlign: "center" }}>
+                <div style={{ fontSize: "2rem", marginBottom: "0.4rem" }}>{score >= 8 ? "🏆" : score >= 5 ? "🥈" : "⛽"}</div>
+                <p style={{ margin: "0 0 0.2rem", color: "#e2e8f0", fontWeight: 800, fontSize: "1.1rem" }}>{score} очков</p>
+                <p style={{ margin: "0 0 0.15rem", color: "#6b7280", fontSize: "0.65rem" }}>Сыграно раундов: {totalPlayed}</p>
+                {bestStreak > 0 && <p style={{ margin: "0 0 0.6rem", color: "#f59e0b", fontSize: "0.65rem" }}>🔥 Лучшая серия: {bestStreak}</p>}
+                <button
+                  onClick={startGame}
+                  style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)", color: "#000", border: "none", borderRadius: "10px", padding: "0.5rem 1.5rem", fontSize: "0.78rem", fontWeight: 800, cursor: "pointer" }}
+                >
+                  Играть снова
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── XP Tiers ─────────────────────────────────────────────────────
 
 const TIERS = [
@@ -963,6 +1159,32 @@ function DailyCheckin() {
                 </span>
               )}
             </div>
+
+            {/* 28-day streak calendar */}
+            {streak > 0 && (
+              <div style={{ marginTop: "0.55rem" }}>
+                <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.38rem", letterSpacing: "0.1em", marginBottom: "0.3rem" }}>КАЛЕНДАРЬ_СЕРИИ · 28Д</div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "3px" }}>
+                  {Array.from({ length: 28 }, (_, i) => {
+                    const daysAgo = 27 - i;
+                    const filled = daysAgo < streak;
+                    const isToday = daysAgo === 0;
+                    return (
+                      <div key={i} style={{
+                        height: "9px", borderRadius: "2px",
+                        background: filled ? (isToday ? "#f59e0b" : "#f59e0b66") : "#1a1a24",
+                        border: `1px solid ${isToday ? "#f59e0b" : filled ? "#f59e0b33" : "#2a2a38"}`,
+                        boxShadow: isToday ? "0 0 4px #f59e0b" : "none",
+                      }} />
+                    );
+                  })}
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", marginTop: "3px" }}>
+                  <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.37rem", color: "#374151" }}>−27д</span>
+                  <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.37rem", color: "#f59e0b" }}>сегодня</span>
+                </div>
+              </div>
+            )}
           </div>
           <button
             onClick={handleCheckin}
@@ -1403,6 +1625,48 @@ function OperatorConsole() {
           </div>
         </div>
 
+        {/* XP milestone roadmap */}
+        {next && (
+          <div style={{ marginTop: "0.75rem", borderTop: `1px solid ${color}22`, paddingTop: "0.65rem" }}>
+            <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.38rem", letterSpacing: "0.1em", marginBottom: "0.35rem" }}>ДОРОЖНАЯ_КАРТА · РАНГИ</div>
+            <div style={{ display: "flex", gap: "0.3rem", overflowX: "auto", paddingBottom: "0.15rem" }}>
+              {TIERS.map((t) => {
+                const tColor = TIER_COLORS[t.name] ?? "#6b7280";
+                const reached = xp >= t.min;
+                const isCurrent = t.min === tier.min;
+                const [tIcon] = t.name.split(" ");
+                return (
+                  <div key={t.name} style={{
+                    flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: "3px",
+                    minWidth: "44px",
+                  }}>
+                    <div style={{
+                      width: "30px", height: "30px", borderRadius: "50%",
+                      background: reached ? `radial-gradient(circle at 35% 35%, ${tColor}33, ${tColor}11)` : "#0d0d14",
+                      border: `1.5px solid ${isCurrent ? tColor : reached ? `${tColor}66` : "#22222f"}`,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: "0.9rem", lineHeight: 1,
+                      boxShadow: isCurrent ? `0 0 10px ${tColor}66` : "none",
+                      filter: reached ? "none" : "grayscale(1) opacity(0.4)",
+                      transition: "all 0.3s",
+                    }}>
+                      {tIcon}
+                    </div>
+                    <span style={{
+                      fontFamily: "'JetBrains Mono',monospace",
+                      fontSize: "0.36rem", color: isCurrent ? tColor : reached ? "#6b7280" : "#374151",
+                      fontWeight: isCurrent ? 700 : 400, textAlign: "center", lineHeight: 1.2,
+                    }}>{t.short ?? t.name.split(" ").slice(1).join(" ")}</span>
+                    <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.34rem", color: "#374151" }}>
+                      {t.min === 0 ? "0" : `${t.min >= 1000 ? `${t.min/1000}к` : t.min}`}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Quick stats row */}
         {user && (
           <div style={{
@@ -1456,6 +1720,7 @@ export function ReserveTab() {
       <div style={{ height: "0.75rem" }} />
       <DailyCheckin />
       <FlipGame />
+      <PriceGuessGame />
       <TapGame />
       <LeaderboardSection />
       <ReferralSection />
