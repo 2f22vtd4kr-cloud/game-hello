@@ -556,10 +556,10 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
         )}
       </AnimatePresence>
 
-      {/* Map legend — bottom-left */}
+      {/* Map legend — bottom-left, fixed so it never moves with nav bar */}
       <div style={{
-        position: "absolute",
-        bottom: navVisible ? "calc(env(safe-area-inset-bottom, 0px) + 8.5rem)" : "calc(env(safe-area-inset-bottom, 0px) + 4rem)",
+        position: "fixed",
+        bottom: "calc(env(safe-area-inset-bottom, 0px) + 1rem)",
         left: "0.75rem",
         zIndex: 1000,
         background: "rgba(8,8,20,0.88)",
@@ -568,7 +568,6 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
         padding: "0.35rem 0.55rem",
         backdropFilter: "blur(12px)",
         display: "flex", flexDirection: "column", gap: "4px",
-        transition: "bottom 0.3s",
       }}>
         {([["#22c55e","≥60%"],["#eab308","25–60%"],["#ef4444","<25%"]] as [string,string][]).map(([c,l]) => (
           <div key={c} style={{ display: "flex", alignItems: "center", gap: "5px" }}>
@@ -578,31 +577,6 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
         ))}
       </div>
 
-      {/* Nav toggle button — bottom-right corner of map */}
-      {onNavToggle && (
-        <button
-          onClick={onNavToggle}
-          style={{
-            position: "absolute",
-            bottom: navVisible ? "calc(env(safe-area-inset-bottom, 0px) + 5.25rem)" : "calc(env(safe-area-inset-bottom, 0px) + 0.75rem)",
-            right: "0.75rem",
-            zIndex: 1000,
-            background: "rgba(20,20,28,0.92)",
-            border: "1px solid #22222f",
-            borderRadius: "10px",
-            color: "#e2e8f0",
-            padding: "0.4rem 0.6rem",
-            fontSize: "0.9rem",
-            cursor: "pointer",
-            backdropFilter: "blur(12px)",
-            transition: "bottom 0.3s",
-            lineHeight: 1,
-          }}
-          title={navVisible ? "Скрыть навигацию" : "Показать навигацию"}
-        >
-          {navVisible ? "⬇" : "⬆"}
-        </button>
-      )}
 
       {/* Leaflet Map */}
       <MapContainer

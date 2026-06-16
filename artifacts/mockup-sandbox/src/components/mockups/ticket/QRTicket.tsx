@@ -3,6 +3,16 @@ import QRCode from "qrcode";
 
 const HASH = "TLN-7F3A9C2E-AI95-60L-SEV042-20260616";
 
+type Corner = "tl" | "tr" | "bl" | "br";
+const CORNERS: Corner[] = ["tl", "tr", "bl", "br"];
+
+function cornerStyle(k: Corner): React.CSSProperties {
+  if (k === "tl") return { top: 0, left: 0, borderTopWidth: "2px", borderLeftWidth: "2px", borderTopLeftRadius: "4px" };
+  if (k === "tr") return { top: 0, right: 0, borderTopWidth: "2px", borderRightWidth: "2px", borderTopRightRadius: "4px" };
+  if (k === "bl") return { bottom: 0, left: 0, borderBottomWidth: "2px", borderLeftWidth: "2px", borderBottomLeftRadius: "4px" };
+  return { bottom: 0, right: 0, borderBottomWidth: "2px", borderRightWidth: "2px", borderBottomRightRadius: "4px" };
+}
+
 export function QRTicket() {
   const [dataUrl, setDataUrl] = useState<string>("");
   const now = new Date();
@@ -91,16 +101,12 @@ export function QRTicket() {
             )}
           </div>
           {/* Corner accents */}
-          {(["tl","tr","bl","br"] as const).map((k) => (
+          {CORNERS.map((k) => (
             <div key={k} style={{
               position: "absolute", width: "16px", height: "16px",
               borderColor: "#a855f7", borderStyle: "solid", borderWidth: 0,
-              ...(k === "tl" ? { top: 0, left: 0, borderTopWidth: "2px", borderLeftWidth: "2px", borderTopLeftRadius: "4px" }
-                : k === "tr" ? { top: 0, right: 0, borderTopWidth: "2px", borderRightWidth: "2px", borderTopRightRadius: "4px" }
-                : k === "bl" ? { bottom: 0, left: 0, borderBottomWidth: "2px", borderLeftWidth: "2px", borderBottomLeftRadius: "4px" }
-                : { bottom: 0, right: 0, borderBottomWidth: "2px", borderRightWidth: "2px", borderBottomRightRadius: "4px" })
-              }
-            />
+              ...cornerStyle(k),
+            }} />
           ))}
         </div>
 
