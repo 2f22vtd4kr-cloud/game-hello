@@ -719,7 +719,13 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
               boxShadow: "0 -12px 50px rgba(168,85,247,0.2), 0 -4px 24px rgba(0,0,0,0.8)",
             }}
           >
-            <div style={{
+            <div
+              ref={(el) => { (dragControls as any)._sheetEl = el; }}
+              onPointerDown={(e) => {
+                const el = e.currentTarget as HTMLDivElement;
+                if (el.scrollTop === 0) dragControls.start(e);
+              }}
+              style={{
               background: "rgba(8,8,20,0.97)",
               borderRadius: "62px 62px 0 0",
               maxHeight: "70vh",

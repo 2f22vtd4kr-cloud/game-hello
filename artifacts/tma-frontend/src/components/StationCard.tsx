@@ -303,6 +303,27 @@ export function StationCard({ station, onClose }: Props) {
         </div>
       </div>
 
+      {/* Buy vouchers CTA — pinned at top for immediate visibility */}
+      <div style={{ padding: "0.55rem 1rem 0.4rem" }}>
+        <a
+          href="https://t.me/sev_fuel_ochered_bot?start=buy"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
+            width: "100%", padding: "0.6rem",
+            background: "linear-gradient(135deg, rgba(168,85,247,0.18), rgba(219,39,119,0.12))",
+            border: "1px solid rgba(168,85,247,0.35)",
+            borderRadius: "12px",
+            color: "#c084fc", fontSize: "0.85rem", fontWeight: 700,
+            textDecoration: "none",
+            boxShadow: "0 0 16px rgba(168,85,247,0.14)",
+          }}
+        >
+          🎫 Купить талоны
+        </a>
+      </div>
+
       {/* Summary row */}
       <div style={{ padding: "0.5rem 1rem", borderBottom: "1px solid #0f0f17", display: "flex", gap: "0.75rem", alignItems: "center" }}>
         <div style={{ textAlign: "center" }}>
@@ -495,30 +516,8 @@ export function StationCard({ station, onClose }: Props) {
       )}
 
       {/* Share station button */}
-      <div style={{ padding: "0 1rem 0.5rem" }}>
-        <ShareStationButton station={station} />
-      </div>
-
-      {/* Buy vouchers CTA */}
       <div style={{ padding: "0 1rem 0.75rem" }}>
-        <a
-          href="https://t.me/sev_fuel_ochered_bot?start=buy"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
-            width: "100%", padding: "0.65rem",
-            background: "linear-gradient(135deg, rgba(168,85,247,0.15), rgba(219,39,119,0.1))",
-            border: "1px solid rgba(168,85,247,0.3)",
-            borderRadius: "12px",
-            color: "#c084fc", fontSize: "0.85rem", fontWeight: 700,
-            textDecoration: "none",
-            boxShadow: "0 0 14px rgba(168,85,247,0.12)",
-            transition: "all 0.2s",
-          }}
-        >
-          🎫 Купить талоны
-        </a>
+        <ShareStationButton station={station} />
       </div>
 
       {/* Footer */}
