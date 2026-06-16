@@ -53,6 +53,12 @@ export function FuelCalculatorModal({ onClose }: Props) {
         animate={{ y: 0 }}
         exit={{ y: "100%" }}
         transition={{ type: "spring", stiffness: 300, damping: 32 }}
+        drag="y"
+        dragConstraints={{ top: 0, bottom: 0 }}
+        dragElastic={{ top: 0, bottom: 0.3 }}
+        onDragEnd={(_e, info) => {
+          if (info.offset.y > 80 || info.velocity.y > 400) onClose();
+        }}
         onClick={(e) => e.stopPropagation()}
         style={{
           width: "100%", maxWidth: "480px",
@@ -63,6 +69,8 @@ export function FuelCalculatorModal({ onClose }: Props) {
           padding: "1rem 1.25rem 2rem",
           position: "relative",
           overflow: "hidden",
+          cursor: "grab",
+          touchAction: "none",
         }}
       >
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: "linear-gradient(90deg,transparent,#a855f7,#db2777,transparent)" }} />
