@@ -166,15 +166,26 @@ export interface SubscriptionStatus {
 
 export type TabId = "map" | "catalog" | "ai" | "games" | "news";
 
+export interface TicketSuggestion {
+  fuel_type: string;
+  volume: number;
+  label: string;
+}
+
 export interface AiMessage {
   role: "user" | "bot";
   text: string;
   ts: number;
+  ticket_suggestion?: TicketSuggestion | null;
+  vpn_fallback?: boolean;
+  dismissed_ticket?: boolean;
 }
 
 export interface AiChatResponse {
   reply: string;
   suggestions?: string[];
+  ticket_suggestion?: TicketSuggestion | null;
+  vpn_fallback?: boolean;
 }
 
 export interface CrisisForecast {

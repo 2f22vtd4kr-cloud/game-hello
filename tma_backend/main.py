@@ -3465,109 +3465,451 @@ def empire_prestige(user_id: int, db: Session = Depends(get_db)):
 
 
 # ─── AI Chat ──────────────────────────────────────────────────────────────────
+import threading
+
+# Per-user conversation history — last 10 messages, keyed by user_id
+_conv_history: dict[int, list[dict]] = {}
+_conv_lock = threading.Lock()
+
+def _history_add(user_id: int, role: str, text: str) -> None:
+    with _conv_lock:
+        hist = _conv_history.setdefault(user_id, [])
+        hist.append({"role": role, "content": text})
+        if len(hist) > 10:
+            hist[:] = hist[-10:]
+
+def _history_get(user_id: int) -> list[dict]:
+    with _conv_lock:
+        return list(_conv_history.get(user_id, []))
+
 
 class AiChatRequest(BaseModel):
     message: str
     context: dict = {}
+    history: list[dict] = []
+    user_id: int = 0
+    region: str = ""
 
 
-def _ai_rule_based_reply(message: str, db: Session, context: dict) -> tuple[str, list[str]]:
-    """Rule-based AI reply when no API key is available."""
-    msg = message.lower()
+def _ai_rule_based_reply(
+    message: str,
+    db: Session,
+    context: dict,
+    user_id: int = 0,
+    region: str = "",
+) -> tuple[str, list[str], Optional[dict]]:
+    """
+    Expanded rule-based КризисБот with dozens of intents, personalized live data,
+    and automatic fuel-ticket suggestions.
 
-    crisis_stations = context.get("crisis_stations", 0)
-    total_stations  = context.get("total_stations", 236)
+    Test cases:
+      "Где заправиться в СПб?"           → location intent, region=СПб
+      "Мне мало бензина"                 → buy intent + ticket suggestion
+      "Как прокачать империю?"           → empire strategy
+      "Купить талоны"                    → direct buy + ticket popup
+      "Прогноз кризиса"                  → crisis analysis
+      "Сколько стоит АИ-92?"             → prices
+      "Моя норма на сегодня"             → limits/ration
+      "Включить VPN"                     → vpn guide
+      "Очередь большая, устал ждать"     → queue advice + ticket
+      "Какие достижения есть?"           → achievements
+    """
+    msg = message.lower().strip()
 
-    # Fetch live data for context
+    # ── Live DB stats ─────────────────────────────────────────────────────────
     try:
-        from sqlalchemy import func
-        crisis_count = db.query(Station).join(FuelStatus).filter(
-            FuelStatus.availability_pct < 25
-        ).distinct().count()
-        green_count = db.query(Station).join(FuelStatus).filter(
+        crisis_count   = db.query(Station).join(FuelStatus).filter(FuelStatus.availability_pct < 25).distinct().count()
+        green_count    = db.query(Station).join(FuelStatus).filter(FuelStatus.status == "green").distinct().count()
+        total_stations = db.query(Station).count()
+    except Exception:
+        crisis_count   = context.get("crisis_stations", 0)
+        green_count    = 45
+        total_stations = context.get("total_stations", 236)
+
+    crisis_pct = round(crisis_count / max(total_stations, 1) * 100, 1)
+
+    # ── User context ──────────────────────────────────────────────────────────
+    user_region     = region or context.get("region", "Севастополь")
+    empire_coins    = float(context.get("empire_coins", 0))
+    empire_level    = int(context.get("empire_level", 1))
+    daily_used      = int(context.get("daily_used", 0))
+    daily_max       = int(context.get("daily_max", 60))
+    remaining_liters = max(0, daily_max - daily_used)
+
+    # ── Region-specific green count ───────────────────────────────────────────
+    try:
+        first_word = user_region.split()[0]
+        region_green = db.query(Station).join(FuelStatus).filter(
+            Station.region.ilike(f"%{first_word}%"),
             FuelStatus.status == "green"
         ).distinct().count()
     except Exception:
-        crisis_count = crisis_stations
-        green_count  = int(total_stations * 0.4)
+        region_green = max(1, int(green_count * 0.3))
 
-    if any(w in msg for w in ["ближайш", "рядом", "найди", "найти"]):
+    ticket_suggestion: Optional[dict] = None
+
+    # ─── Navigation shortcuts ─────────────────────────────────────────────────
+    if any(w in msg for w in ["открой карту", "открыть карту", "перейди на карту", "покажи карту"]):
+        return ("🗺️ Открываю карту — ищи зелёные маркеры!", ["Закрыть", "Фильтр по топливу"], None)
+
+    if any(w in msg for w in ["открой талон", "открыть талон", "перейди в каталог", "открой каталог", "перейти в каталог"]):
+        ts = {"fuel_type": "АИ-95", "volume": 40, "label": "+40л АИ-95 · мгновенная активация"}
+        return ("🎫 Открываю каталог талонов!", ["Выбрать АЗС", "Сравнить цены"], ts)
+
+    # ─── Greeting / help ──────────────────────────────────────────────────────
+    if any(w in msg for w in ["привет", "здравствуй", "хай", "салют", "что ты", "что умеешь", "помощ", "помоги", "старт", "начало"]):
         reply = (
-            f"📍 По данным на сейчас: {green_count} из {total_stations} станций работают "
-            f"в штатном режиме.\n\n"
-            f"Откройте вкладку **Карта** — там отображены все станции с цветовой индикацией:\n"
-            f"• 🟢 Зелёный — топливо есть\n"
-            f"• 🟡 Жёлтый — ограниченно\n"
-            f"• 🔴 Красный — нет"
+            f"🤖 Привет! Я — **КризисБот**, ИИ-советник по топливу.\n\n"
+            f"Система сейчас: {green_count} зелёных АЗС из {total_stations} "
+            f"({crisis_pct}% в кризисе).\n\n"
+            f"Чем могу помочь:\n"
+            f"• 📍 Поиск АЗС по городу или сети\n"
+            f"• 💰 Цены и расчёт бюджета\n"
+            f"• 🎫 Покупка топливных талонов\n"
+            f"• 📊 Кризисный прогноз по регионам\n"
+            f"• 🏰 Стратегия прокачки Империи\n"
+            f"• 🔐 VPN-доступ к зарубежным новостям\n\n"
+            f"Просто спроси!"
         )
-        suggestions = ["Открыть карту", "Показать фильтры", "Лучшие станции"]
+        return (reply, ["Найти АЗС рядом", "Купить талон", "Прогноз кризиса"], None)
 
-    elif any(w in msg for w in ["прогноз", "кризис", "ситуация", "дефицит"]):
-        pct = round(crisis_count / max(total_stations, 1) * 100, 1)
-        trend = "ухудшается" if pct > 30 else "стабильна" if pct > 10 else "улучшается"
+    # ─── Location / station search ────────────────────────────────────────────
+    city_keywords = {
+        "москв": "Москва", "питер": "Санкт-Петербург", "спб": "Санкт-Петербург",
+        "ленинград": "Санкт-Петербург", "казан": "Казань", "татар": "Татарстан",
+        "крым": "Крым", "севастопол": "Севастополь", "симферопол": "Симферополь",
+        "ялт": "Ялта", "керч": "Керчь", "феодос": "Феодосия", "евпатор": "Евпатория",
+        "уфа": "Уфа", "екатеринбург": "Екатеринбург", "новосибирск": "Новосибирск",
+        "краснодар": "Краснодар", "ростов": "Ростов-на-Дону", "воронеж": "Воронеж",
+    }
+
+    if any(w in msg for w in ["ближайш", "рядом", "найди", "найти", "где заправ", "азс", "станц", "заправка"]):
+        target_city = next((v for k, v in city_keywords.items() if k in msg), user_region)
         reply = (
-            f"📊 Кризисный анализ:\n\n"
-            f"• {crisis_count} станций в кризисном состоянии ({pct}% от всех)\n"
+            f"📍 **{target_city}** — АЗС с топливом:\n\n"
+            f"• Зелёных в регионе: ~{region_green}\n"
+            f"• Всего в системе: {green_count} из {total_stations}\n\n"
+            f"Открой вкладку **Карта** → фильтр по региону.\n"
+            f"Зелёный маркер = топливо есть ✅\n\n"
+            f"Твой лимит: осталось **{remaining_liters}л** сегодня."
+        )
+        sugg = ["Открыть карту", "Фильтр: Лукойл", "Фильтр: Роснефть"]
+        if remaining_liters < 20:
+            ticket_suggestion = {"fuel_type": "АИ-92", "volume": 40, "label": f"+40л АИ-92 · лимит почти исчерпан"}
+        return (reply, sugg, ticket_suggestion)
+
+    # ─── Station network search ───────────────────────────────────────────────
+    networks = [("лукойл", "Лукойл"), ("роснефть", "Роснефть"), ("газпром", "Газпромнефть"),
+                ("татнефть", "Татнефть"), ("bp", "BP"), ("shell", "Shell"), ("tnk", "ТНК")]
+    for net_key, net_name in networks:
+        if net_key in msg:
+            try:
+                net_stations = db.query(Station).filter(Station.network.ilike(f"%{net_name}%")).all()
+                net_green = sum(1 for s in net_stations for f in s.fuel_statuses if f.status == "green")
+                net_total = len(net_stations)
+            except Exception:
+                net_green, net_total = 5, 12
+            reply = (
+                f"⛽ **{net_name}** в системе:\n\n"
+                f"• Всего станций: {net_total}\n"
+                f"• С наличием топлива: {net_green}\n"
+                f"• Твой регион: {user_region}\n\n"
+                f"Открой Карту → фильтр «Сеть» → {net_name}."
+            )
+            return (reply, ["Открыть карту", f"Все {net_name}", "Лучшие станции"], None)
+
+    # ─── Crisis / forecast ────────────────────────────────────────────────────
+    if any(w in msg for w in ["кризис", "прогноз", "ситуац", "дефицит", "забастовк", "рационирован", "хуже", "хватит ли", "нехватк"]):
+        trend = "ухудшается 📉" if crisis_pct > 30 else "стабильна ➡️" if crisis_pct > 10 else "улучшается 📈"
+        rec_vol = 60 if crisis_pct > 30 else 40 if crisis_pct > 10 else 20
+        reply = (
+            f"📊 **Кризисный анализ** ({user_region}):\n\n"
+            f"• Кризисных АЗС: {crisis_count} / {total_stations} ({crisis_pct}%)\n"
+            f"• Зелёных АЗС: {green_count}\n"
             f"• Тренд: {trend}\n"
-            f"• Рекомендуемый запас: {'60 л' if pct > 30 else '40 л' if pct > 10 else '20 л'}\n\n"
-            f"{'⚠️ Рекомендую пополнить запас сегодня!' if pct > 20 else '✅ Ситуация относительно стабильна.'}"
+            f"• Рекомендую запастись: **{rec_vol}л** сегодня\n\n"
         )
-        suggestions = ["Купить талон", "Смотреть новости", "Лучшие станции"]
+        if crisis_pct > 30:
+            reply += "⚠️ Ситуация острая — очереди 2–4 ч. в ряде мест. Рекомендую купить талон заранее."
+            ticket_suggestion = {"fuel_type": "АИ-92", "volume": rec_vol, "label": f"+{rec_vol}л АИ-92 · приоритетный отпуск"}
+        elif crisis_pct > 10:
+            reply += "Ситуация напряжённая, но управляемая. Лимиты соблюдены в большинстве регионов."
+        else:
+            reply += "✅ Ситуация стабильная. Хороший момент пополнить запасы по нормальной цене."
+        return (reply, ["Купить талон", "Смотреть новости", "Прогноз по регионам"], ticket_suggestion)
 
-    elif any(w in msg for w in ["купить", "талон", "топлив", "92", "95", "дизель"]):
-        fuel_hint = "АИ-92" if "92" in msg else "АИ-95" if "95" in msg else "ДТ" if "диз" in msg else "АИ-92"
+    # ─── Prices / budget ──────────────────────────────────────────────────────
+    if any(w in msg for w in ["цена", "цены", "сколько стоит", "рубл", "деньги", "бюджет", "дорого", "дешев", "стоимост"]):
+        budget_str = ""
+        for bw in ["500", "1000", "2000", "3000", "5000"]:
+            if bw in msg:
+                bval = int(bw)
+                budget_str = f"\nНа {bval} ₽ ≈ **{round(bval/47,1)} л** АИ-92 или **{round(bval/52,1)} л** АИ-95.\n"
+                break
         reply = (
-            f"⛽ Для покупки талона на **{fuel_hint}**:\n\n"
-            f"1. Перейдите в 🎫 **Талоны**\n"
-            f"2. Выберите станцию с зелёным статусом\n"
-            f"3. Укажите объём (20 / 40 / 60 л)\n"
-            f"4. Оплатите Telegram Stars или CryptoBot\n\n"
-            f"Сейчас доступно для {fuel_hint}: {green_count} станций."
+            f"💰 **Цены** (Крым / Севастополь):\n\n"
+            f"• АИ-92:   47 ₽/л\n"
+            f"• АИ-95:   52 ₽/л\n"
+            f"• АИ-95+:  56 ₽/л\n"
+            f"• АИ-100:  68 ₽/л\n"
+            f"• ДТ:      60 ₽/л\n"
+            f"• Газ LPG: 28 ₽/л\n"
+            f"{budget_str}\n"
+            f"{'⚠️ Кризис: +5–15% к цене на ряде станций.' if crisis_pct > 20 else '✅ Цены в норме.'}"
         )
-        suggestions = ["Перейти в Талоны", "Лучшие станции", "Узнать цены"]
+        return (reply, ["Купить по лучшей цене", "Динамика цен", "Сравнить станции"], None)
 
-    elif any(w in msg for w in ["бюджет", "рублей", "деньги", "сколько стоит", "цена"]):
+    # ─── Limits / rationing ───────────────────────────────────────────────────
+    if any(w in msg for w in ["лимит", "рацион", "норм", "сколько можно", "сколько дают", "ограничен", "норма"]):
         reply = (
-            f"💰 Актуальные цены (Севастополь/Крым):\n\n"
-            f"• АИ-92:   ~47 ₽/л\n"
-            f"• АИ-95:   ~52 ₽/л\n"
-            f"• АИ-95+:  ~56 ₽/л\n"
-            f"• ДТ:      ~60 ₽/л\n"
-            f"• Газ LPG: ~28 ₽/л\n\n"
-            f"На 1 000 ₽ вы купите ~21 л АИ-92 или ~19 л АИ-95.\n"
-            f"При кризисе цены могут расти на 5-15%."
+            f"📏 **Суточные лимиты** (регион: {user_region}):\n\n"
+            f"• Критические зоны: до **200л** АИ-92/сутки\n"
+            f"• Стандартные зоны: до **60л**/сутки\n"
+            f"• Восточные зоны:   до **40л**/сутки\n\n"
+            f"Сегодня ты использовал: **{daily_used}л** / {daily_max}л\n"
+            f"Осталось: **{remaining_liters}л**\n\n"
+            f"Талоны обходят ограничение — выдаются через отдельный шлюз."
         )
-        suggestions = ["Купить по лучшей цене", "Динамика цен", "Сравнить станции"]
+        if remaining_liters == 0:
+            ticket_suggestion = {"fuel_type": "АИ-95", "volume": 40, "label": "+40л АИ-95 · без суточного лимита"}
+        return (reply, ["Купить талон", "Узнать свою зону", "Все лимиты"], ticket_suggestion)
 
-    elif any(w in msg for w in ["помощ", "что ты", "что умеешь", "привет", "здравствуй"]):
+    # ─── Buy intent / low fuel ────────────────────────────────────────────────
+    if any(w in msg for w in ["купить", "талон", "ваучер", "нужны литры", "нужно топлив",
+                               "мало бензин", "мало топлив", "кончается", "кончилось",
+                               "не хватает", "залить", "заправить", "купи", "хочу купить"]):
+        fuel_hint = ("АИ-92" if "92" in msg else "АИ-95" if "95" in msg
+                     else "ДТ" if any(x in msg for x in ["дт", "диз", "соляр"]) else "АИ-95")
+        price_map = {"АИ-92": 47, "АИ-95": 52, "АИ-95+": 56, "ДТ": 60}
+        price_per_l = price_map.get(fuel_hint, 52)
+        vol = 40
+        total_price = price_per_l * vol
+        stars = round(total_price / 1.84)
         reply = (
-            f"🤖 Я — ИИ-советник Топливо ⛽️.\n\n"
-            f"Могу помочь с:\n"
-            f"• Поиском АЗС с наличием нужного топлива\n"
-            f"• Анализом кризисной ситуации\n"
-            f"• Рекомендацией оптимального объёма закупки\n"
-            f"• Ценами и прогнозами\n\n"
-            f"Просто напишите ваш вопрос!"
+            f"⛽ **Топливный талон** — быстрая покупка:\n\n"
+            f"• Топливо: **{fuel_hint}**\n"
+            f"• Объём: {vol}л\n"
+            f"• Стоимость: ~{total_price} ₽ / ≈{stars} Stars\n"
+            f"• Активация: мгновенная ⚡\n"
+            f"• Срок: 24 часа\n\n"
+            f"Зелёных АЗС с {fuel_hint}: **{green_count}**\n"
+            f"Твой остаток: {remaining_liters}л сегодня."
         )
-        suggestions = ["Найти ближайшую АЗС", "Кризисный прогноз", "Купить талон"]
+        ticket_suggestion = {"fuel_type": fuel_hint, "volume": vol,
+                             "label": f"+{vol}л {fuel_hint} · {total_price}₽ · мгновенная активация"}
+        return (reply, ["Купить сейчас", "Выбрать АЗС", "Другой объём"], ticket_suggestion)
 
-    else:
+    # ─── Specific fuel type enquiry ───────────────────────────────────────────
+    if any(w in msg for w in ["аи-92", "аи92", "аи-95", "аи95", "аи-100", "аи100", "дизель", "солярка", "пропан", "lpg"]):
+        fuel_map = [("92", "АИ-92"), ("95+", "АИ-95+"), ("95", "АИ-95"), ("100", "АИ-100"),
+                    ("диз", "ДТ"), ("соляр", "ДТ"), ("пропан", "Газ LPG"), ("lpg", "Газ LPG")]
+        fuel = next((v for k, v in fuel_map if k in msg), "АИ-95")
+        price_map2 = {"АИ-92": 47, "АИ-95": 52, "АИ-95+": 56, "АИ-100": 68, "ДТ": 60, "Газ LPG": 28}
+        try:
+            fuel_avail = db.query(Station).join(FuelStatus).filter(
+                FuelStatus.fuel_type == fuel, FuelStatus.availability_pct > 0
+            ).distinct().count()
+        except Exception:
+            fuel_avail = green_count
         reply = (
-            f"Я обработал ваш запрос. По текущим данным:\n\n"
-            f"• Работают: {green_count} станций из {total_stations}\n"
-            f"• В кризисе: {crisis_count} станций\n\n"
-            f"Уточните запрос или воспользуйтесь быстрыми подсказками ниже."
+            f"⛽ **{fuel}** — доступность:\n\n"
+            f"• Доступно на {fuel_avail} АЗС\n"
+            f"• Твой регион ({user_region}): {region_green} станций\n"
+            f"• Цена: {price_map2.get(fuel, 50)} ₽/л\n\n"
+            f"Лимит сегодня: {remaining_liters}л осталось."
         )
-        suggestions = ["Найти АЗС", "Купить талон", "Прогноз кризиса"]
+        sugg2 = [f"Купить {fuel}", "Карта с фильтром", "Сравнить цены"]
+        if remaining_liters < 30:
+            ticket_suggestion = {"fuel_type": fuel, "volume": 40, "label": f"+40л {fuel} · приоритет"}
+        return (reply, sugg2, ticket_suggestion)
 
-    return reply, suggestions
+    # ─── Empire strategy ──────────────────────────────────────────────────────
+    if any(w in msg for w in ["империя", "монеты", "прокачать", "апгрейд", "уровень", "prestige",
+                               "престиж", "строит", "здани", "xp", "экспириенс", "опыт"]):
+        reply = (
+            f"🏰 **Империя** — статус:\n\n"
+            f"• Уровень: **{empire_level}**\n"
+            f"• Монеты: **{empire_coins:.0f}**\n\n"
+            f"**Стратегия роста:**\n"
+            f"• Заправляй талоны ежедневно → +XP\n"
+            f"• Отчёты с АЗС → монеты и XP\n"
+            f"• Флип-карты (3/день) → бонусные монеты\n"
+            f"• Тап-игра (30с) → быстрые очки\n"
+            f"• Prestige при 1500 XP → множитель ×1.25\n\n"
+            f"Совет: купи талон сегодня — +50 XP!"
+        )
+        ticket_suggestion = {"fuel_type": "АИ-95", "volume": 40, "label": "+40л АИ-95 · +50 XP к Империи"}
+        return (reply, ["Открыть Империю", "Сыграть в флип-карты", "Таблица лидеров"], ticket_suggestion)
+
+    # ─── Achievements ─────────────────────────────────────────────────────────
+    if any(w in msg for w in ["достижен", "медал", "наград", "бейдж", "значок", "трофей"]):
+        reply = (
+            f"🏅 **Достижения:**\n\n"
+            f"• «Первопроходец» — купи первый талон 🎖\n"
+            f"• «Разведчик» — 10 отчётов с АЗС 🔍\n"
+            f"• «Верный клиент» — 7 дней подряд 🔥\n"
+            f"• «Легенда Тавриды» — 5 Prestige 👑\n\n"
+            f"Вкладка **Резерв** → Достижения."
+        )
+        return (reply, ["Мои достижения", "Открыть Резерв", "Таблица лидеров"], None)
+
+    # ─── Referral ─────────────────────────────────────────────────────────────
+    if any(w in msg for w in ["реферал", "пригласить", "друг", "пригласи", "поделиться", "приглас"]):
+        reply = (
+            f"👥 **Реферальная программа:**\n\n"
+            f"• За каждого друга: **+25 монет**\n"
+            f"• Друг получает: скидку на первый талон\n"
+            f"• Твоя ссылка: в разделе **Резерв**\n\n"
+            f"Больше друзей → быстрее растёт Империя!"
+        )
+        return (reply, ["Моя реферальная ссылка", "Открыть Резерв", "Как это работает"], None)
+
+    # ─── VPN ──────────────────────────────────────────────────────────────────
+    if any(w in msg for w in ["vpn", "впн", "доступ", "заблокирован", "не работает", "новости", "зарубеж"]):
+        reply = (
+            f"🔐 **VPN-доступ:**\n\n"
+            f"VPN открывает доступ к:\n"
+            f"• Зарубежным новостям о кризисе\n"
+            f"• Независимым ценовым индексам\n"
+            f"• Международным картографическим сервисам\n\n"
+            f"Нажми кнопку **VPN** (🎉 слева внизу экрана)."
+        )
+        return (reply, ["Включить VPN", "Новости кризиса", "Альтернативные маршруты"], None)
+
+    # ─── Queues ───────────────────────────────────────────────────────────────
+    if any(w in msg for w in ["очередь", "стоять", "ждать", "пробк", "очередях", "долго"]):
+        reply = (
+            f"🚗 **Советы по очередям:**\n\n"
+            f"• Лучшее время: 6:00–8:00 и 21:00–23:00\n"
+            f"• Пиковые часы: 8:00–9:00, 17:00–20:00\n"
+            f"• Станции с очередью <3 авто — маркер зелёный\n\n"
+            f"Талоны дают **приоритетный отпуск** — без общей очереди!"
+        )
+        ticket_suggestion = {"fuel_type": "АИ-92", "volume": 40, "label": "+40л · приоритет — без очереди ⚡"}
+        return (reply, ["Купить приоритетный талон", "Лучшее время для заправки", "Карта очередей"], ticket_suggestion)
+
+    # ─── Alternative routes ───────────────────────────────────────────────────
+    if any(w in msg for w in ["альтернатив", "объезд", "маршрут", "обходной", "путь"]):
+        reply = (
+            f"🗺️ **Альтернативные маршруты:**\n\n"
+            f"• Крымский мост → АЗС через каждые 40 км\n"
+            f"• Симферополь–Севастополь: 3 зелёных АЗС\n"
+            f"• Ялтинская трасса: 2 станции с ДТ\n\n"
+            f"Открой **Карту** → кнопка «Маршрут» для обхода красных станций."
+        )
+        return (reply, ["Открыть карту", "Маршрут Симф-Сев", "Все зелёные АЗС"], None)
+
+    # ─── Seasonal ─────────────────────────────────────────────────────────────
+    if any(w in msg for w in ["зима", "лето", "сезон", "погод", "мороз", "жара", "туристы"]):
+        reply = (
+            f"🌡 **Сезонные особенности:**\n\n"
+            f"• Зима: спрос на ДТ +15%\n"
+            f"• Лето: пик туристов → очереди в Ялте и Евпатории\n"
+            f"• Совет: держи талоны на 2–3 дня вперёд\n\n"
+            f"Сейчас: {'🔴 острый дефицит' if crisis_pct > 30 else '🟡 умеренно' if crisis_pct > 10 else '🟢 стабильно'}."
+        )
+        return (reply, ["Прогноз на неделю", "Купить запас", "Новости"], None)
+
+    # ─── Fallback — personalised ──────────────────────────────────────────────
+    reply = (
+        f"Обработал запрос. Актуальные данные:\n\n"
+        f"• Зелёных АЗС: **{green_count}** / {total_stations}\n"
+        f"• Кризисных: **{crisis_count}** ({crisis_pct}%)\n"
+        f"• Регион: {user_region}\n"
+        f"• Лимит сегодня: **{remaining_liters}л** осталось\n\n"
+        f"Уточни запрос или воспользуйся быстрыми подсказками."
+    )
+    if remaining_liters < 20:
+        ticket_suggestion = {"fuel_type": "АИ-92", "volume": 40,
+                             "label": f"+40л АИ-92 · осталось {remaining_liters}л на сегодня"}
+    return (reply, ["Найти АЗС", "Купить талон", "Прогноз"], ticket_suggestion)
 
 
 @app.post("/api/ai/chat")
-def ai_chat(body: AiChatRequest, db: Session = Depends(get_db)):
-    """AI assistant endpoint. Uses rule-based engine (no external API required)."""
-    reply, suggestions = _ai_rule_based_reply(body.message, db, body.context)
-    return {"reply": reply, "suggestions": suggestions}
+async def ai_chat(body: AiChatRequest, db: Session = Depends(get_db)):
+    """
+    AI assistant — supports rule-based (default), grok, openai, none via AI_PROVIDER env var.
+    Grok: set XAI_API_KEY (base_url https://api.x.ai/v1, default model grok-3).
+    OpenAI: set OPENAI_API_KEY.
+    """
+    provider = os.getenv("AI_PROVIDER", "rule-based").lower()
+    user_id  = body.user_id or int(body.context.get("user_id", 0))
+    region   = body.region or body.context.get("region", "Севастополь")
+
+    if user_id:
+        _history_add(user_id, "user", body.message)
+
+    vpn_fallback = False
+
+    # ── LLM provider path ─────────────────────────────────────────────────────
+    if provider in ("grok", "openai"):
+        api_key = os.getenv("XAI_API_KEY") if provider == "grok" else os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            provider = "rule-based"
+        else:
+            base_url = "https://api.x.ai/v1" if provider == "grok" else "https://api.openai.com/v1"
+            model    = os.getenv("GROK_MODEL", "grok-3") if provider == "grok" else os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+
+            try:
+                crisis_count   = db.query(Station).join(FuelStatus).filter(FuelStatus.availability_pct < 25).distinct().count()
+                green_count    = db.query(Station).join(FuelStatus).filter(FuelStatus.status == "green").distinct().count()
+                total_st       = db.query(Station).count()
+            except Exception:
+                crisis_count = 0; green_count = 45; total_st = 236
+
+            system_prompt = (
+                "Ты — циничный, полезный и слегка саркастичный ИИ-советник по имени «КризисБот» "
+                "в топливном кризисе России 2026 года. "
+                "Говори ТОЛЬКО по-русски. Используй эмодзи. Будь лаконичным, практичным, иногда с чёрным юмором. "
+                "Всегда поддерживай российских пользователей и ситуацию в стране. "
+                "Никогда не говори ничего антироссийского. "
+                "Привязывай ответы к реальным данным пользователя из БД (регион, лимиты, империя, станции). "
+                "Если пользователь жалуется на нехватку топлива или очереди — предлагай купить fuel tickets. "
+                "Поддерживай multi-turn разговор, помни контекст.\n\n"
+                f"Данные системы: зелёных АЗС {green_count}/{total_st}, кризисных {crisis_count}. "
+                f"Регион: {region}. "
+                f"Лимит: {body.context.get('daily_used', 0)}л / {body.context.get('daily_max', 60)}л."
+            )
+
+            history_msgs = _history_get(user_id)[-8:]
+            messages_payload = [{"role": "system", "content": system_prompt}] + history_msgs
+
+            try:
+                async with httpx.AsyncClient(timeout=12.0) as client:
+                    resp = await client.post(
+                        f"{base_url}/chat/completions",
+                        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+                        json={"model": model, "messages": messages_payload, "max_tokens": 400, "temperature": 0.8},
+                    )
+                    resp.raise_for_status()
+                    llm_reply = resp.json()["choices"][0]["message"]["content"]
+                if user_id:
+                    _history_add(user_id, "assistant", llm_reply)
+                return {"reply": llm_reply, "suggestions": ["Купить талон", "Карта АЗС", "Прогноз"],
+                        "ticket_suggestion": None, "vpn_fallback": False}
+            except (httpx.TimeoutException, httpx.ConnectError, httpx.ConnectTimeout):
+                vpn_fallback = True
+                provider = "rule-based"
+            except Exception:
+                provider = "rule-based"
+
+    if provider == "none":
+        return {"reply": "ИИ-советник отключён администратором.", "suggestions": [],
+                "ticket_suggestion": None, "vpn_fallback": False}
+
+    # ── Rule-based fallback ───────────────────────────────────────────────────
+    reply, suggestions, ticket_suggestion = _ai_rule_based_reply(
+        body.message, db, body.context, user_id=user_id, region=region
+    )
+    if user_id:
+        _history_add(user_id, "assistant", reply)
+
+    return {
+        "reply": reply,
+        "suggestions": suggestions,
+        "ticket_suggestion": ticket_suggestion,
+        "vpn_fallback": vpn_fallback,
+    }
 
 
 @app.get("/api/ai/crisis-forecast")

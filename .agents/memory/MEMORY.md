@@ -7,3 +7,4 @@
 - [Port conflict on backend restart](port-conflict.md) — run `fuser -k 8000/tcp` before restarting TMA Backend if it fails to bind port 8000.
 - [FastAPI route ordering](fastapi-route-ordering.md) — literal routes (e.g. /api/empire/leaderboard) must be declared BEFORE parameterized routes (/api/empire/{user_id}) or FastAPI will try to parse the literal as the param type and return 422.
 - [useToast API](usetoa-api.md) — useToast().add(message: string, type?: "success"|"error"|"info"|"warning") — NOT add({ type, message }). Message is first arg, type is second.
+- [AI provider pattern](ai-provider-pattern.md) — AI_PROVIDER env var: "rule-based"(default)/"grok"/"openai"/"none"; Grok uses XAI_API_KEY + base_url https://api.x.ai/v1; ai_chat must be async def to use httpx.AsyncClient.

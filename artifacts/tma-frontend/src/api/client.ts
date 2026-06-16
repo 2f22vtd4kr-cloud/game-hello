@@ -350,11 +350,27 @@ export const deleteStationNote = (stationId: number, userId: number) =>
 // AI Chat
 export const sendAiMessage = (
   message: string,
-  context?: { crisis_stations?: number; user_id?: number; total_stations?: number },
+  context?: {
+    crisis_stations?: number;
+    user_id?: number;
+    total_stations?: number;
+    region?: string;
+    daily_used?: number;
+    daily_max?: number;
+    empire_coins?: number;
+    empire_level?: number;
+  },
+  history?: Array<{ role: string; content: string }>,
 ) =>
   req<import("@/types").AiChatResponse>("/ai/chat", {
     method: "POST",
-    body: JSON.stringify({ message, context: context ?? {} }),
+    body: JSON.stringify({
+      message,
+      context: context ?? {},
+      history: history ?? [],
+      user_id: context?.user_id ?? 0,
+      region: context?.region ?? "",
+    }),
   });
 
 export const fetchCrisisForecast = () =>
