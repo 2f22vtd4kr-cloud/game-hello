@@ -39,3 +39,17 @@ sqlalchemy
 telegram
 tornado
 uvicorn[standard]
+aiohttp
+apscheduler
+fastapi
+httpx
+pillow
+psycopg2-binary
+python-dotenv
+python-multipart
+python-telegram-bot==20.7
+qrcode[pil]
+sqlalchemy
+telegram
+tornado
+uvicorn[standard]
