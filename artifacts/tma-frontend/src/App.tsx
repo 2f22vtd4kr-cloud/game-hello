@@ -350,12 +350,14 @@ export default function App() {
           border: "1px solid #1e1e2a",
           boxShadow: "none",
           cursor: "pointer",
-          display: "flex", alignItems: "center", justifyContent: "center",
+          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
           fontSize: "1rem",
+          gap: "1px",
           transition: "bottom 0.3s",
         }}
       >
-        🔒
+        <span style={{ fontSize: "1rem", lineHeight: 1 }}>🎉</span>
+        <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.38rem", color: "#6b7280", letterSpacing: "0.04em", lineHeight: 1 }}>VPN</span>
       </button>
 
       {/* Wallet floating button */}
