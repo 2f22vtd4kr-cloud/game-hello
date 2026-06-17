@@ -55,6 +55,14 @@ class UserCreateIn(BaseModel):
     username: Optional[str] = None
 
 
+class NetworkVoucherIn(BaseModel):
+    user_id: int
+    network: str
+    fuel_type: str
+    volume: int
+    payment_method: str = "mock"
+
+
 class PurchaseOut(BaseModel):
     id: int
     fuel_type: str

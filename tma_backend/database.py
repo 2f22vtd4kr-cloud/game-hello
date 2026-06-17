@@ -11,7 +11,7 @@ from sqlalchemy.orm import sessionmaker, Session
 
 from tma_backend.models import Base, GasStation, FuelStatus, AnalyticsSnapshot
 
-_EXCEL_SEED_THRESHOLD = 600  # total stations above this means Excel data is already seeded
+_EXCEL_SEED_THRESHOLD = 1300  # total stations above this means Excel data is already seeded
 
 logger = logging.getLogger(__name__)
 

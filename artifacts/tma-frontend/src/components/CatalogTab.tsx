@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Fuse from "fuse.js";
-import { fetchLimits, createStarsInvoice, createCryptoBotInvoice, fetchStations as apiFetchStations } from "@/api/client";
+import { fetchLimits, createStarsInvoice, createCryptoBotInvoice, createNetworkStarsInvoice, createNetworkCryptoBotInvoice, fetchStations as apiFetchStations } from "@/api/client";
 import { useUserStore } from "@/stores/useUserStore";
 import { usePriceStore } from "@/stores/usePriceStore";
 import { useStationStore } from "@/stores/useStationStore";
@@ -18,6 +18,27 @@ const FUEL_PRICES: Record<string, number> = {
   "АИ-92": 65, "АИ-95": 71, "АИ-95+": 76,
   "АИ-100": 88, "ДТ": 79, "ДТ+": 84, "Газ": 35,
 };
+const NETWORK_PRICES: Record<string, Record<string, number>> = {
+  "Лукойл":          { "АИ-92": 65.9, "АИ-95": 74.2, "АИ-95+": 79.5, "АИ-100": 92.0, "ДТ": 80.5, "ДТ+": 85.3, "Газ": 31.2 },
+  "Роснефть":        { "АИ-92": 65.1, "АИ-95": 72.9, "АИ-95+": 78.0, "АИ-100": 90.5, "ДТ": 79.4, "ДТ+": 84.2, "Газ": 30.5 },
+  "Газпромнефть":    { "АИ-92": 65.4, "АИ-95": 73.4, "АИ-95+": 78.5, "АИ-100": 91.2, "ДТ": 79.9, "ДТ+": 84.7, "Газ": 30.9 },
+  "Газпром":         { "АИ-92": 65.4, "АИ-95": 73.4, "АИ-95+": 78.5, "АИ-100": 91.2, "ДТ": 79.9, "ДТ+": 84.7, "Газ": 30.9 },
+  "Башнефть":        { "АИ-92": 61.9, "АИ-95": 66.1, "АИ-95+": 70.7, "АИ-100": 86.0, "ДТ": 75.8, "ДТ+": 80.3, "Газ": 26.5 },
+  "Татнефть":        { "АИ-92": 62.4, "АИ-95": 66.8, "АИ-95+": 71.5, "АИ-100": 86.8, "ДТ": 76.4, "ДТ+": 81.0, "Газ": 26.9 },
+  "ННК":             { "АИ-92": 70.5, "АИ-95": 74.8, "АИ-95+": 80.0, "АИ-100": 92.2, "ДТ": 87.9, "ДТ+": 93.2, "Газ": 35.0 },
+  "Teboil":          { "АИ-92": 64.8, "АИ-95": 71.2, "АИ-95+": 76.2, "АИ-100": 88.5, "ДТ": 79.2, "ДТ+": 83.9, "Газ": 30.1 },
+  "Тебойл":          { "АИ-92": 64.8, "АИ-95": 71.2, "АИ-95+": 76.2, "АИ-100": 88.5, "ДТ": 79.2, "ДТ+": 83.9, "Газ": 30.1 },
+  "Нефтьмагистраль": { "АИ-92": 64.5, "АИ-95": 70.9, "АИ-95+": 75.9, "АИ-100": 88.0, "ДТ": 78.5, "ДТ+": 83.2, "Газ": 29.8 },
+  "ТРАССА":          { "АИ-92": 64.2, "АИ-95": 70.5, "АИ-95+": 75.4, "АИ-100": 87.5, "ДТ": 78.0, "ДТ+": 82.7, "Газ": 29.5 },
+};
+const NETWORK_VOUCHER_NETWORKS = [
+  { name: "Лукойл",       color: "#ef4444" },
+  { name: "Роснефть",     color: "#0ea5e9" },
+  { name: "Газпромнефть", color: "#3b82f6" },
+  { name: "Башнефть",     color: "#8b5cf6" },
+  { name: "Татнефть",     color: "#22c55e" },
+  { name: "ННК",          color: "#f59e0b" },
+];
 const VOLUMES = [20, 40, 60];
 const STAR_RUB_RATE = 2.5; // ~$0.013 per Star × ~90 RUB/USD; adjusted to match real fuel prices
 const PAGE_SIZE = 25;
@@ -360,6 +381,10 @@ export function CatalogTab({ initialStationId, onCalcOpenChange }: CatalogTabPro
     try { return JSON.parse(localStorage.getItem(RECENTLY_VIEWED_KEY) || "[]"); } catch { return []; }
   });
   const [dealFuel, setDealFuel] = useState<"АИ-92" | "АИ-95" | "ДТ">("АИ-92");
+  const [activeNetwork, setActiveNetwork] = useState<string | null>(null);
+  const [nvFuel, setNvFuel] = useState<string>("АИ-92");
+  const [nvVolume, setNvVolume] = useState<number>(40);
+  const [nvLoading, setNvLoading] = useState(false);
 
   const sentinelRef = useRef<HTMLDivElement>(null);
 
@@ -417,6 +442,45 @@ export function CatalogTab({ initialStationId, onCalcOpenChange }: CatalogTabPro
     useStationStore.setState({ lastFetched: null });
     try { await useStationStore.getState().fetch(); } finally { setRefreshing(false); }
   }, [refreshing]);
+
+  const handleNetworkVoucher = useCallback(async (method: PayMethod) => {
+    if (!activeNetwork || !user) return;
+    setNvLoading(true);
+    try {
+      if (method === "stars") {
+        const inv = await createNetworkStarsInvoice(user.id, activeNetwork, nvFuel, nvVolume);
+        type TgWebApp = { openInvoice?: (url: string, cb: (s: string) => void) => void };
+        const tg = (window as unknown as { Telegram?: { WebApp?: TgWebApp } }).Telegram?.WebApp;
+        if (tg?.openInvoice && inv.invoice_link) {
+          tg.openInvoice(inv.invoice_link, (status: string) => {
+            if (status === "paid") {
+              notify("success");
+              toast(`⭐ Сетевой талон ${activeNetwork} на ${inv.stars_amount} Stars оформлен!`, "success");
+              setActiveNetwork(null);
+            } else if (status === "cancelled") {
+              toast("Оплата отменена.", "info");
+            } else {
+              toast(`Ошибка оплаты: ${status}`, "error");
+            }
+          });
+          return;
+        }
+        if (inv.invoice_link) { window.open(inv.invoice_link, "_blank"); }
+        toast(`⭐ Талон ${activeNetwork}: ${inv.stars_amount} Stars`, "success");
+        setActiveNetwork(null);
+      } else {
+        const inv = await createNetworkCryptoBotInvoice(user.id, activeNetwork, nvFuel, nvVolume);
+        if (inv.checkout_url) { window.open(inv.checkout_url, "_blank"); }
+        toast(`💎 Крипто-инвойс для ${activeNetwork} открыт`, "success");
+        setActiveNetwork(null);
+      }
+    } catch (e: unknown) {
+      notify("error");
+      toast(String(e), "error");
+    } finally {
+      setNvLoading(false);
+    }
+  }, [activeNetwork, user, nvFuel, nvVolume, toast]);
 
   // ── Crisis count ──────────────────────────────────────────────────────────
   const crisisCount = useMemo(() => stations.filter((s) => {
@@ -870,7 +934,8 @@ export function CatalogTab({ initialStationId, onCalcOpenChange }: CatalogTabPro
           .filter((s) => s.fuel_statuses.some((f) => f.fuel_type === dealFuel && f.availability_pct > 0))
           .map((s) => {
             const p = getPrice(s.region, dealFuel);
-            const price = p?.effective ?? FUEL_PRICES[dealFuel] ?? 70;
+            const networkP = NETWORK_PRICES[s.network]?.[dealFuel];
+            const price = networkP ?? p?.effective ?? FUEL_PRICES[dealFuel] ?? 70;
             const avail = s.fuel_statuses.find((f) => f.fuel_type === dealFuel)?.availability_pct ?? 0;
             return { s, price, avail };
           })
@@ -910,6 +975,74 @@ export function CatalogTab({ initialStationId, onCalcOpenChange }: CatalogTabPro
           </div>
         );
       })()}
+
+      {/* ── Network Vouchers ── */}
+      {!selectedStation && !searchQuery && (
+        <div style={{ padding: "0 1rem 0.75rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginBottom: "0.45rem" }}>
+            <span style={{ fontFamily: "'JetBrains Mono',monospace", color: "#a855f7", fontSize: "0.45rem", letterSpacing: "0.14em" }}>СЕТЕВЫЕ_ТАЛОНЫ</span>
+            <div style={{ flex: 1, height: "1px", background: "linear-gradient(90deg,#a855f722,transparent)" }} />
+            <span style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.45rem" }}>ДЕЙСТВУЕТ НА ВСЕХ АЗС СЕТИ</span>
+          </div>
+          <div style={{ background: "linear-gradient(135deg,#0d0d18,#0f0c1a)", border: "1px solid #a855f722", borderRadius: "12px", padding: "0.6rem", position: "relative", overflow: "hidden" }}>
+            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: "linear-gradient(90deg,transparent,#a855f7,transparent)" }} />
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "0.3rem", marginBottom: activeNetwork ? "0.55rem" : 0 }}>
+              {NETWORK_VOUCHER_NETWORKS.map(({ name, color }) => (
+                <button key={name}
+                  onClick={() => { impact("light"); setActiveNetwork(activeNetwork === name ? null : name); setNvFuel("АИ-92"); setNvVolume(40); }}
+                  style={{ padding: "0.45rem 0.2rem", background: activeNetwork === name ? `${color}18` : "rgba(255,255,255,0.025)", border: `1px solid ${activeNetwork === name ? color + "90" : "#1a1a24"}`, borderRadius: "9px", display: "flex", flexDirection: "column", alignItems: "center", gap: "0.18rem", cursor: "pointer", transition: "all 0.15s" }}>
+                  <span style={{ fontFamily: "'JetBrains Mono',monospace", color: activeNetwork === name ? color : "#6b7280", fontSize: "0.57rem", fontWeight: activeNetwork === name ? 700 : 400, textAlign: "center", lineHeight: 1.25 }}>{name}</span>
+                  <span style={{ color: "#374151", fontSize: "0.47rem" }}>{(NETWORK_PRICES[name]?.["АИ-92"] ?? 65).toFixed(1)}₽/л</span>
+                </button>
+              ))}
+            </div>
+            <AnimatePresence>
+              {activeNetwork && (
+                <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.16 }}>
+                  <div style={{ display: "flex", gap: "0.25rem", marginBottom: "0.38rem", flexWrap: "wrap" }}>
+                    {["АИ-92", "АИ-95", "ДТ", "Газ"].map((ft) => (
+                      <button key={ft} onClick={() => { impact("light"); setNvFuel(ft); }}
+                        style={{ padding: "0.22rem 0.45rem", background: nvFuel === ft ? "#a855f720" : "#0b0b10", border: `1px solid ${nvFuel === ft ? "#a855f7" : "#222230"}`, borderRadius: "7px", color: nvFuel === ft ? "#a855f7" : "#4b5563", fontSize: "0.58rem", fontWeight: nvFuel === ft ? 700 : 400, cursor: "pointer" }}>
+                        {ft} · {(NETWORK_PRICES[activeNetwork]?.[ft] ?? FUEL_PRICES[ft] ?? 65).toFixed(1)}₽
+                      </button>
+                    ))}
+                  </div>
+                  <div style={{ display: "flex", gap: "0.25rem", marginBottom: "0.45rem" }}>
+                    {VOLUMES.map((v) => (
+                      <button key={v} onClick={() => { impact("light"); setNvVolume(v); }}
+                        style={{ flex: 1, padding: "0.28rem", background: nvVolume === v ? "#db277718" : "#0b0b10", border: `1px solid ${nvVolume === v ? "#db2777" : "#222230"}`, borderRadius: "7px", color: nvVolume === v ? "#db2777" : "#4b5563", fontSize: "0.62rem", fontWeight: nvVolume === v ? 700 : 400, cursor: "pointer", textAlign: "center" }}>
+                        {v}л
+                      </button>
+                    ))}
+                  </div>
+                  <div style={{ background: "#0b0b10", border: "1px solid #1a1a24", borderRadius: "8px", padding: "0.38rem 0.55rem", display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.4rem" }}>
+                    <div>
+                      <div style={{ color: "#6b7280", fontSize: "0.5rem" }}>Сетевой талон · 7 дней</div>
+                      <div style={{ color: "#e2e8f0", fontSize: "0.7rem", fontWeight: 700 }}>{activeNetwork} · {nvFuel} · {nvVolume}л</div>
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                      <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#a855f7", fontSize: "0.85rem", fontWeight: 800 }}>
+                        {((NETWORK_PRICES[activeNetwork]?.[nvFuel] ?? FUEL_PRICES[nvFuel] ?? 65) * nvVolume).toFixed(0)}₽
+                      </div>
+                      <div style={{ color: "#374151", fontSize: "0.48rem" }}>≈{Math.ceil((NETWORK_PRICES[activeNetwork]?.[nvFuel] ?? FUEL_PRICES[nvFuel] ?? 65) * nvVolume / STAR_RUB_RATE)}⭐</div>
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", gap: "0.35rem" }}>
+                    <button onClick={() => handleNetworkVoucher("stars")} disabled={nvLoading}
+                      style={{ flex: 1, padding: "0.46rem", background: "linear-gradient(135deg,#a855f720,#9333ea20)", border: "1px solid #a855f740", borderRadius: "9px", color: "#a855f7", fontSize: "0.63rem", fontWeight: 700, cursor: nvLoading ? "wait" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.3rem" }}>
+                      ⭐ Оплатить Stars
+                    </button>
+                    <button onClick={() => handleNetworkVoucher("cryptobot")} disabled={nvLoading}
+                      style={{ flex: 1, padding: "0.46rem", background: "linear-gradient(135deg,#22c55e15,#16a34a15)", border: "1px solid #22c55e30", borderRadius: "9px", color: "#22c55e", fontSize: "0.63rem", fontWeight: 700, cursor: nvLoading ? "wait" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.3rem" }}>
+                      💎 Crypto
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+      )}
 
       {/* ── Sort row ── */}
       <div style={{ padding: "0 1rem 0.5rem", display: "flex", gap: "0.35rem", alignItems: "center", overflowX: "auto" }}>
@@ -1193,8 +1326,8 @@ export function CatalogTab({ initialStationId, onCalcOpenChange }: CatalogTabPro
                         </div>
                       )}
                       </div>
-                      {/* Compare button - only shown when a station is already selected */}
-                      {selectedStation !== null && selectedStation.id !== s.id && (
+                      {/* Compare button */}
+                      {compareStation?.id !== s.id && (
                         <button
                           onClick={(e) => { e.stopPropagation(); setCompareStation(s as GasStation); setShowCompare(true); }}
                           style={{

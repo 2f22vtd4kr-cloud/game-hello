@@ -128,6 +128,45 @@ export const createCryptoBotInvoice = (
     },
   );
 
+export const createNetworkStarsInvoice = (
+  userId: number,
+  network: string,
+  fuelType: string,
+  volume: number,
+) =>
+  req<{ stars_amount: number; invoice_link: string | null; transaction_id: string; price_rub: number }>(
+    "/catalog/network-stars-invoice",
+    {
+      method: "POST",
+      body: JSON.stringify({ user_id: userId, network, fuel_type: fuelType, volume }),
+    },
+  );
+
+export const createNetworkCryptoBotInvoice = (
+  userId: number,
+  network: string,
+  fuelType: string,
+  volume: number,
+) =>
+  req<{ checkout_url: string; transaction_id: string; qr_hash: string }>(
+    "/catalog/network-cryptobot-invoice",
+    {
+      method: "POST",
+      body: JSON.stringify({ user_id: userId, network, fuel_type: fuelType, volume }),
+    },
+  );
+
+export const purchaseNetworkVoucher = (
+  userId: number,
+  network: string,
+  fuelType: string,
+  volume: number,
+) =>
+  req<import("@/types").PurchaseResult>("/catalog/network-voucher", {
+    method: "POST",
+    body: JSON.stringify({ user_id: userId, network, fuel_type: fuelType, volume, payment_method: "mock" }),
+  });
+
 export const submitTapScore = (
   userId: number,
   score: number,

@@ -36,7 +36,7 @@ from tma_backend.cards import draw_cards, RARITY_COLORS
 from tma_backend.payment import provider
 from tma_backend.schemas import (
     AnalyticsOut, CardOut, CheckinOut, FlipResultOut, GasStationOut,
-    LeaderboardEntry, LeaderboardOut, PurchaseIn, PurchaseResultOut,
+    LeaderboardEntry, LeaderboardOut, NetworkVoucherIn, PurchaseIn, PurchaseResultOut,
     ReferralOut, ReferralUseIn, ReferralUseOut, StarsPurchaseIn,
     StationReportIn, SubscriptionIn, SubscriptionOut,
     SubscriptionStatusOut, TapScoreIn, TapScoreOut, UserCreateIn, UserOut,
@@ -44,7 +44,7 @@ from tma_backend.schemas import (
 )
 
 INTERNAL_API_SECRET = os.getenv("INTERNAL_API_SECRET", "tma_internal_dev_2026")
-from tma_backend.seed_regions import DAILY_LIMITS, FUEL_PRICES_RUB, REGIONAL_PRICES, XP_TIERS
+from tma_backend.seed_regions import DAILY_LIMITS, FUEL_PRICES_RUB, NETWORK_PRICES, REGIONAL_PRICES, XP_TIERS
 
 logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s %(name)s %(levelname)s %(message)s")
@@ -1444,7 +1444,8 @@ def purchase_voucher(body: PurchaseIn, db: Session = Depends(get_db)):
             detail="⚠️ Превышен суточный лимит отпуска для данного региона.",
         )
 
-    price_per_l = FUEL_PRICES_RUB.get(body.fuel_type, 50)
+    _net_p = NETWORK_PRICES.get(station.network, {})
+    price_per_l = _net_p.get(body.fuel_type) or FUEL_PRICES_RUB.get(body.fuel_type, 50)
     total_price = price_per_l * body.volume
 
     from tma_backend.payment import get_provider
@@ -1532,7 +1533,8 @@ def create_stars_invoice(body: PurchaseIn, db: Session = Depends(get_db)):
     station = db.query(GasStation).filter(GasStation.id == body.station_id).first()
     if not station:
         raise HTTPException(404, detail="Станция не найдена")
-    price_per_l = FUEL_PRICES_RUB.get(body.fuel_type, 50)
+    _net_p = NETWORK_PRICES.get(station.network, {})
+    price_per_l = _net_p.get(body.fuel_type) or FUEL_PRICES_RUB.get(body.fuel_type, 50)
     total_price = price_per_l * body.volume
     from tma_backend.payment import get_provider
     result = get_provider("stars").create_invoice(
@@ -1555,7 +1557,8 @@ def create_cryptobot_invoice(body: PurchaseIn, db: Session = Depends(get_db)):
     station = db.query(GasStation).filter(GasStation.id == body.station_id).first()
     if not station:
         raise HTTPException(404, detail="Станция не найдена")
-    price_per_l = FUEL_PRICES_RUB.get(body.fuel_type, 50)
+    _net_p = NETWORK_PRICES.get(station.network, {})
+    price_per_l = _net_p.get(body.fuel_type) or FUEL_PRICES_RUB.get(body.fuel_type, 50)
     total_price = price_per_l * body.volume
     from tma_backend.payment import get_provider
     result = get_provider("cryptobot").create_invoice(
@@ -1586,6 +1589,106 @@ def create_cryptobot_invoice(body: PurchaseIn, db: Session = Depends(get_db)):
         "transaction_id": result.transaction_id,
         "qr_hash": result.qr_hash,
     }
+
+
+@app.post("/api/catalog/network-stars-invoice")
+def create_network_stars_invoice(body: NetworkVoucherIn, db: Session = Depends(get_db)):
+    """Create a Telegram Stars invoice for a network-wide voucher (no specific station)."""
+    _get_or_create_user(db, body.user_id)
+    _net_p = NETWORK_PRICES.get(body.network, {})
+    price_per_l = _net_p.get(body.fuel_type) or FUEL_PRICES_RUB.get(body.fuel_type, 50)
+    total_price = price_per_l * body.volume
+    from tma_backend.payment import get_provider
+    result = get_provider("stars").create_invoice(
+        user_id=body.user_id, fuel_type=body.fuel_type,
+        volume=body.volume, price_rub=total_price,
+    )
+    if not result.ok:
+        raise HTTPException(500, detail=result.error or "Ошибка создания инвойса Stars")
+    return {
+        "stars_amount": result.stars_amount,
+        "invoice_link": result.checkout_url,
+        "transaction_id": result.transaction_id,
+        "price_rub": total_price,
+    }
+
+
+@app.post("/api/catalog/network-cryptobot-invoice")
+def create_network_cryptobot_invoice(body: NetworkVoucherIn, db: Session = Depends(get_db)):
+    """Create a CryptoBot invoice for a network-wide voucher."""
+    _get_or_create_user(db, body.user_id)
+    _net_p = NETWORK_PRICES.get(body.network, {})
+    price_per_l = _net_p.get(body.fuel_type) or FUEL_PRICES_RUB.get(body.fuel_type, 50)
+    total_price = price_per_l * body.volume
+    from tma_backend.payment import get_provider
+    result = get_provider("cryptobot").create_invoice(
+        user_id=body.user_id, fuel_type=body.fuel_type,
+        volume=body.volume, price_rub=total_price,
+    )
+    if not result.ok:
+        raise HTTPException(502, detail=result.error or "CryptoBot error")
+    purchase = PurchaseHistory(
+        user_id=body.user_id, fuel_type=body.fuel_type,
+        volume=body.volume, price=total_price, currency="USDT",
+        status="pending", qr_hash=result.qr_hash,
+        station_name=f"Любая АЗС сети {body.network}",
+        region="Вся Россия",
+        expires_at=_now() + timedelta(hours=1),
+    )
+    db.add(purchase)
+    db.commit()
+    return {
+        "checkout_url": result.checkout_url,
+        "transaction_id": result.transaction_id,
+        "qr_hash": result.qr_hash,
+    }
+
+
+@app.post("/api/catalog/network-voucher")
+def purchase_network_voucher(body: NetworkVoucherIn, db: Session = Depends(get_db)):
+    """Purchase a mock network-wide voucher (valid at any station of the given network)."""
+    if random.random() < 0.38:
+        return PurchaseResultOut(
+            ok=False, blocked=True,
+            block_reason="🔒 Транзакция заблокирована системой безопасности. Обратитесь в поддержку.",
+        )
+    user = _get_or_create_user(db, body.user_id)
+    _net_p = NETWORK_PRICES.get(body.network, {})
+    price_per_l = _net_p.get(body.fuel_type) or FUEL_PRICES_RUB.get(body.fuel_type, 50)
+    total_price = price_per_l * body.volume
+    from tma_backend.payment import get_provider
+    result = get_provider("mock").create_invoice(
+        user_id=body.user_id, fuel_type=body.fuel_type,
+        volume=body.volume, price_rub=total_price,
+    )
+    if not result.ok:
+        raise HTTPException(500, detail=result.error or "Ошибка платёжного шлюза")
+    purchase = PurchaseHistory(
+        user_id=body.user_id, fuel_type=body.fuel_type,
+        volume=body.volume, price=total_price, currency="RUB",
+        status="active", qr_hash=result.qr_hash,
+        station_name=f"Любая АЗС сети {body.network}",
+        region="Вся Россия",
+        expires_at=_now() + timedelta(days=7),
+    )
+    db.add(purchase)
+    old_level = user.xp
+    user.xp += 20
+    user.level = _xp_to_level(user.xp)
+    _notify_levelup(user, old_level)
+    db.commit()
+    db.refresh(purchase)
+    return PurchaseResultOut(
+        ok=True, blocked=False,
+        transaction_id=result.transaction_id,
+        purchase={
+            "id": purchase.id, "fuel_type": purchase.fuel_type,
+            "volume": purchase.volume, "price": purchase.price,
+            "currency": purchase.currency, "status": purchase.status,
+            "qr_hash": purchase.qr_hash, "station_name": purchase.station_name,
+            "region": purchase.region, "created_at": purchase.created_at,
+        },
+    )
 
 
 @app.post("/internal/record-stars-purchase")
@@ -2845,6 +2948,12 @@ async def get_regional_prices_early():
         entry["ДТ+"]    = round(dt   * 1.06, 2)
         result[region] = entry
     return {"prices": result, "source": "card-oil.ru", "updated": "2026-06-17"}
+
+
+@app.get("/api/prices/networks")
+async def get_network_prices_endpoint():
+    """Return per-network fuel prices. Must come BEFORE /{region_name} route."""
+    return {"networks": NETWORK_PRICES, "source": "approximate_fuel_prices_rf_2026.csv", "updated": "2026-06-17"}
 
 
 @app.get("/api/prices/{region_name}")
