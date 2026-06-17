@@ -1096,6 +1096,10 @@ export function CatalogTab({ initialStationId, onCalcOpenChange }: CatalogTabPro
             return { s, price, avail };
           })
           .sort((a, b) => a.price - b.price || b.avail - a.avail)
+          .filter((item, idx, arr) => {
+            const key = item.s.network?.trim() || item.s.name;
+            return arr.findIndex((x) => (x.s.network?.trim() || x.s.name) === key) === idx;
+          })
           .slice(0, 3);
         if (!deals.length) return null;
         const color = DEAL_COLORS[dealFuel];

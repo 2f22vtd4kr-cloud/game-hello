@@ -1959,6 +1959,10 @@ function TopCheapestStations() {
       return { s, price, avail };
     })
     .sort((a, b) => a.price - b.price || b.avail - a.avail)
+    .filter((item, idx, arr) => {
+      const key = item.s.network?.trim() || item.s.name;
+      return arr.findIndex((x) => (x.s.network?.trim() || x.s.name) === key) === idx;
+    })
     .slice(0, 5);
 
   if (!top5.length) return null;
