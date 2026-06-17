@@ -6,3 +6,9 @@ id = "ytHRI4njNYBvbpp2IsJHN"
 uri = "file://attached_assets/sample_ticket.png"
 type = "image"
 title = "Пример топливного талона"
+
+[[outputs]]
+id = "HQfBVeNBJQP_wJ9ObG1qc"
+uri = "file://stations_export.csv"
+type = "table"
+title = "Все АЗС — 570 станций с данными"
