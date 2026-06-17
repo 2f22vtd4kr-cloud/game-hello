@@ -45,7 +45,7 @@ PAID_AMOUNT_USDT   = 12          # фиксированная стоимость
 USDT_RUB_RATE      = 92          # курс конвертации для отображения суммы в рублях
 DB_PATH            = "vouchers.db"
 MAP_URL         = "https://fuel.sevtech.org/map"
-TMA_URL         = "https://fuel-tickets-ru--kolachenkovmyko.replit.app"
+TMA_URL         = os.getenv("TMA_URL", "https://fuel-tickets-ru--velychkodoro.replit.app")
 
 
 # ─── Deep-link helpers ────────────────────────────────────────────

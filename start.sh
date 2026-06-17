@@ -8,9 +8,11 @@ pkill -f "python bot.py" 2>/dev/null || true
 pkill -f "tma_backend.main" 2>/dev/null || true
 sleep 1
 
-# Bot in background — force polling (safer on Replit)
-echo "Starting Telegram Bot (polling)..."
-unset REPLIT_DEPLOYMENT
+# Bot in background.
+# In production (REPLIT_DEPLOYMENT is set) the bot uses webhook mode on
+# localhost:8443 and FastAPI proxies /tg/webhook → it.
+# In dev (REPLIT_DEPLOYMENT not set) it falls back to polling.
+echo "Starting Telegram Bot..."
 python bot.py &
 BOT_PID=$!
 
