@@ -361,7 +361,7 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
         pointerEvents: visible ? "auto" : "none",
       }}
     >
-      {/* Filter Bar */}
+      {/* Filter Bar — clean: Filters button + Search only */}
       <div
         style={{
           position: "absolute",
@@ -371,18 +371,19 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
           zIndex: 1000,
           display: "flex",
           gap: "0.5rem",
-          flexWrap: "wrap",
+          alignItems: "center",
         }}
       >
+        {/* Фильтры button */}
         <button
-          onClick={() => setShowFilters(!showFilters)}
+          onClick={() => { setShowFilters(!showFilters); impact("light"); }}
           style={{
-            background: (filterStatus !== "all" || filterFuel || filterNetwork || filterRegion || filterZone)
+            background: activeFilterCount > 0 || showFavoritesOnly
               ? "rgba(168,85,247,0.15)"
               : "rgba(20,20,28,0.92)",
-            border: `1px solid ${(filterStatus !== "all" || filterFuel || filterNetwork || filterRegion || filterZone) ? "#a855f755" : "#22222f"}`,
+            border: `1px solid ${activeFilterCount > 0 || showFavoritesOnly ? "#a855f755" : "#22222f"}`,
             borderRadius: "10px",
-            color: (filterStatus !== "all" || filterFuel || filterNetwork || filterRegion || filterZone) ? "#c084fc" : "#e2e8f0",
+            color: activeFilterCount > 0 || showFavoritesOnly ? "#c084fc" : "#e2e8f0",
             padding: "0.4rem 0.75rem",
             fontSize: "0.75rem",
             cursor: "pointer",
@@ -391,239 +392,33 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
             alignItems: "center",
             gap: "0.3rem",
             fontWeight: 600,
-            boxShadow: (filterStatus !== "all" || filterFuel || filterNetwork || filterRegion || filterZone)
-              ? "0 0 10px rgba(168,85,247,0.25)"
-              : "none",
+            flexShrink: 0,
+            boxShadow: activeFilterCount > 0 || showFavoritesOnly ? "0 0 10px rgba(168,85,247,0.25)" : "none",
             transition: "all 0.2s",
           }}
         >
-          ⬡ Фильтры{" "}
-          {activeFilterCount > 0 && (
-            <span
-              style={{
-                background: "#a855f7",
-                borderRadius: "8px",
-                color: "#fff",
-                fontSize: "0.62rem",
-                fontWeight: 800,
-                padding: "0.05rem 0.38rem",
-                lineHeight: "1.5",
-                minWidth: "1.1rem",
-                textAlign: "center",
-                boxShadow: "0 0 6px #a855f7",
-                fontFamily: "'JetBrains Mono',monospace",
-              }}
-            >{activeFilterCount}</span>
+          ⬡ Фильтры
+          {(activeFilterCount > 0 || showFavoritesOnly) && (
+            <span style={{
+              background: "#a855f7",
+              borderRadius: "8px",
+              color: "#fff",
+              fontSize: "0.62rem",
+              fontWeight: 800,
+              padding: "0.05rem 0.38rem",
+              lineHeight: "1.5",
+              minWidth: "1.1rem",
+              textAlign: "center",
+              boxShadow: "0 0 6px #a855f7",
+              fontFamily: "'JetBrains Mono',monospace",
+            }}>
+              {activeFilterCount + (showFavoritesOnly ? 1 : 0)}
+            </span>
           )}
         </button>
 
-        {/* Crisis quick-filter */}
-        {(() => {
-          const redCount = stations.filter((s) => dominantStatus(s) === "red").length;
-          const isCrisisFilter = filterStatus === "red";
-          if (redCount === 0) return null;
-          return (
-            <button
-              onClick={() => setFilter("filterStatus", isCrisisFilter ? "all" : "red")}
-              title="Показать только кризисные АЗС"
-              style={{
-                background: isCrisisFilter ? "rgba(239,68,68,0.2)" : "rgba(20,20,28,0.92)",
-                border: `1px solid ${isCrisisFilter ? "#ef444488" : "#ef444430"}`,
-                borderRadius: "10px",
-                color: isCrisisFilter ? "#fca5a5" : "#ef4444",
-                padding: "0.4rem 0.6rem",
-                fontSize: "0.72rem", fontWeight: 700,
-                cursor: "pointer",
-                backdropFilter: "blur(12px)",
-                display: "flex", alignItems: "center", gap: "0.25rem",
-                transition: "all 0.2s",
-                boxShadow: isCrisisFilter ? "0 0 10px rgba(239,68,68,0.3)" : "none",
-                animation: !isCrisisFilter && redCount > 20 ? "crisisPulse 2s ease-in-out infinite" : "none",
-              }}
-            >
-              <span style={{ fontSize: "0.6rem" }}>●</span>
-              {redCount}
-            </button>
-          );
-        })()}
-
-        {/* Zone quick-filter */}
-        {([
-          { z: "critical", label: "🔴", title: "Кризисная зона" },
-          { z: "standard", label: "🟣", title: "Стандартная зона" },
-          { z: "eastern",  label: "🟡", title: "Восточная зона" },
-        ] as const).map(({ z, label, title }) => (
-          <button key={z}
-            onClick={() => setFilter("filterZone", filterZone === z ? null : z)}
-            title={title}
-            style={{
-              background: filterZone === z ? "rgba(168,85,247,0.15)" : "rgba(20,20,28,0.92)",
-              border: `1px solid ${filterZone === z ? "#a855f755" : "#22222f"}`,
-              borderRadius: "10px", color: filterZone === z ? "#c084fc" : "#9ca3af",
-              padding: "0.4rem 0.5rem", fontSize: "0.7rem", cursor: "pointer",
-              backdropFilter: "blur(12px)", transition: "all 0.2s",
-              boxShadow: filterZone === z ? "0 0 8px rgba(168,85,247,0.2)" : "none",
-            }}
-          >{label}</button>
-        ))}
-
-        {/* Geolocation nearest station */}
-        <button
-          onClick={findNearest}
-          disabled={geoLoading}
-          title="Ближайшая АЗС"
-          style={{
-            background: geoLoading ? "rgba(168,85,247,0.15)" : "rgba(20,20,28,0.92)",
-            border: `1px solid ${geoError ? "#ef444455" : geoLoading ? "#a855f755" : "#22222f"}`,
-            borderRadius: "10px",
-            color: geoError ? "#ef4444" : geoLoading ? "#a855f7" : "#e2e8f0",
-            padding: "0.4rem 0.6rem",
-            fontSize: "0.78rem",
-            cursor: geoLoading ? "default" : "pointer",
-            backdropFilter: "blur(12px)",
-            display: "flex", alignItems: "center", gap: "0.2rem",
-            transition: "all 0.2s",
-          }}
-        >
-          {geoLoading ? "⟳" : geoError ? "✗" : "📍"}
-        </button>
-
-        {/* Nearest green from map center (no GPS required) */}
-        <button
-          onClick={findNearestGreenFromCenter}
-          title="Ближайшая зелёная АЗС от центра карты"
-          style={{
-            background: "rgba(20,20,28,0.92)",
-            border: "1px solid #22222f",
-            borderRadius: "10px",
-            color: "#4ade80",
-            padding: "0.4rem 0.6rem",
-            fontSize: "0.78rem",
-            cursor: "pointer",
-            backdropFilter: "blur(12px)",
-            display: "flex", alignItems: "center", gap: "0.2rem",
-            transition: "all 0.2s",
-          }}
-        >
-          🟢
-        </button>
-
-        {/* Heatmap toggle */}
-        <button
-          onClick={() => setShowHeatmap((v) => !v)}
-          style={{
-            background: showHeatmap ? "rgba(168,85,247,0.18)" : "rgba(20,20,28,0.92)",
-            border: `1px solid ${showHeatmap ? "#a855f755" : "#22222f"}`,
-            borderRadius: "10px",
-            color: showHeatmap ? "#a855f7" : "#9ca3af",
-            padding: "0.4rem 0.6rem",
-            fontSize: "0.78rem",
-            cursor: "pointer",
-            backdropFilter: "blur(12px)",
-            display: "flex", alignItems: "center", gap: "0.25rem",
-          }}
-          title="Тепловая карта регионов"
-        >
-          🌡
-        </button>
-
-        {/* Available fuel only toggle */}
-        {(() => {
-          const withFuel = stations.filter((s) => s.fuel_statuses.some((f) => f.availability_pct > 0)).length;
-          const isActive = filterStatus === "green";
-          return (
-            <button
-              onClick={() => setFilter("filterStatus", isActive ? "all" : "green")}
-              title={isActive ? "Показать все АЗС" : "Только с топливом"}
-              style={{
-                background: isActive ? "rgba(34,197,94,0.18)" : "rgba(20,20,28,0.92)",
-                border: `1px solid ${isActive ? "#22c55e55" : "#22222f"}`,
-                borderRadius: "10px",
-                color: isActive ? "#4ade80" : "#6b7280",
-                padding: "0.4rem 0.55rem",
-                fontSize: "0.62rem", fontWeight: 700,
-                cursor: "pointer",
-                backdropFilter: "blur(12px)",
-                display: "flex", alignItems: "center", gap: "0.2rem",
-                transition: "all 0.2s",
-                boxShadow: isActive ? "0 0 8px rgba(34,197,94,0.22)" : "none",
-                fontFamily: "'JetBrains Mono',monospace",
-                letterSpacing: "0.02em",
-                whiteSpace: "nowrap",
-              }}
-            >
-              ⛽ {withFuel}
-            </button>
-          );
-        })()}
-
-        {/* Filtered count pill */}
-        {(activeFilterCount > 0 || showFavoritesOnly || searchQuery) && (
-          <div style={{
-            background: "rgba(168,85,247,0.12)", border: "1px solid #a855f730",
-            borderRadius: "10px", padding: "0.4rem 0.55rem",
-            backdropFilter: "blur(12px)", display: "flex", alignItems: "center", gap: "0.25rem",
-            flexShrink: 0,
-          }}>
-            <span style={{ fontFamily: "'JetBrains Mono',monospace", color: "#c084fc", fontSize: "0.62rem", fontWeight: 700 }}>{filtered.length}</span>
-            <span style={{ color: "#6b7280", fontSize: "0.58rem" }}>/ {stations.length}</span>
-          </div>
-        )}
-
-        {/* Favorites filter */}
-        <button
-          onClick={() => setShowFavoritesOnly((v) => !v)}
-          title={showFavoritesOnly ? "Показать все АЗС" : "Только избранные"}
-          style={{
-            background: showFavoritesOnly ? "rgba(234,179,8,0.18)" : "rgba(20,20,28,0.92)",
-            border: `1px solid ${showFavoritesOnly ? "#eab30855" : "#22222f"}`,
-            borderRadius: "10px",
-            color: showFavoritesOnly ? "#fde047" : "#9ca3af",
-            padding: "0.4rem 0.6rem",
-            fontSize: "0.78rem",
-            cursor: "pointer",
-            backdropFilter: "blur(12px)",
-            display: "flex", alignItems: "center", gap: "0.25rem",
-            transition: "all 0.2s",
-            boxShadow: showFavoritesOnly ? "0 0 10px rgba(234,179,8,0.25)" : "none",
-          }}
-        >
-          ⭐
-        </button>
-
-        {/* Clear all filters */}
-        {(activeFilterCount > 0 || showFavoritesOnly || searchQuery) && (
-          <button
-            onClick={() => {
-              setFilter("filterStatus", "all");
-              setFilter("filterFuel", null);
-              setFilter("filterNetwork", null);
-              setFilter("filterRegion", null);
-              setFilter("filterZone", null);
-              setShowFavoritesOnly(false);
-              setSearchQuery("");
-              setSearchOpen(false);
-              impact("light");
-            }}
-            title="Сбросить все фильтры"
-            style={{
-              background: "rgba(239,68,68,0.12)",
-              border: "1px solid #ef444430",
-              borderRadius: "10px",
-              color: "#ef4444",
-              padding: "0.4rem 0.55rem",
-              fontSize: "0.68rem",
-              cursor: "pointer",
-              backdropFilter: "blur(12px)",
-              fontWeight: 700,
-              flexShrink: 0,
-              transition: "all 0.2s",
-            }}
-          >✕</button>
-        )}
-
-        {/* Search — expand on click */}
-        <div style={{ display: "flex", alignItems: "center", gap: "0.3rem", flex: searchOpen ? 1 : "none" }}>
+        {/* Search — takes all remaining space */}
+        <div style={{ display: "flex", alignItems: "center", gap: "0.3rem", flex: 1 }}>
           <button
             onClick={() => {
               setSearchOpen((v) => !v);
@@ -632,6 +427,7 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
               } else {
                 setSearchQuery("");
               }
+              impact("light");
             }}
             style={{
               background: (searchOpen || searchQuery) ? "rgba(219,39,119,0.15)" : "rgba(20,20,28,0.92)",
@@ -662,7 +458,10 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") jumpToSearchResult(); if (e.key === "Escape") { setSearchOpen(false); setSearchQuery(""); } }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") jumpToSearchResult();
+                    if (e.key === "Escape") { setSearchOpen(false); setSearchQuery(""); }
+                  }}
                   placeholder="АЗС, сеть, адрес…"
                   style={{
                     width: "100%",
@@ -681,137 +480,23 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
               </motion.div>
             )}
           </AnimatePresence>
-        </div>
-
-        {/* Favorites-only active badge */}
-        {showFavoritesOnly && !searchQuery && (
-          <div style={{
-            background: "rgba(234,179,8,0.12)",
-            border: "1px solid #eab30844",
-            borderRadius: "10px",
-            padding: "0.4rem 0.55rem",
-            fontFamily: "'JetBrains Mono',monospace",
-            fontSize: "0.65rem",
-            color: "#fde047",
-            backdropFilter: "blur(12px)",
-            flexShrink: 0,
-            cursor: "pointer",
-          }} onClick={() => setShowFavoritesOnly(false)}>
-            ⭐ {filtered.length} АЗС ×
-          </div>
-        )}
-
-        {/* Zone filter active badge */}
-        {filterZone && !searchQuery && !showFavoritesOnly && (
-          <div style={{
-            background: "rgba(168,85,247,0.12)",
-            border: "1px solid #a855f744",
-            borderRadius: "10px",
-            padding: "0.4rem 0.55rem",
-            fontFamily: "'JetBrains Mono',monospace",
-            fontSize: "0.62rem",
-            color: "#c084fc",
-            backdropFilter: "blur(12px)",
-            flexShrink: 0,
-            cursor: "pointer",
-            display: "flex", alignItems: "center", gap: "0.3rem",
-          }} onClick={() => setFilter("filterZone", null)}>
-            {{ critical: "🔴", standard: "🟣", eastern: "🟡" }[filterZone] ?? "⬡"}
-            {filtered.length} АЗС ×
-          </div>
-        )}
-
-        {/* Search result count badge */}
-        {searchQuery && (
-          <div style={{
-            background: filtered.length > 0 ? "rgba(219,39,119,0.12)" : "rgba(239,68,68,0.12)",
-            border: `1px solid ${filtered.length > 0 ? "#db277744" : "#ef444444"}`,
-            borderRadius: "10px",
-            padding: "0.4rem 0.55rem",
-            fontFamily: "'JetBrains Mono',monospace",
-            fontSize: "0.65rem",
-            color: filtered.length > 0 ? "#f472b6" : "#ef4444",
-            backdropFilter: "blur(12px)",
-            cursor: filtered.length > 0 ? "pointer" : "default",
-            flexShrink: 0,
-          }} onClick={jumpToSearchResult}>
-            {filtered.length > 0 ? `${filtered.length} АЗС →` : "0"}
-          </div>
-        )}
-
-        {/* Total station count — always visible */}
-        {!searchQuery && !showFavoritesOnly && activeFilterCount === 0 && stations.length > 0 && (
-          <div style={{
-            background: "rgba(20,20,28,0.88)",
-            border: "1px solid #1e1e2a",
-            borderRadius: "10px",
-            padding: "0.4rem 0.55rem",
-            fontFamily: "'JetBrains Mono',monospace",
-            fontSize: "0.6rem",
-            color: "#374151",
-            backdropFilter: "blur(12px)",
-            flexShrink: 0,
-            display: "flex", alignItems: "center", gap: "0.25rem",
-          }}>
-            <span style={{ color: "#a855f7", fontWeight: 700 }}>{stations.length.toLocaleString("ru")}</span>
-            <span>АЗС</span>
-          </div>
-        )}
-
-        {/* Quick status strip — tap to filter */}
-        <div
-          style={{
-            background: "rgba(20,20,28,0.92)",
-            border: "1px solid #22222f",
-            borderRadius: "10px",
-            backdropFilter: "blur(12px)",
-            display: "flex",
-            alignItems: "center",
-            overflow: "hidden",
-          }}
-        >
-          {loading ? (
-            <span style={{ color: "#374151", fontSize: "0.7rem", padding: "0.4rem 0.75rem", fontFamily: "'JetBrains Mono',monospace" }}>···</span>
-          ) : (
-            <>
-              {([
-                { status: "green",  color: "#22c55e", dot: "●" },
-                { status: "yellow", color: "#eab308", dot: "●" },
-                { status: "red",    color: "#ef4444", dot: "●" },
-              ] as const).map(({ status, color, dot }) => {
-                const cnt = filtered.filter((s) => dominantStatus(s) === status).length;
-                const isActive = filterStatus === status;
-                return (
-                  <button
-                    key={status}
-                    onClick={() => setFilter("filterStatus", isActive ? "all" : status)}
-                    style={{
-                      background: isActive ? `${color}18` : "transparent",
-                      border: "none",
-                      borderRight: "1px solid #22222f",
-                      padding: "0.38rem 0.55rem",
-                      cursor: "pointer",
-                      display: "flex", alignItems: "center", gap: "0.22rem",
-                      transition: "background 0.15s",
-                    }}
-                  >
-                    <span style={{ color, fontSize: "0.55rem", lineHeight: 1 }}>{dot}</span>
-                    <span style={{
-                      fontFamily: "'JetBrains Mono',monospace",
-                      fontSize: "0.68rem", fontWeight: isActive ? 800 : 500,
-                      color: isActive ? color : "#6b7280",
-                    }}>{cnt}</span>
-                  </button>
-                );
-              })}
-              <span style={{
-                fontFamily: "'JetBrains Mono',monospace",
-                fontSize: "0.6rem", color: filtered.length < stations.length ? "#a855f7" : "#4b5563",
-                padding: "0 0.5rem",
-              }}>
-                {filtered.length < stations.length ? `${filtered.length}/${stations.length}` : `${stations.length}`}
-              </span>
-            </>
+          {/* Search result count badge — compact, inside the search row */}
+          {searchQuery && (
+            <div style={{
+              background: filtered.length > 0 ? "rgba(219,39,119,0.12)" : "rgba(239,68,68,0.12)",
+              border: `1px solid ${filtered.length > 0 ? "#db277744" : "#ef444444"}`,
+              borderRadius: "10px",
+              padding: "0.4rem 0.5rem",
+              fontFamily: "'JetBrains Mono',monospace",
+              fontSize: "0.62rem",
+              color: filtered.length > 0 ? "#f472b6" : "#ef4444",
+              backdropFilter: "blur(12px)",
+              cursor: filtered.length > 0 ? "pointer" : "default",
+              flexShrink: 0,
+              whiteSpace: "nowrap",
+            }} onClick={jumpToSearchResult}>
+              {filtered.length > 0 ? `${filtered.length} →` : "0"}
+            </div>
           )}
         </div>
       </div>
@@ -825,7 +510,7 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
             exit={{ opacity: 0, y: -10 }}
             style={{
               position: "absolute",
-              top: "6.5rem",
+              top: "5rem",
               left: "0.75rem",
               right: "0.75rem",
               zIndex: 1000,
@@ -848,6 +533,221 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
                 onClick={() => setShowFilters(false)}
                 style={{ background: "none", border: "none", color: "#374151", cursor: "pointer", fontSize: "0.7rem", padding: "0.1rem 0.3rem" }}
               >✕</button>
+            </div>
+
+            {/* Quick stats strip */}
+            <div style={{
+              background: "rgba(20,20,28,0.8)",
+              border: "1px solid #1e1e2a",
+              borderRadius: "10px",
+              display: "flex",
+              alignItems: "center",
+              overflow: "hidden",
+              marginBottom: "0.65rem",
+            }}>
+              {loading ? (
+                <span style={{ color: "#374151", fontSize: "0.7rem", padding: "0.4rem 0.75rem", fontFamily: "'JetBrains Mono',monospace" }}>···</span>
+              ) : (
+                <>
+                  {([
+                    { status: "green",  color: "#22c55e", dot: "●" },
+                    { status: "yellow", color: "#eab308", dot: "●" },
+                    { status: "red",    color: "#ef4444", dot: "●" },
+                  ] as const).map(({ status, color, dot }) => {
+                    const cnt = filtered.filter((s) => dominantStatus(s) === status).length;
+                    const isActive = filterStatus === status;
+                    return (
+                      <button
+                        key={status}
+                        onClick={() => setFilter("filterStatus", isActive ? "all" : status)}
+                        style={{
+                          background: isActive ? `${color}18` : "transparent",
+                          border: "none",
+                          borderRight: "1px solid #1e1e2a",
+                          padding: "0.38rem 0.65rem",
+                          cursor: "pointer",
+                          display: "flex", alignItems: "center", gap: "0.22rem",
+                          transition: "background 0.15s",
+                        }}
+                      >
+                        <span style={{ color, fontSize: "0.55rem", lineHeight: 1 }}>{dot}</span>
+                        <span style={{
+                          fontFamily: "'JetBrains Mono',monospace",
+                          fontSize: "0.68rem", fontWeight: isActive ? 800 : 500,
+                          color: isActive ? color : "#6b7280",
+                        }}>{cnt}</span>
+                      </button>
+                    );
+                  })}
+                  <span style={{
+                    fontFamily: "'JetBrains Mono',monospace",
+                    fontSize: "0.6rem",
+                    color: filtered.length < stations.length ? "#a855f7" : "#4b5563",
+                    padding: "0 0.6rem",
+                    marginLeft: "auto",
+                  }}>
+                    {filtered.length < stations.length ? `${filtered.length}/${stations.length}` : `${stations.length}`}
+                    {" "}АЗС
+                  </span>
+                </>
+              )}
+            </div>
+
+            {/* Quick actions */}
+            <p style={{ color: "#374151", fontSize: "0.6rem", margin: "0 0 0.35rem", textTransform: "uppercase", letterSpacing: "0.12em" }}>Быстрые действия</p>
+            <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap", marginBottom: "0.65rem" }}>
+              {/* Geolocation nearest */}
+              <button
+                onClick={() => { findNearest(); setShowFilters(false); }}
+                disabled={geoLoading}
+                title="Ближайшая АЗС по GPS"
+                style={{
+                  background: geoLoading ? "rgba(168,85,247,0.15)" : "rgba(20,20,28,0.9)",
+                  border: `1px solid ${geoError ? "#ef444455" : geoLoading ? "#a855f755" : "#22222f"}`,
+                  borderRadius: "8px",
+                  color: geoError ? "#ef4444" : geoLoading ? "#a855f7" : "#e2e8f0",
+                  padding: "0.3rem 0.55rem",
+                  fontSize: "0.72rem", cursor: geoLoading ? "default" : "pointer",
+                  display: "flex", alignItems: "center", gap: "0.25rem",
+                  transition: "all 0.2s",
+                }}
+              >
+                {geoLoading ? "⟳" : geoError ? "✗" : "📍"} Ближайшая
+              </button>
+
+              {/* Nearest green from map center */}
+              <button
+                onClick={() => { findNearestGreenFromCenter(); setShowFilters(false); }}
+                title="Ближайшая с топливом от центра карты"
+                style={{
+                  background: "rgba(20,20,28,0.9)",
+                  border: "1px solid #22222f",
+                  borderRadius: "8px",
+                  color: "#4ade80",
+                  padding: "0.3rem 0.55rem",
+                  fontSize: "0.72rem", cursor: "pointer",
+                  display: "flex", alignItems: "center", gap: "0.25rem",
+                  transition: "all 0.2s",
+                }}
+              >
+                🟢 С топливом
+              </button>
+
+              {/* Heatmap toggle */}
+              <button
+                onClick={() => setShowHeatmap((v) => !v)}
+                title="Тепловая карта регионов"
+                style={{
+                  background: showHeatmap ? "rgba(168,85,247,0.18)" : "rgba(20,20,28,0.9)",
+                  border: `1px solid ${showHeatmap ? "#a855f755" : "#22222f"}`,
+                  borderRadius: "8px",
+                  color: showHeatmap ? "#a855f7" : "#9ca3af",
+                  padding: "0.3rem 0.55rem",
+                  fontSize: "0.72rem", cursor: "pointer",
+                  display: "flex", alignItems: "center", gap: "0.25rem",
+                  transition: "all 0.2s",
+                }}
+              >
+                🌡 Тепловая карта
+              </button>
+
+              {/* Available fuel only */}
+              {(() => {
+                const withFuel = stations.filter((s) => s.fuel_statuses.some((f) => f.availability_pct > 0)).length;
+                const isActive = filterStatus === "green";
+                return (
+                  <button
+                    onClick={() => setFilter("filterStatus", isActive ? "all" : "green")}
+                    title={isActive ? "Показать все АЗС" : "Только с топливом"}
+                    style={{
+                      background: isActive ? "rgba(34,197,94,0.18)" : "rgba(20,20,28,0.9)",
+                      border: `1px solid ${isActive ? "#22c55e55" : "#22222f"}`,
+                      borderRadius: "8px",
+                      color: isActive ? "#4ade80" : "#6b7280",
+                      padding: "0.3rem 0.55rem",
+                      fontSize: "0.72rem", fontWeight: isActive ? 700 : 400, cursor: "pointer",
+                      display: "flex", alignItems: "center", gap: "0.25rem",
+                      transition: "all 0.2s",
+                      boxShadow: isActive ? "0 0 8px rgba(34,197,94,0.22)" : "none",
+                      fontFamily: "'JetBrains Mono',monospace",
+                    }}
+                  >
+                    ⛽ {withFuel}
+                  </button>
+                );
+              })()}
+
+              {/* Favorites */}
+              <button
+                onClick={() => setShowFavoritesOnly((v) => !v)}
+                title={showFavoritesOnly ? "Показать все АЗС" : "Только избранные"}
+                style={{
+                  background: showFavoritesOnly ? "rgba(234,179,8,0.18)" : "rgba(20,20,28,0.9)",
+                  border: `1px solid ${showFavoritesOnly ? "#eab30855" : "#22222f"}`,
+                  borderRadius: "8px",
+                  color: showFavoritesOnly ? "#fde047" : "#9ca3af",
+                  padding: "0.3rem 0.55rem",
+                  fontSize: "0.72rem", cursor: "pointer",
+                  display: "flex", alignItems: "center", gap: "0.25rem",
+                  transition: "all 0.2s",
+                  boxShadow: showFavoritesOnly ? "0 0 10px rgba(234,179,8,0.25)" : "none",
+                }}
+              >
+                ⭐ Избранные
+              </button>
+
+              {/* Crisis quick-filter */}
+              {(() => {
+                const redCount = stations.filter((s) => dominantStatus(s) === "red").length;
+                const isCrisisFilter = filterStatus === "red";
+                if (redCount === 0) return null;
+                return (
+                  <button
+                    onClick={() => setFilter("filterStatus", isCrisisFilter ? "all" : "red")}
+                    title="Только кризисные АЗС"
+                    style={{
+                      background: isCrisisFilter ? "rgba(239,68,68,0.2)" : "rgba(20,20,28,0.9)",
+                      border: `1px solid ${isCrisisFilter ? "#ef444488" : "#ef444430"}`,
+                      borderRadius: "8px",
+                      color: isCrisisFilter ? "#fca5a5" : "#ef4444",
+                      padding: "0.3rem 0.55rem",
+                      fontSize: "0.72rem", fontWeight: 700, cursor: "pointer",
+                      display: "flex", alignItems: "center", gap: "0.22rem",
+                      transition: "all 0.2s",
+                      boxShadow: isCrisisFilter ? "0 0 10px rgba(239,68,68,0.3)" : "none",
+                    }}
+                  >
+                    <span style={{ fontSize: "0.55rem" }}>●</span> Кризис {redCount}
+                  </button>
+                );
+              })()}
+            </div>
+
+            {/* Zone quick-filters */}
+            <p style={{ color: "#374151", fontSize: "0.6rem", margin: "0 0 0.35rem", textTransform: "uppercase", letterSpacing: "0.12em" }}>Зона</p>
+            <div style={{ display: "flex", gap: "0.35rem", marginBottom: "0.65rem" }}>
+              {([
+                { z: "critical", label: "🔴 Кризисная", title: "Кризисная зона" },
+                { z: "standard", label: "🟣 Стандартная", title: "Стандартная зона" },
+                { z: "eastern",  label: "🟡 Восточная", title: "Восточная зона" },
+              ] as const).map(({ z, label, title }) => (
+                <button key={z}
+                  onClick={() => setFilter("filterZone", filterZone === z ? null : z)}
+                  title={title}
+                  style={{
+                    background: filterZone === z ? "rgba(168,85,247,0.15)" : "#0b0b10",
+                    border: `1px solid ${filterZone === z ? "#a855f755" : "#1e1e2a"}`,
+                    borderRadius: "8px",
+                    color: filterZone === z ? "#c084fc" : "#4b5563",
+                    padding: "0.28rem 0.55rem",
+                    fontSize: "0.7rem",
+                    fontWeight: filterZone === z ? 700 : 400,
+                    cursor: "pointer",
+                    transition: "all 0.2s",
+                    boxShadow: filterZone === z ? "0 0 8px rgba(168,85,247,0.2)" : "none",
+                  }}
+                >{label}</button>
+              ))}
             </div>
 
             {/* Status */}
