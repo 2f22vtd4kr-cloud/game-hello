@@ -5,8 +5,11 @@
 - [Region favorites client-side](region-favorites.md) — stored via Zustand persist (localStorage "tma-region-favorites"); no backend needed for UI.
 - [Water zone fix at startup](water-zone-fix.md) — _fix_water_stations() runs at every startup, moves in-water coords to region center ±0.07°; idempotent.
 - [Port conflict on backend restart](port-conflict.md) — run `fuser -k 8000/tcp` before restarting TMA Backend if it fails to bind port 8000.
-- [FastAPI route ordering](fastapi-route-ordering.md) — literal routes (e.g. /api/empire/leaderboard) must be declared BEFORE parameterized routes (/api/empire/{user_id}) or FastAPI will try to parse the literal as the param type and return 422.
+- [FastAPI route ordering](fastapi-route-ordering.md) — literal routes (e.g. /api/empire/leaderboard, /api/prices/regional) must be declared BEFORE parameterized routes (/api/empire/{user_id}, /api/prices/{region_name}).
 - [useToast API](usetoa-api.md) — useToast().add(message: string, type?: "success"|"error"|"info"|"warning") — NOT add({ type, message }). Message is first arg, type is second.
 - [AI provider pattern](ai-provider-pattern.md) — AI_PROVIDER env var: "rule-based"(default)/"grok"/"openai"/"none"; Grok uses XAI_API_KEY + base_url https://api.x.ai/v1; ai_chat must be async def to use httpx.AsyncClient.
 - [Excel station seeder](excel-station-seeder.md) — 1222 real stations in seed_excel_stations.py; threshold 600 guards re-seed; delete tma.db + restart backend to force fresh seed; must escape all quotes from Excel addresses.
 - [Game notification timer bug](game-notif-timer.md) — GamesPage useEffect cleanup cancels previous timers on new notifications; fix with Map<id,timer> ref so each notification has its own independent timeout.
+- [PostgreSQL in production](postgres-production.md) — DATABASE_URL secret is set → app uses PostgreSQL, not SQLite. tma.db stays 0 bytes. Raw SQL must use Python datetime not SQLite date('now'). Model columns added via ALTER TABLE in _run_migrations() at startup.
+- [Bot polling vs webhook](bot-polling-webhook.md) — production bot uses webhook mode (REPLIT_DEPLOYMENT set); dev uses polling. start.sh must NOT unset REPLIT_DEPLOYMENT or both bots poll the same token causing 409 conflict.
+- [sed class name collision](sed-classname-collision.md) — running sed 's/Station/GasStation/g' on code that already has GasStation creates GasGasStation. Always grep-verify after bulk sed replacements.

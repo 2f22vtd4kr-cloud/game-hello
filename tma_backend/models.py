@@ -301,6 +301,7 @@ class Empire(Base):
     last_daily_reward_at = Column(DateTime(timezone=True), nullable=True)
     last_collected_at = Column(DateTime(timezone=True), default=_now)
     created_at = Column(DateTime(timezone=True), default=_now)
+    full_state_json = Column(Text, nullable=True)
 
 
 class StationNote(Base):

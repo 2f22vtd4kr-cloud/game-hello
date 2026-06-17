@@ -2830,6 +2830,23 @@ def get_price_history(hours: int = 24, db: Session = Depends(get_db)):
     return {"history": result}
 
 
+@app.get("/api/prices/regional")
+async def get_regional_prices_early():
+    """Return per-region fuel prices — must be declared BEFORE /{region_name}."""
+    default = {k: float(v) for k, v in FUEL_PRICES_RUB.items()}
+    result = {}
+    for region, prices in REGIONAL_PRICES.items():
+        entry = {**default}
+        entry.update(prices)
+        ai95 = prices.get("АИ-95", default["АИ-95"])
+        dt   = prices.get("ДТ",    default["ДТ"])
+        entry["АИ-95+"] = round(ai95 * 1.07, 2)
+        entry["АИ-100"] = round(ai95 * 1.24, 2)
+        entry["ДТ+"]    = round(dt   * 1.06, 2)
+        result[region] = entry
+    return {"prices": result, "source": "card-oil.ru", "updated": "2026-06-17"}
+
+
 @app.get("/api/prices/{region_name}")
 def get_prices_for_region(region_name: str, db: Session = Depends(get_db)):
     from tma_backend.seed_regions import FUEL_PRICES_RUB, FUEL_TYPES
@@ -3073,17 +3090,23 @@ async def prices_websocket(websocket: WebSocket):
 def get_stats_summary(db: Session = Depends(get_db)):
     """Quick summary stats for dashboard widgets."""
     from sqlalchemy import text as _text
+    from datetime import datetime, timezone
 
-    def _count(q: str) -> int:
-        return db.execute(_text(q)).scalar() or 0
+    def _count(q: str, **params) -> int:
+        return db.execute(_text(q), params).scalar() or 0
+
+    today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
 
     total = _count("SELECT count(*) FROM gas_stations")
     green = _count("SELECT count(DISTINCT station_id) FROM fuel_statuses WHERE availability_pct >= 60")
     yellow = _count("SELECT count(DISTINCT station_id) FROM fuel_statuses WHERE availability_pct >= 25 AND availability_pct < 60")
     red = _count("SELECT count(DISTINCT station_id) FROM fuel_statuses WHERE availability_pct < 25")
     total_users = _count("SELECT count(*) FROM users")
-    active_vouchers = _count("SELECT count(*) FROM purchases WHERE status = 'active'")
-    reports_today = _count("SELECT count(*) FROM crowd_reports WHERE created_at >= date('now')")
+    active_vouchers = _count("SELECT count(*) FROM purchase_history WHERE status = 'active'")
+    reports_today = _count(
+        "SELECT count(*) FROM station_reports WHERE created_at >= :today",
+        today=today_start,
+    )
 
     overall_pct = db.execute(_text(
         "SELECT AVG(availability_pct) FROM fuel_statuses"
@@ -3115,14 +3138,17 @@ def get_admin_stats(db: Session = Depends(get_db)):
     from sqlalchemy import text as _text
     import os as _os
 
-    def _count(q: str) -> int:
-        return db.execute(_text(q)).scalar() or 0
+    def _count(q: str, **params) -> int:
+        return db.execute(_text(q), params).scalar() or 0
 
     total_stations = _count("SELECT count(*) FROM gas_stations")
     total_users = _count("SELECT count(*) FROM users")
     total_purchases = _count("SELECT count(*) FROM purchase_history")
+    from datetime import datetime, timezone, timedelta
+    cutoff_24h = datetime.now(timezone.utc) - timedelta(hours=24)
     reports_24h = _count(
-        "SELECT count(*) FROM station_reports WHERE created_at >= datetime('now','-24 hours')"
+        "SELECT count(*) FROM station_reports WHERE created_at >= :cutoff",
+        cutoff=cutoff_24h,
     )
 
     # Crisis zones: regions where avg availability < 25%
@@ -3519,9 +3545,9 @@ def _ai_rule_based_reply(
 
     # ── Live DB stats ─────────────────────────────────────────────────────────
     try:
-        crisis_count   = db.query(Station).join(FuelStatus).filter(FuelStatus.availability_pct < 25).distinct().count()
-        green_count    = db.query(Station).join(FuelStatus).filter(FuelStatus.status == "green").distinct().count()
-        total_stations = db.query(Station).count()
+        crisis_count   = db.query(GasStation).join(FuelStatus).filter(FuelStatus.availability_pct < 25).distinct().count()
+        green_count    = db.query(GasStation).join(FuelStatus).filter(FuelStatus.status == "green").distinct().count()
+        total_stations = db.query(GasStation).count()
     except Exception:
         crisis_count   = context.get("crisis_stations", 0)
         green_count    = context.get("green_stations", 45)
@@ -3540,8 +3566,8 @@ def _ai_rule_based_reply(
     # ── Region-specific green count ───────────────────────────────────────────
     try:
         first_word = user_region.split()[0]
-        region_green = db.query(Station).join(FuelStatus).filter(
-            Station.region.ilike(f"%{first_word}%"),
+        region_green = db.query(GasStation).join(FuelStatus).filter(
+            GasStation.region.ilike(f"%{first_word}%"),
             FuelStatus.status == "green"
         ).distinct().count()
     except Exception:
@@ -3671,15 +3697,15 @@ def _ai_rule_based_reply(
             # Pull real stats from DB for this region
             try:
                 first_word = city_name.split()[0]
-                region_total = db.query(Station).filter(
-                    Station.region.ilike(f"%{first_word}%")
+                region_total = db.query(GasStation).filter(
+                    GasStation.region.ilike(f"%{first_word}%")
                 ).count()
-                region_green_city = db.query(Station).join(FuelStatus).filter(
-                    Station.region.ilike(f"%{first_word}%"),
+                region_green_city = db.query(GasStation).join(FuelStatus).filter(
+                    GasStation.region.ilike(f"%{first_word}%"),
                     FuelStatus.status == "green"
                 ).distinct().count()
-                region_crisis = db.query(Station).join(FuelStatus).filter(
-                    Station.region.ilike(f"%{first_word}%"),
+                region_crisis = db.query(GasStation).join(FuelStatus).filter(
+                    GasStation.region.ilike(f"%{first_word}%"),
                     FuelStatus.availability_pct < 25
                 ).distinct().count()
             except Exception:
@@ -3727,7 +3753,7 @@ def _ai_rule_based_reply(
     for net_key, net_name in networks:
         if net_key in msg:
             try:
-                net_stations = db.query(Station).filter(Station.network.ilike(f"%{net_name}%")).all()
+                net_stations = db.query(GasStation).filter(GasStation.network.ilike(f"%{net_name}%")).all()
                 net_green = sum(1 for s in net_stations for f in s.fuel_statuses if f.status == "green")
                 net_total = len(net_stations)
             except Exception:
@@ -3834,7 +3860,7 @@ def _ai_rule_based_reply(
         fuel = next((v for k, v in fuel_map if k in msg), "АИ-95")
         price_map2 = {"АИ-92": 47, "АИ-95": 52, "АИ-95+": 56, "АИ-100": 68, "ДТ": 60, "Газ LPG": 28}
         try:
-            fuel_avail = db.query(Station).join(FuelStatus).filter(
+            fuel_avail = db.query(GasStation).join(FuelStatus).filter(
                 FuelStatus.fuel_type == fuel, FuelStatus.availability_pct > 0
             ).distinct().count()
         except Exception:
@@ -4097,9 +4123,9 @@ async def ai_chat(body: AiChatRequest, db: Session = Depends(get_db)):
             model    = os.getenv("GROK_MODEL", "grok-3") if provider == "grok" else os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 
             try:
-                crisis_count   = db.query(Station).join(FuelStatus).filter(FuelStatus.availability_pct < 25).distinct().count()
-                green_count    = db.query(Station).join(FuelStatus).filter(FuelStatus.status == "green").distinct().count()
-                total_st       = db.query(Station).count()
+                crisis_count   = db.query(GasStation).join(FuelStatus).filter(FuelStatus.availability_pct < 25).distinct().count()
+                green_count    = db.query(GasStation).join(FuelStatus).filter(FuelStatus.status == "green").distinct().count()
+                total_st       = db.query(GasStation).count()
             except Exception:
                 crisis_count = context.get("crisis_stations", 0); green_count = context.get("green_stations", 45); total_st = context.get("total_stations", 236)
 
@@ -4164,10 +4190,10 @@ async def ai_chat(body: AiChatRequest, db: Session = Depends(get_db)):
 def ai_crisis_forecast(db: Session = Depends(get_db)):
     """Returns crisis severity forecast per region."""
     from sqlalchemy import func as sqlfunc
-    regions = db.query(Station.region).distinct().all()
+    regions = db.query(GasStation.region).distinct().all()
     result = []
     for (region,) in regions[:10]:
-        stations_in_region = db.query(Station).filter(Station.region == region).all()
+        stations_in_region = db.query(GasStation).filter(GasStation.region == region).all()
         if not stations_in_region:
             continue
         total_pct = 0.0
@@ -4191,25 +4217,6 @@ def ai_crisis_forecast(db: Session = Depends(get_db)):
             "region": region,
         })
     return result
-
-
-@app.get("/api/prices/regional")
-async def get_regional_prices():
-    """Return per-region fuel prices from card-oil.ru (June 2026)."""
-    default = {k: float(v) for k, v in FUEL_PRICES_RUB.items()}
-    result = {}
-    for region, prices in REGIONAL_PRICES.items():
-        entry = {**default}
-        entry.update(prices)
-        # Derive premium grades relative to АИ-92/АИ-95/ДТ
-        ai92 = prices.get("АИ-92", default["АИ-92"])
-        ai95 = prices.get("АИ-95", default["АИ-95"])
-        dt   = prices.get("ДТ",    default["ДТ"])
-        entry["АИ-95+"] = round(ai95 * 1.07, 2)
-        entry["АИ-100"] = round(ai95 * 1.24, 2)
-        entry["ДТ+"]    = round(dt   * 1.06, 2)
-        result[region] = entry
-    return {"prices": result, "source": "card-oil.ru", "updated": "2026-06-17"}
 
 
 FRONTEND_DIST = os.path.join(
