@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Fuse from "fuse.js";
-import { fetchLimits, createStarsInvoice, createCryptoBotInvoice, createNetworkStarsInvoice, createNetworkCryptoBotInvoice, fetchStations as apiFetchStations } from "@/api/client";
+import { fetchLimits, createStarsInvoice, createCryptoBotInvoice, createNetworkStarsInvoice, createNetworkCryptoBotInvoice, fetchStations as apiFetchStations, setPriceAlert, fetchPriceAlerts, deletePriceAlert } from "@/api/client";
+import type { PriceAlertOut } from "@/api/client";
 import { useUserStore } from "@/stores/useUserStore";
 import { usePriceStore } from "@/stores/usePriceStore";
 import { useStationStore } from "@/stores/useStationStore";
@@ -314,8 +315,17 @@ function LiveMarketWidget({
 }) {
   const prices = usePriceStore((s) => s.prices);
   const connected = usePriceStore((s) => s.connected);
+  const user = useUserStore((s) => s.user);
+  const { add: toast } = useToast();
   const [flash, setFlash] = useState(false);
   const prevMarket = useRef(lockedPrice);
+
+  // ── Alert state ──
+  const [activeAlert, setActiveAlert] = useState<PriceAlertOut | null>(null);
+  const [alertOpen, setAlertOpen] = useState(false);
+  const [threshold, setThreshold] = useState("");
+  const [direction, setDirection] = useState<"above" | "below">("above");
+  const [saving, setSaving] = useState(false);
 
   const marketPrice = useMemo(() => {
     const vals = Object.values(prices)
@@ -324,6 +334,18 @@ function LiveMarketWidget({
     return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : lockedPrice;
   }, [prices, fuelType, lockedPrice]);
 
+  // Load existing alert for this fuel type
+  useEffect(() => {
+    if (!user?.id) return;
+    fetchPriceAlerts(user.id)
+      .then(alerts => {
+        const match = alerts.find(a => a.fuel_type === fuelType) ?? null;
+        setActiveAlert(match);
+      })
+      .catch(() => {});
+  }, [user?.id, fuelType]);
+
+  // Flash border on price move
   useEffect(() => {
     if (Math.abs(marketPrice - prevMarket.current) > 0.05) {
       setFlash(true);
@@ -332,6 +354,44 @@ function LiveMarketWidget({
       return () => clearTimeout(t);
     }
   }, [marketPrice]);
+
+  const handleBellClick = () => {
+    if (activeAlert) {
+      handleDeleteAlert();
+    } else {
+      setThreshold(String(Math.round(direction === "above" ? marketPrice + 2 : marketPrice - 2)));
+      setAlertOpen(v => !v);
+    }
+  };
+
+  const handleSaveAlert = async () => {
+    if (!user?.id) return;
+    const val = parseFloat(threshold);
+    if (isNaN(val) || val <= 0) { toast("Введите корректную цену", "error"); return; }
+    setSaving(true);
+    try {
+      const result = await setPriceAlert(user.id, user.id, fuelType, val, direction);
+      setActiveAlert(result);
+      setAlertOpen(false);
+      toast(`🔔 Уведомление: ${fuelType} ${direction === "above" ? "≥" : "≤"} ${val}₽/л`, "success");
+    } catch {
+      toast("Не удалось сохранить уведомление", "error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteAlert = async () => {
+    if (!activeAlert || !user?.id) return;
+    try {
+      await deletePriceAlert(activeAlert.id, user.id);
+      setActiveAlert(null);
+      setAlertOpen(false);
+      toast("🔕 Уведомление отключено", "info");
+    } catch {
+      toast("Ошибка при удалении уведомления", "error");
+    }
+  };
 
   const baseFuelPrice = FUEL_PRICES[fuelType] ?? lockedPrice;
   const premium = Math.max(0, marketPrice / baseFuelPrice - 1);
@@ -368,6 +428,7 @@ function LiveMarketWidget({
       borderRadius: "12px", padding: "0.5rem 0.65rem", marginBottom: "0.65rem",
       transition: "background 0.3s, border-color 0.3s",
     }}>
+      {/* Header row */}
       <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", marginBottom: "0.35rem" }}>
         <div style={{
           width: "5px", height: "5px", borderRadius: "50%",
@@ -377,14 +438,35 @@ function LiveMarketWidget({
         <span style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.4rem", letterSpacing: "0.1em" }}>
           РЫНОК vs ТАЛОН · {connected ? "LIVE" : "—"}
         </span>
-        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "0.3rem" }}>
+        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "0.35rem" }}>
           <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.5rem", color: "#22c55e", fontWeight: 800 }}>
             +{savings3mo.toFixed(0)}₽
           </span>
           <span style={{ color: "#374151", fontSize: "0.38rem" }}>за {volume}л · 3мес</span>
+          {/* Bell alert button */}
+          <button
+            onClick={handleBellClick}
+            title={activeAlert ? `Отключить уведомление (${activeAlert.direction === "above" ? "≥" : "≤"}${activeAlert.threshold_rub.toFixed(0)}₽)` : "Настроить ценовое уведомление"}
+            style={{
+              background: activeAlert ? "rgba(245,158,11,0.15)" : "rgba(55,65,81,0.15)",
+              border: `1px solid ${activeAlert ? "#f59e0b55" : "#22222f"}`,
+              borderRadius: "6px", padding: "0.15rem 0.3rem", cursor: "pointer",
+              color: activeAlert ? "#f59e0b" : "#4b5563",
+              fontSize: "0.62rem", display: "flex", alignItems: "center", gap: "0.2rem",
+              transition: "all 0.2s", lineHeight: 1,
+            }}
+          >
+            {activeAlert ? "🔔" : "🔕"}
+            {activeAlert && (
+              <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.37rem", color: "#f59e0b" }}>
+                {activeAlert.direction === "above" ? "≥" : "≤"}{activeAlert.threshold_rub.toFixed(0)}₽
+              </span>
+            )}
+          </button>
         </div>
       </div>
 
+      {/* SVG chart */}
       <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: "block", overflow: "visible" }}>
         <polygon points={fillPoly} fill="rgba(239,68,68,0.1)" />
         <polyline points={mktLine} fill="none" stroke="#ef4444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -409,6 +491,7 @@ function LiveMarketWidget({
         <text x={toX(3) + 4} y={toY(pts[3].market) + 3} fill="#ef4444" fontSize="8" fontFamily="JetBrains Mono, monospace">▲</text>
       </svg>
 
+      {/* Legend */}
       <div style={{ display: "flex", gap: "0.75rem" }}>
         {([["#ef4444", "▲ Рынок (прогноз)"], ["#22c55e", "— Ваш талон"]] as [string, string][]).map(([color, label]) => (
           <div key={label} style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
@@ -417,6 +500,72 @@ function LiveMarketWidget({
           </div>
         ))}
       </div>
+
+      {/* Alert setup panel */}
+      {alertOpen && !activeAlert && (
+        <div style={{
+          marginTop: "0.55rem", padding: "0.55rem 0.6rem",
+          background: "#08080f", borderRadius: "8px", border: "1px solid #1a1a28",
+        }}>
+          <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#4b5563", fontSize: "0.38rem", letterSpacing: "0.1em", marginBottom: "0.45rem" }}>
+            УВЕДОМИТЬ КОГДА {fuelType}
+          </div>
+          {/* Direction toggle */}
+          <div style={{ display: "flex", gap: "0.3rem", marginBottom: "0.45rem" }}>
+            {(["above", "below"] as const).map(d => (
+              <button key={d} onClick={() => {
+                setDirection(d);
+                setThreshold(String(Math.round(d === "above" ? marketPrice + 2 : marketPrice - 2)));
+              }} style={{
+                flex: 1, padding: "0.2rem 0.4rem", borderRadius: "5px", cursor: "pointer",
+                fontSize: "0.52rem", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700,
+                background: direction === d
+                  ? (d === "above" ? "rgba(239,68,68,0.15)" : "rgba(34,197,94,0.12)")
+                  : "#0b0b0f",
+                border: `1px solid ${direction === d ? (d === "above" ? "#ef444466" : "#22c55e55") : "#1e1e2a"}`,
+                color: direction === d ? (d === "above" ? "#ef4444" : "#22c55e") : "#374151",
+                transition: "all 0.15s",
+              }}>
+                {d === "above" ? "↑ вырастет до" : "↓ упадёт до"}
+              </button>
+            ))}
+          </div>
+          {/* Input + save row */}
+          <div style={{ display: "flex", gap: "0.35rem", alignItems: "center" }}>
+            <input
+              type="number"
+              value={threshold}
+              onChange={e => setThreshold(e.target.value)}
+              min={1}
+              style={{
+                flex: 1, background: "#0b0b0f", border: "1px solid #22222f",
+                borderRadius: "6px", color: "#e2e8f0",
+                fontFamily: "'JetBrains Mono',monospace", fontSize: "0.72rem",
+                padding: "0.28rem 0.45rem", outline: "none",
+              }}
+              placeholder={`${Math.round(marketPrice)}₽`}
+            />
+            <span style={{ color: "#374151", fontSize: "0.55rem", fontFamily: "'JetBrains Mono',monospace", flexShrink: 0 }}>₽/л</span>
+            <button onClick={handleSaveAlert} disabled={saving} style={{
+              background: "rgba(168,85,247,0.15)", border: "1px solid #a855f755",
+              borderRadius: "6px", color: "#a855f7",
+              fontFamily: "'JetBrains Mono',monospace", fontSize: "0.58rem", fontWeight: 800,
+              padding: "0.28rem 0.55rem", cursor: saving ? "wait" : "pointer", flexShrink: 0,
+              transition: "opacity 0.2s", opacity: saving ? 0.5 : 1,
+            }}>
+              {saving ? "…" : "🔔 Вкл"}
+            </button>
+            <button onClick={() => setAlertOpen(false)} style={{
+              background: "transparent", border: "1px solid #1e1e2a",
+              borderRadius: "6px", color: "#374151",
+              fontSize: "0.6rem", padding: "0.28rem 0.42rem", cursor: "pointer", flexShrink: 0,
+            }}>✕</button>
+          </div>
+          <div style={{ marginTop: "0.3rem", color: "#2a2a36", fontSize: "0.37rem", fontFamily: "'JetBrains Mono',monospace" }}>
+            Сейчас: {marketPrice.toFixed(1)}₽/л · уведомление раз в 6 ч
+          </div>
+        </div>
+      )}
     </div>
   );
 }

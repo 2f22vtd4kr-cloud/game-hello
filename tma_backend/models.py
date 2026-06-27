@@ -347,3 +347,24 @@ class RegionFavorite(Base):
     __table_args__ = (
         UniqueConstraint("user_id", "region_name", name="uq_fav_user_region"),
     )
+
+
+class MarketPriceAlert(Base):
+    """User-set threshold alert: fires a Telegram notification when the
+    average market price for a fuel type crosses the user's chosen level."""
+    __tablename__ = "market_price_alerts"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(BigInteger, nullable=False, index=True)
+    telegram_chat_id = Column(BigInteger, nullable=False)
+    fuel_type = Column(String, nullable=False)
+    threshold_rub = Column(Float, nullable=False)
+    direction = Column(String, default="above")  # "above" | "below"
+    active = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), default=_now)
+    last_notified_at = Column(DateTime(timezone=True), nullable=True)
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "fuel_type", name="uq_alert_user_fuel"),
+        Index("ix_alert_active", "active"),
+    )

@@ -434,3 +434,38 @@ export const fetchStatsSummary = () =>
     reports_today: number;
     status: string;
   }>("/stats/summary");
+
+// Market price threshold alerts
+export interface PriceAlertOut {
+  id: number;
+  fuel_type: string;
+  threshold_rub: number;
+  direction: "above" | "below";
+  active: boolean;
+}
+
+export const setPriceAlert = (
+  userId: number,
+  telegramChatId: number,
+  fuelType: string,
+  thresholdRub: number,
+  direction: "above" | "below" = "above",
+) =>
+  req<PriceAlertOut>("/price-alerts", {
+    method: "POST",
+    body: JSON.stringify({
+      user_id: userId,
+      telegram_chat_id: telegramChatId,
+      fuel_type: fuelType,
+      threshold_rub: thresholdRub,
+      direction,
+    }),
+  });
+
+export const fetchPriceAlerts = (userId: number) =>
+  req<PriceAlertOut[]>(`/price-alerts/${userId}`);
+
+export const deletePriceAlert = (alertId: number, userId: number) =>
+  req<{ ok: boolean }>(`/price-alerts/${alertId}?user_id=${userId}`, {
+    method: "DELETE",
+  });

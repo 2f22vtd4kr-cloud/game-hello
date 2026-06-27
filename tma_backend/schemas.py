@@ -304,3 +304,29 @@ class NetworkStarsPurchaseIn(BaseModel):
     price_rub: int
     stars_amount: int
     internal_secret: str
+
+
+class MarketPriceAlertIn(BaseModel):
+    user_id: int
+    telegram_chat_id: int
+    fuel_type: str
+    threshold_rub: float
+    direction: str = "above"
+
+    @field_validator("direction")
+    @classmethod
+    def validate_direction(cls, v: str) -> str:
+        if v not in ("above", "below"):
+            raise ValueError("direction must be 'above' or 'below'")
+        return v
+
+
+class MarketPriceAlertOut(BaseModel):
+    id: int
+    user_id: int
+    fuel_type: str
+    threshold_rub: float
+    direction: str
+    active: bool
+    created_at: datetime
+    model_config = {"from_attributes": True}

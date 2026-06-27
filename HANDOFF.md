@@ -77,6 +77,60 @@ The `LiveMarketWidget` was implemented and HMR-confirmed live. The user's next s
 
 ---
 
+## Session: 2026-06-27 — Price Alert Opt-In Inside LiveMarketWidget
+
+### What we were building
+A push-notification opt-in button inside the `LiveMarketWidget` so users can set a personal price threshold (e.g. "notify me when АИ-92 hits 75₽") and receive a Telegram message when the market crosses it.
+
+### What was done this session
+
+#### 1. New DB model — `MarketPriceAlert`
+`tma_backend/models.py` — new SQLAlchemy model with fields: `user_id`, `telegram_chat_id`, `fuel_type`, `threshold_rub`, `direction` ("above"/"below"), `active`, `created_at`, `last_notified_at`. Unique constraint on `(user_id, fuel_type)` — one alert per fuel type per user.
+
+#### 2. Pydantic schemas
+`tma_backend/schemas.py` — added `MarketPriceAlertIn` (with direction validator) and `MarketPriceAlertOut`.
+
+#### 3. Backend migration + endpoints
+`tma_backend/main.py`:
+- `_run_migrations()` — added `CREATE TABLE IF NOT EXISTS market_price_alerts` DDL (PostgreSQL-compatible)
+- `POST /api/price-alerts` — upsert alert (resets cooldown on update)
+- `GET /api/price-alerts/{user_id}` — list active alerts for user
+- `DELETE /api/price-alerts/{alert_id}?user_id=` — delete alert
+
+#### 4. Scheduler job `check_market_price_alerts`
+`tma_backend/main.py` — runs every 10 min. Computes avg effective price per fuel type from `FuelPriceEvent` table, checks all active alerts, sends Telegram HTML message if threshold crossed. 6-hour cooldown per alert to avoid spam. Also fixed a pre-existing missing `finally: db.close()` in `detect_price_spikes`.
+
+#### 5. Frontend API client
+`artifacts/tma-frontend/src/api/client.ts` — added `setPriceAlert`, `fetchPriceAlerts`, `deletePriceAlert`, and `PriceAlertOut` interface.
+
+#### 6. LiveMarketWidget UI update
+`artifacts/tma-frontend/src/components/CatalogTab.tsx` — `LiveMarketWidget` now:
+- Loads existing alert for its `fuelType` on mount via `fetchPriceAlerts`
+- Shows a 🔕/🔔 bell button in the widget header (top-right)
+- When active: button is amber with threshold shown (e.g. `≥75₽`); clicking it deletes the alert
+- When inactive: clicking opens an inline panel below the chart with direction toggle (↑/↓) + number input + save button
+- Toast notifications on set/delete
+
+### Where we stopped
+Feature is fully built and live. The bot's 409 Conflict errors in logs are transient (old polling session expiry) — not a bug.
+
+### Key files changed this session
+| File | What changed |
+|------|-------------|
+| `tma_backend/models.py` | Added `MarketPriceAlert` model |
+| `tma_backend/schemas.py` | Added `MarketPriceAlertIn`, `MarketPriceAlertOut` |
+| `tma_backend/main.py` | Migration DDL, 3 REST endpoints, `check_market_price_alerts` scheduler job (every 10 min), fixed `detect_price_spikes` missing `finally: db.close()` |
+| `artifacts/tma-frontend/src/api/client.ts` | Added `setPriceAlert`, `fetchPriceAlerts`, `deletePriceAlert`, `PriceAlertOut` |
+| `artifacts/tma-frontend/src/components/CatalogTab.tsx` | Updated `LiveMarketWidget` with bell opt-in button + inline form |
+
+### Architecture reminders for next session
+- Alert table: one row per `(user_id, fuel_type)` — upsert on save, 6h cooldown on notify
+- `telegram_chat_id` = `user.id` for TMA users (Telegram DM chat ID = user ID)
+- Alert check runs every 10 min via APScheduler; uses `FuelPriceEvent` for current prices
+- `direction: "above"` = notify when `current >= threshold`; `"below"` = notify when `current <= threshold`
+
+---
+
 ## Handoff Convention
 
 Every session must append a new `## Session: YYYY-MM-DD — Title` block above this line before ending. Include:

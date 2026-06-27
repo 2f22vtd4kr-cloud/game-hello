@@ -31,6 +31,7 @@ from tma_backend.models import (
     PurchaseHistory, ReferralCode, StationReport, Subscription, User,
     UserAchievement, UserCheckin, VpnSession,
     FuelPriceEvent, NewsEvent, CreditTransaction, PremiumSubscription, RssCacheEntry,
+    MarketPriceAlert,
 )
 from tma_backend.cards import draw_cards, RARITY_COLORS
 from tma_backend.payment import provider
@@ -41,6 +42,7 @@ from tma_backend.schemas import (
     StationReportIn, SubscriptionIn, SubscriptionOut,
     SubscriptionStatusOut, TapScoreIn, TapScoreOut, UserCreateIn, UserOut,
     VpnBuyIn, VpnInvoiceOut, VpnSessionOut, VpnStatusOut,
+    MarketPriceAlertIn, MarketPriceAlertOut,
 )
 
 INTERNAL_API_SECRET = os.getenv("INTERNAL_API_SECRET", "tma_internal_dev_2026")
@@ -129,6 +131,18 @@ def _run_migrations() -> None:
         "CREATE INDEX IF NOT EXISTS ix_station_report_station_id ON station_reports (station_id)",
         "CREATE INDEX IF NOT EXISTS ix_station_report_expires_at ON station_reports (expires_at)",
         "CREATE INDEX IF NOT EXISTS ix_station_report_created_at ON station_reports (created_at)",
+        # Market price threshold alerts
+        (
+            "CREATE TABLE IF NOT EXISTS market_price_alerts ("
+            "id SERIAL PRIMARY KEY, user_id BIGINT NOT NULL, "
+            "telegram_chat_id BIGINT NOT NULL, fuel_type VARCHAR NOT NULL, "
+            "threshold_rub FLOAT NOT NULL, direction VARCHAR NOT NULL DEFAULT 'above', "
+            "active BOOLEAN NOT NULL DEFAULT TRUE, "
+            "created_at TIMESTAMPTZ DEFAULT NOW(), last_notified_at TIMESTAMPTZ, "
+            "CONSTRAINT uq_alert_user_fuel UNIQUE (user_id, fuel_type))"
+        ),
+        "CREATE INDEX IF NOT EXISTS ix_alert_active ON market_price_alerts (active)",
+        "CREATE INDEX IF NOT EXISTS ix_alert_user ON market_price_alerts (user_id)",
     ]
     with engine.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
         for stmt in ddl_statements:
@@ -171,6 +185,7 @@ async def lifespan(app: FastAPI):
     scheduler.add_job(fluctuate_prices, "interval", minutes=15, jitter=60)
     scheduler.add_job(snapshot_price_history, "interval", hours=1, jitter=120)
     scheduler.add_job(generate_news_from_availability, "interval", hours=2, jitter=60)
+    scheduler.add_job(check_market_price_alerts, "interval", minutes=10, jitter=60)
     scheduler.start()
     logger.info("Топливо ⛽️ API запущен (DB init running in background).")
 
@@ -941,9 +956,91 @@ def detect_price_spikes():
                         )
                 except Exception as exc:
                     logger.warning("Price spike notify failed for chat %s: %s", chat_id, exc)
+    finally:
+        db.close()
 
-    except Exception as e:
-        logger.error("detect_price_spikes error: %s", e)
+
+def check_market_price_alerts():
+    """
+    Every 10 min: compute avg market price per fuel type and fire Telegram
+    notifications for any active MarketPriceAlert whose threshold is crossed.
+    6-hour cooldown per alert to avoid spam.
+    """
+    bot_token = os.getenv("TELEGRAM_BOT_TOKEN", "")
+    if not bot_token:
+        return
+
+    db = SessionLocal()
+    try:
+        alerts = (
+            db.query(MarketPriceAlert)
+            .filter(MarketPriceAlert.active == True)
+            .all()
+        )
+        if not alerts:
+            return
+
+        # Compute avg effective price per fuel type from active FuelPriceEvents
+        from collections import defaultdict
+        fuel_vals: dict[str, list[float]] = defaultdict(list)
+        events = db.query(FuelPriceEvent).all()
+        for ev in events:
+            base = FUEL_PRICES_RUB.get(ev.fuel_type, 50)
+            fuel_vals[ev.fuel_type].append(base * ev.multiplier)
+
+        avg_prices: dict[str, float] = {
+            fuel: sum(vals) / len(vals)
+            for fuel, vals in fuel_vals.items() if vals
+        }
+
+        now = datetime.now(timezone.utc)
+        COOLDOWN_HOURS = 6
+
+        for alert in alerts:
+            current = avg_prices.get(alert.fuel_type)
+            if current is None:
+                continue
+
+            # Cooldown check
+            if alert.last_notified_at:
+                hours_since = (now - alert.last_notified_at).total_seconds() / 3600
+                if hours_since < COOLDOWN_HOURS:
+                    continue
+
+            triggered = (
+                (alert.direction == "above" and current >= alert.threshold_rub)
+                or (alert.direction == "below" and current <= alert.threshold_rub)
+            )
+            if not triggered:
+                continue
+
+            direction_ru = "достигла" if alert.direction == "above" else "опустилась до"
+            arrow = "📈" if alert.direction == "above" else "📉"
+            text = (
+                f"{arrow} <b>Ценовой сигнал — {alert.fuel_type}</b>\n\n"
+                f"Средняя цена <b>{direction_ru} {alert.threshold_rub:.0f} ₽/л</b>!\n\n"
+                f"📊 Текущая цена: <b>{current:.1f} ₽/л</b>\n"
+                f"🎯 Ваш порог: <b>{alert.threshold_rub:.0f} ₽/л</b>\n\n"
+                f"Зафиксируйте цену прямо сейчас в Матрице Снабжения ⛽️"
+            )
+            try:
+                with httpx.Client(timeout=8.0) as client:
+                    client.post(
+                        f"https://api.telegram.org/bot{bot_token}/sendMessage",
+                        json={
+                            "chat_id": alert.telegram_chat_id,
+                            "text": text,
+                            "parse_mode": "HTML",
+                        },
+                    )
+                alert.last_notified_at = now
+                db.commit()
+                logger.info(
+                    "Market price alert fired: user=%d fuel=%s price=%.1f threshold=%.1f dir=%s",
+                    alert.user_id, alert.fuel_type, current, alert.threshold_rub, alert.direction,
+                )
+            except Exception as exc:
+                logger.warning("check_market_price_alerts notify failed: %s", exc)
     finally:
         db.close()
 
@@ -4402,6 +4499,72 @@ else:
     @app.get("/")
     async def root_fallback():
         return {"status": "running", "note": "frontend dist not built yet"}
+
+
+# ─── Market Price Threshold Alerts ────────────────────────────────────────────
+
+@app.post("/api/price-alerts", response_model=MarketPriceAlertOut)
+def set_price_alert(body: MarketPriceAlertIn, db: Session = Depends(get_db)):
+    """Create or update a price alert. One alert per user+fuel_type (upsert)."""
+    existing = (
+        db.query(MarketPriceAlert)
+        .filter(
+            MarketPriceAlert.user_id == body.user_id,
+            MarketPriceAlert.fuel_type == body.fuel_type,
+        )
+        .first()
+    )
+    if existing:
+        existing.threshold_rub = body.threshold_rub
+        existing.direction = body.direction
+        existing.active = True
+        existing.telegram_chat_id = body.telegram_chat_id
+        existing.last_notified_at = None  # reset cooldown on update
+        db.commit()
+        db.refresh(existing)
+        return existing
+    alert = MarketPriceAlert(
+        user_id=body.user_id,
+        telegram_chat_id=body.telegram_chat_id,
+        fuel_type=body.fuel_type,
+        threshold_rub=body.threshold_rub,
+        direction=body.direction,
+    )
+    db.add(alert)
+    db.commit()
+    db.refresh(alert)
+    return alert
+
+
+@app.get("/api/price-alerts/{user_id}", response_model=list[MarketPriceAlertOut])
+def get_price_alerts(user_id: int, db: Session = Depends(get_db)):
+    """Return all active price alerts for a user."""
+    return (
+        db.query(MarketPriceAlert)
+        .filter(
+            MarketPriceAlert.user_id == user_id,
+            MarketPriceAlert.active == True,
+        )
+        .all()
+    )
+
+
+@app.delete("/api/price-alerts/{alert_id}")
+def delete_price_alert(alert_id: int, user_id: int, db: Session = Depends(get_db)):
+    """Delete a price alert (must belong to the requesting user)."""
+    alert = (
+        db.query(MarketPriceAlert)
+        .filter(
+            MarketPriceAlert.id == alert_id,
+            MarketPriceAlert.user_id == user_id,
+        )
+        .first()
+    )
+    if not alert:
+        raise HTTPException(404, detail="Alert not found")
+    db.delete(alert)
+    db.commit()
+    return {"ok": True}
 
 
 if __name__ == "__main__":
