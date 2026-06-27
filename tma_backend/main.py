@@ -1469,7 +1469,7 @@ def purchase_voucher(body: PurchaseIn, db: Session = Depends(get_db)):
         qr_hash=result.qr_hash,
         station_name=station.name,
         region=station.region,
-        expires_at=_now() + timedelta(days=3),
+        expires_at=_now() + timedelta(days=90),
     )
     db.add(purchase)
 
@@ -1670,7 +1670,7 @@ def purchase_network_voucher(body: NetworkVoucherIn, db: Session = Depends(get_d
         status="active", qr_hash=result.qr_hash,
         station_name=f"Любая АЗС сети {body.network}",
         region="Вся Россия",
-        expires_at=_now() + timedelta(days=30),
+        expires_at=_now() + timedelta(days=90),
     )
     db.add(purchase)
     old_level = user.xp
@@ -1721,7 +1721,7 @@ def record_stars_purchase(body: StarsPurchaseIn, db: Session = Depends(get_db)):
         qr_hash=qr,
         station_name=station_name,
         region=region,
-        expires_at=_now() + timedelta(days=3),
+        expires_at=_now() + timedelta(days=90),
     )
     db.add(purchase)
 

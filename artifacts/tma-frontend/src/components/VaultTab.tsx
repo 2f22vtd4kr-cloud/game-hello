@@ -21,13 +21,13 @@ function expiryInfo(expiresAt: string | null | undefined): { color: string; labe
   if (!expiresAt) return { color: "#6b7280", label: "Срок неизвестен", pct: 50, daysLeft: 0 };
   const now = Date.now();
   const exp = new Date(expiresAt).getTime();
-  const totalMs = 30 * 24 * 3600 * 1000;
+  const totalMs = 90 * 24 * 3600 * 1000;
   const leftMs = exp - now;
   const daysLeft = Math.max(0, Math.ceil(leftMs / (24 * 3600 * 1000)));
   const pct = Math.max(0, Math.min(100, (leftMs / totalMs) * 100));
   if (leftMs <= 0) return { color: "#ef4444", label: "Истёк", pct: 0, daysLeft: 0 };
-  if (daysLeft <= 7)  return { color: "#ef4444", label: `${daysLeft} дн. осталось`, pct, daysLeft };
-  if (daysLeft <= 15) return { color: "#eab308", label: `${daysLeft} дн. осталось`, pct, daysLeft };
+  if (daysLeft <= 30) return { color: "#ef4444", label: `${daysLeft} дн. осталось`, pct, daysLeft };
+  if (daysLeft <= 60) return { color: "#eab308", label: `${daysLeft} дн. осталось`, pct, daysLeft };
   return { color: "#22c55e", label: `${daysLeft} дн. осталось`, pct, daysLeft };
 }
 
@@ -884,7 +884,7 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
                           .reduce<string | null>((acc, v) => (!acc || v.expires_at! < acc ? v.expires_at! : acc), null);
                         if (!soonest) return null;
                         const daysLeft = Math.ceil((new Date(soonest).getTime() - Date.now()) / 86400000);
-                        const exColor = daysLeft <= 3 ? "#ef4444" : daysLeft <= 7 ? "#eab308" : "#22c55e";
+                        const exColor = daysLeft <= 30 ? "#ef4444" : daysLeft <= 60 ? "#eab308" : "#22c55e";
                         return (
                           <div style={{ background: `${exColor}12`, border: `1px solid ${exColor}33`, borderRadius: "4px", padding: "0.02rem 0.25rem", fontFamily: "'JetBrains Mono',monospace", fontSize: "0.38rem", color: exColor, fontWeight: 700 }}>
                             {daysLeft}д
@@ -905,8 +905,8 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
                     if (!withExpiry.length) return null;
                     const soonest = withExpiry.reduce<string>((acc, v) => (!acc || v.expires_at! < acc ? v.expires_at! : acc), withExpiry[0].expires_at!);
                     const daysLeft = Math.max(0, Math.ceil((new Date(soonest).getTime() - Date.now()) / 86400000));
-                    const pct = Math.min(100, Math.round((daysLeft / 30) * 100));
-                    const exColor = daysLeft <= 3 ? "#ef4444" : daysLeft <= 7 ? "#eab308" : netColor;
+                    const pct = Math.min(100, Math.round((daysLeft / 90) * 100));
+                    const exColor = daysLeft <= 30 ? "#ef4444" : daysLeft <= 60 ? "#eab308" : netColor;
                     return (
                       <div style={{ padding: "0 0.75rem 0.5rem" }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.2rem" }}>
