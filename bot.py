@@ -126,6 +126,16 @@ async def post_init(app: Application) -> None:
 
 
 def main() -> None:
+    if not BOT_TOKEN:
+        logger.warning(
+            "TELEGRAM_BOT_TOKEN is not set — bot is disabled. "
+            "Set the secret to enable the Telegram bot."
+        )
+        import time
+        while True:
+            time.sleep(3600)
+        return
+
     app = (
         Application.builder()
         .token(BOT_TOKEN)
