@@ -243,6 +243,10 @@ function PaymentConfirmModal({ pending, onConfirm, onCancel }: { pending: Pendin
           <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#4b5563", fontSize: "0.5rem", letterSpacing: "0.16em", marginBottom: "0.4rem" }}>ПОДГОТОВКА_ОПЛАТЫ</div>
           <h3 style={{ margin: "0 0 0.3rem", color: "#e2e8f0", fontSize: "1.1rem", fontWeight: 800 }}>Подтвердите заказ</h3>
           <p style={{ margin: 0, color: "#6b7280", fontSize: "0.78rem", lineHeight: 1.5 }}>{pending.volume}л {pending.fuelType}</p>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: "0.3rem", marginTop: "0.45rem", background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.25)", borderRadius: "20px", padding: "0.2rem 0.55rem" }}>
+            <span style={{ fontSize: "0.65rem" }}>🔒</span>
+            <span style={{ fontFamily: "'JetBrains Mono',monospace", color: "#22c55e", fontSize: "0.44rem", fontWeight: 700 }}>ЦЕНА ЗАМОРОЖЕНА · 90 ДНЕЙ</span>
+          </div>
         </div>
         <div style={{ background: "#14141c", border: "1px solid #22222f", borderRadius: "14px", padding: "0.85rem 1rem", marginBottom: "1.1rem" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.45rem" }}>
@@ -388,10 +392,16 @@ function FuelItem({ fuelType, station, limits, userId, payMethod, onBuy }: {
         </p>
       )}
 
-      <div style={{ background: "rgba(245,158,11,0.05)", border: "1px solid rgba(245,158,11,0.12)", borderRadius: "8px", padding: "0.4rem 0.55rem", marginBottom: "0.6rem" }}>
-        <p style={{ margin: 0, color: "#4b5563", fontSize: "0.56rem", lineHeight: 1.5 }}>
-          ⚠️ Цены на талоны обновляются в реальном времени. Оплата по актуальной цене на момент покупки. Возврат средств невозможен.
-        </p>
+      <div style={{ background: "linear-gradient(135deg,rgba(34,197,94,0.07),rgba(168,85,247,0.05))", border: "1px solid rgba(34,197,94,0.2)", borderRadius: "10px", padding: "0.45rem 0.65rem", marginBottom: "0.6rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+        <span style={{ fontSize: "0.85rem", flexShrink: 0 }}>🔒</span>
+        <div>
+          <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#22c55e", fontSize: "0.44rem", fontWeight: 700, letterSpacing: "0.1em", marginBottom: "0.15rem" }}>ЦЕНА ЗАМОРОЖЕНА · 90 ДНЕЙ</div>
+          <div style={{ color: "#4b5563", fontSize: "0.54rem", lineHeight: 1.45 }}>Оплатите сейчас — заправляйтесь по сегодняшней цене в течение трёх месяцев.</div>
+        </div>
+        <div style={{ flexShrink: 0, textAlign: "right" }}>
+          <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#22c55e", fontSize: "0.55rem", fontWeight: 800 }}>+{(pricePerL * 0.085 * volume).toFixed(0)}₽</div>
+          <div style={{ color: "#374151", fontSize: "0.38rem" }}>экономия·3мес</div>
+        </div>
       </div>
 
       <motion.button
@@ -855,6 +865,45 @@ export function CatalogTab({ initialStationId, onCalcOpenChange }: CatalogTabPro
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* ── Anti-inflation hero banner ── */}
+      {!selectedStation && (
+        <div style={{ padding: "0 12px 10px" }}>
+          <div style={{
+            background: "linear-gradient(135deg,#0d0d20,#130820)",
+            border: "1px solid #a855f733",
+            borderRadius: "16px",
+            padding: "0.85rem 1rem",
+            position: "relative",
+            overflow: "hidden",
+          }}>
+            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: "linear-gradient(90deg,transparent,#a855f7,#db2777,transparent)" }} />
+            <div style={{ display: "flex", alignItems: "center", gap: "0.65rem" }}>
+              <div style={{ fontSize: "1.6rem", flexShrink: 0, filter: "drop-shadow(0 0 10px #a855f766)" }}>🔒</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#a855f7", fontSize: "0.44rem", letterSpacing: "0.15em", marginBottom: "0.2rem" }}>АНТИИНФЛЯЦИОННАЯ ЗАЩИТА</div>
+                <div style={{ color: "#e2e8f0", fontWeight: 800, fontSize: "0.82rem", lineHeight: 1.2, marginBottom: "0.2rem" }}>
+                  Заплати сейчас — цена заморожена на <span style={{ background: "linear-gradient(90deg,#a855f7,#db2777)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>90 дней</span>
+                </div>
+                <div style={{ color: "#6b7280", fontSize: "0.58rem" }}>Топливо дорожает ~2–4% в месяц. Ваш талон — нет.</div>
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: "0.4rem", marginTop: "0.7rem" }}>
+              {[
+                { icon: "📈", v: "+2–4%", sub: "рост/мес" },
+                { icon: "💰", v: "+8–12%", sub: "за 90 дней" },
+                { icon: "🛡️", v: "90 дн.", sub: "гарантия" },
+              ].map(({ icon, v, sub }) => (
+                <div key={sub} style={{ flex: 1, background: "#0a0a14", borderRadius: "10px", padding: "0.4rem 0.3rem", textAlign: "center", border: "1px solid #1e1e2a" }}>
+                  <div style={{ fontSize: "0.7rem" }}>{icon}</div>
+                  <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#a855f7", fontSize: "0.5rem", fontWeight: 700 }}>{v}</div>
+                  <div style={{ color: "#374151", fontSize: "0.38rem" }}>{sub}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── FLAGSHIP: Network Vouchers ── */}
       {!selectedStation && (
@@ -1369,11 +1418,18 @@ export function CatalogTab({ initialStationId, onCalcOpenChange }: CatalogTabPro
                                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: "0.18rem", borderTop: `1px solid ${netColor}12` }}>
                                     <div style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
                                       <span style={{ fontSize: "0.5rem" }}>💚</span>
-                                      <span style={{ fontFamily: "'JetBrains Mono',monospace", color: "#22c55e", fontSize: "0.44rem", fontWeight: 700 }}>Экономия vs рынок</span>
+                                      <span style={{ fontFamily: "'JetBrains Mono',monospace", color: "#22c55e", fontSize: "0.44rem", fontWeight: 700 }}>Экономия vs рынок сейчас</span>
                                     </div>
                                     <span style={{ fontFamily: "'JetBrains Mono',monospace", color: "#22c55e", fontSize: "0.5rem", fontWeight: 800 }}>−{savings}₽</span>
                                   </div>
                                 )}
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: "0.18rem", borderTop: `1px solid ${netColor}12` }}>
+                                  <div style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                                    <span style={{ fontSize: "0.5rem" }}>🔒</span>
+                                    <span style={{ fontFamily: "'JetBrains Mono',monospace", color: "#a855f7", fontSize: "0.44rem", fontWeight: 700 }}>Заморожено на 90 дней</span>
+                                  </div>
+                                  <span style={{ fontFamily: "'JetBrains Mono',monospace", color: "#a855f7", fontSize: "0.5rem", fontWeight: 800 }}>+{Math.round(grandTotal * 0.085)}₽ экон.</span>
+                                </div>
                               </div>
                             );
                           })()}
