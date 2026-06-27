@@ -405,11 +405,12 @@ function LiveMarketWidget({
   const savings3mo = Math.max(0, (pts[3].market - lockedPrice) * volume);
 
   const W = 280, H = compact ? 46 : 56;
-  const padL = 36, padR = 14, padT = 8, padB = 14;
+  const padL = 38, padR = 16, padT = 10, padB = 16;
   const chartW = W - padL - padR;
   const chartH = H - padT - padB;
-  const minP = lockedPrice * 0.997;
-  const maxP = pts[3].market * 1.003;
+  const allVals = pts.flatMap(p => [p.market, p.locked]);
+  const minP = Math.min(...allVals) * 0.994;
+  const maxP = Math.max(...allVals) * 1.006;
   const range = maxP - minP || 1;
   const toX = (mo: number) => padL + (mo / 3) * chartW;
   const toY = (p: number) => padT + chartH - ((p - minP) / range) * chartH;
@@ -482,13 +483,30 @@ function LiveMarketWidget({
             {p.mo === 0 ? "сейч" : `+${p.mo}м`}
           </text>
         ))}
-        <text x={padL - 3} y={toY(pts[3].market) + 3} textAnchor="end" fill="#ef4444" fontSize="7.5" fontFamily="JetBrains Mono, monospace" fontWeight="bold">
-          {pts[3].market.toFixed(0)}₽
-        </text>
-        <text x={padL - 3} y={toY(lockedPrice) + 3} textAnchor="end" fill="#22c55e" fontSize="7.5" fontFamily="JetBrains Mono, monospace" fontWeight="bold">
-          {lockedPrice.toFixed(0)}₽
-        </text>
-        <text x={toX(3) + 4} y={toY(pts[3].market) + 3} fill="#ef4444" fontSize="8" fontFamily="JetBrains Mono, monospace">▲</text>
+        {(() => {
+          const yMkt = toY(pts[3].market);
+          const yLck = toY(lockedPrice);
+          // Keep labels at least 10px apart; push them away from each other
+          const gap = 10;
+          let yMktLabel = yMkt + 3;
+          let yLckLabel = yLck + 3;
+          if (Math.abs(yMktLabel - yLckLabel) < gap) {
+            const mid = (yMktLabel + yLckLabel) / 2;
+            yMktLabel = mid - gap / 2;
+            yLckLabel = mid + gap / 2;
+          }
+          return (
+            <>
+              <text x={padL - 3} y={yMktLabel} textAnchor="end" fill="#ef4444" fontSize="7.5" fontFamily="JetBrains Mono, monospace" fontWeight="bold">
+                {pts[3].market.toFixed(0)}₽
+              </text>
+              <text x={padL - 3} y={yLckLabel} textAnchor="end" fill="#22c55e" fontSize="7.5" fontFamily="JetBrains Mono, monospace" fontWeight="bold">
+                {lockedPrice.toFixed(0)}₽
+              </text>
+              <text x={toX(3) + 4} y={yMkt + 3} fill="#ef4444" fontSize="8" fontFamily="JetBrains Mono, monospace">▲</text>
+            </>
+          );
+        })()}
       </svg>
 
       {/* Legend */}
