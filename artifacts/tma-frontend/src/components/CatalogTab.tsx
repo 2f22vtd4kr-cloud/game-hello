@@ -306,6 +306,121 @@ function PaymentMethodSelector({ value, onChange }: { value: PayMethod; onChange
   );
 }
 
+// ─── LiveMarketWidget ──────────────────────────────────────────────────────
+function LiveMarketWidget({
+  fuelType, lockedPrice, volume, compact = false,
+}: {
+  fuelType: string; lockedPrice: number; volume: number; compact?: boolean;
+}) {
+  const prices = usePriceStore((s) => s.prices);
+  const connected = usePriceStore((s) => s.connected);
+  const [flash, setFlash] = useState(false);
+  const prevMarket = useRef(lockedPrice);
+
+  const marketPrice = useMemo(() => {
+    const vals = Object.values(prices)
+      .map(r => (r[fuelType] as { effective?: number } | undefined)?.effective ?? 0)
+      .filter(v => v > 0);
+    return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : lockedPrice;
+  }, [prices, fuelType, lockedPrice]);
+
+  useEffect(() => {
+    if (Math.abs(marketPrice - prevMarket.current) > 0.05) {
+      setFlash(true);
+      const t = setTimeout(() => setFlash(false), 700);
+      prevMarket.current = marketPrice;
+      return () => clearTimeout(t);
+    }
+  }, [marketPrice]);
+
+  const baseFuelPrice = FUEL_PRICES[fuelType] ?? lockedPrice;
+  const premium = Math.max(0, marketPrice / baseFuelPrice - 1);
+  const monthlyRate = Math.min(0.05, 0.028 + premium * 0.15);
+
+  const pts = [0, 1, 2, 3].map(mo => ({
+    mo,
+    market: marketPrice * Math.pow(1 + monthlyRate, mo),
+    locked: lockedPrice,
+  }));
+  const savings3mo = Math.max(0, (pts[3].market - lockedPrice) * volume);
+
+  const W = 280, H = compact ? 46 : 56;
+  const padL = 36, padR = 14, padT = 8, padB = 14;
+  const chartW = W - padL - padR;
+  const chartH = H - padT - padB;
+  const minP = lockedPrice * 0.997;
+  const maxP = pts[3].market * 1.003;
+  const range = maxP - minP || 1;
+  const toX = (mo: number) => padL + (mo / 3) * chartW;
+  const toY = (p: number) => padT + chartH - ((p - minP) / range) * chartH;
+
+  const mktLine = pts.map(p => `${toX(p.mo).toFixed(1)},${toY(p.market).toFixed(1)}`).join(' ');
+  const lckLine = pts.map(p => `${toX(p.mo).toFixed(1)},${toY(p.locked).toFixed(1)}`).join(' ');
+  const fillPoly = [
+    ...pts.map(p => `${toX(p.mo).toFixed(1)},${toY(p.market).toFixed(1)}`),
+    ...[...pts].reverse().map(p => `${toX(p.mo).toFixed(1)},${toY(p.locked).toFixed(1)}`),
+  ].join(' ');
+
+  return (
+    <div style={{
+      background: flash ? "rgba(239,68,68,0.07)" : "#0a0a14",
+      border: `1px solid ${flash ? "#ef444433" : "#1e1e2a"}`,
+      borderRadius: "12px", padding: "0.5rem 0.65rem", marginBottom: "0.65rem",
+      transition: "background 0.3s, border-color 0.3s",
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", marginBottom: "0.35rem" }}>
+        <div style={{
+          width: "5px", height: "5px", borderRadius: "50%",
+          background: connected ? "#22c55e" : "#374151",
+          boxShadow: connected ? "0 0 5px #22c55e" : "none", flexShrink: 0, transition: "all 0.3s",
+        }} />
+        <span style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.4rem", letterSpacing: "0.1em" }}>
+          РЫНОК vs ТАЛОН · {connected ? "LIVE" : "—"}
+        </span>
+        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "0.3rem" }}>
+          <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.5rem", color: "#22c55e", fontWeight: 800 }}>
+            +{savings3mo.toFixed(0)}₽
+          </span>
+          <span style={{ color: "#374151", fontSize: "0.38rem" }}>за {volume}л · 3мес</span>
+        </div>
+      </div>
+
+      <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: "block", overflow: "visible" }}>
+        <polygon points={fillPoly} fill="rgba(239,68,68,0.1)" />
+        <polyline points={mktLine} fill="none" stroke="#ef4444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        <polyline points={lckLine} fill="none" stroke="#22c55e" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="5 3" />
+        {pts.map((p) => (
+          <g key={p.mo}>
+            <circle cx={toX(p.mo)} cy={toY(p.market)} r="2.5" fill="#ef4444" />
+            {p.mo === 0 && <circle cx={toX(p.mo)} cy={toY(p.locked)} r="2.5" fill="#22c55e" />}
+          </g>
+        ))}
+        {pts.map((p) => (
+          <text key={p.mo} x={toX(p.mo)} y={H - 1} textAnchor="middle" fill="#2a2a36" fontSize="7" fontFamily="JetBrains Mono, monospace">
+            {p.mo === 0 ? "сейч" : `+${p.mo}м`}
+          </text>
+        ))}
+        <text x={padL - 3} y={toY(pts[3].market) + 3} textAnchor="end" fill="#ef4444" fontSize="7.5" fontFamily="JetBrains Mono, monospace" fontWeight="bold">
+          {pts[3].market.toFixed(0)}₽
+        </text>
+        <text x={padL - 3} y={toY(lockedPrice) + 3} textAnchor="end" fill="#22c55e" fontSize="7.5" fontFamily="JetBrains Mono, monospace" fontWeight="bold">
+          {lockedPrice.toFixed(0)}₽
+        </text>
+        <text x={toX(3) + 4} y={toY(pts[3].market) + 3} fill="#ef4444" fontSize="8" fontFamily="JetBrains Mono, monospace">▲</text>
+      </svg>
+
+      <div style={{ display: "flex", gap: "0.75rem" }}>
+        {([["#ef4444", "▲ Рынок (прогноз)"], ["#22c55e", "— Ваш талон"]] as [string, string][]).map(([color, label]) => (
+          <div key={label} style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+            <div style={{ width: "10px", height: "1.5px", background: color, borderRadius: "1px", flexShrink: 0 }} />
+            <span style={{ color: "#374151", fontSize: "0.4rem", fontFamily: "'JetBrains Mono',monospace" }}>{label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── FuelItem ──────────────────────────────────────────────────────────────
 function FuelItem({ fuelType, station, limits, userId, payMethod, onBuy }: {
   fuelType: string; station: GasStation; limits: LimitsMap | null;
@@ -370,6 +485,8 @@ function FuelItem({ fuelType, station, limits, userId, payMethod, onBuy }: {
           </div>
         </div>
       )}
+
+      <LiveMarketWidget fuelType={fuelType} lockedPrice={pricePerL} volume={volume} compact />
 
       <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.6rem" }}>
         {VOLUMES.map((v) => (
@@ -1295,6 +1412,8 @@ export function CatalogTab({ initialStationId, onCalcOpenChange }: CatalogTabPro
                         </div>
                       );
                     })()}
+
+                    <LiveMarketWidget fuelType={nvFuel} lockedPrice={pricePerL} volume={nvVolume} />
 
                     {/* Price comparison bar across all networks for selected fuel */}
                     <div style={{ marginBottom: "0.65rem" }}>
