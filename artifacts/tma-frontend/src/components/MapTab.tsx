@@ -18,14 +18,30 @@ import { StationCard } from "@/components/StationCard";
 // bundled asset imports.  No CDN URLs needed here — this file only uses
 // L.divIcon() for custom station markers, so no further setup is required.
 
-// Brand accent colors for map markers
+// Mercedes ambient light CSS — injected once into the DOM
+const AMBIENT_CSS = `
+@keyframes ambientFlow {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+@keyframes ambientPulse {
+  0%,100% { opacity:.55; }
+  50%     { opacity:1; }
+}
+.ambient-strip {
+  background-size: 200% 100%;
+  animation: ambientFlow 3s linear infinite, ambientPulse 2.6s ease-in-out infinite;
+}
+`;
+
+// Brand accent colors for map markers — vivid per-network palette
 const BRAND_ACCENT: Record<string, string> = {
-  "лукойл": "#dc2626", "роснефть": "#1d4ed8", "газпромнефть": "#4338ca",
-  "газпром": "#1e40af", "татнефть": "#92400e", "сургутнефтегаз": "#6d28d9",
-  "опти": "#0f766e", "тебойл": "#0369a1", "teboil": "#0369a1",
-  "башнефть": "#065f46", "таиф-нк": "#7c2d12", "кнп": "#5b21b6",
-  "птк": "#0c4a6e", "ртк": "#831843", "топлайн": "#4c1d95",
-  "грифон": "#ea580c", "атан": "#a855f7", "тэс": "#db2777",
+  "лукойл": "#DC143C", "роснефть": "#1565C0", "газпромнефть": "#1976D2",
+  "газпром": "#0288D1", "татнефть": "#00695C", "сургутнефтегаз": "#6A1B9A",
+  "опти": "#00838F", "тебойл": "#01579B", "teboil": "#01579B",
+  "башнефть": "#558B2F", "таиф-нк": "#BF360C", "кнп": "#4527A0",
+  "птк": "#01579B", "ртк": "#880E4F", "топлайн": "#4A148C",
+  "грифон": "#E65100", "атан": "#6A1B9A", "тэс": "#AD1457",
 };
 
 function getBrandAccent(network = ""): string | null {
@@ -37,26 +53,41 @@ function getBrandAccent(network = ""): string | null {
 }
 
 function createStationIcon(status: string, starred = false, network = "", queue = 0) {
-  const color = STATUS_COLORS[status] ?? "#9ca3af";
+  // Availability color — vivid palette
+  const avColor = status === "green" ? "#00E676" : status === "yellow" ? "#FFD600" : "#FF1744";
   const brandColor = getBrandAccent(network);
-  const pulse = status === "red" ? `<div style="position:absolute;inset:-4px;border-radius:50%;border:1.5px solid ${color};opacity:0.4;animation:mrkPulse 1.8s ease-in-out infinite;"></div>` : "";
-  const starBadge = starred ? `<div style="position:absolute;top:-7px;right:-7px;font-size:9px;line-height:1;z-index:2;filter:drop-shadow(0 0 3px #f59e0b);">⭐</div>` : "";
-  const queueBadge = queue >= 4 ? `<div style="position:absolute;top:-7px;left:-7px;font-size:8px;font-weight:700;line-height:1;z-index:2;background:#ef4444;color:#fff;border-radius:50%;width:13px;height:13px;display:flex;align-items:center;justify-content:center;border:1px solid #0d0d18;">${queue}</div>` : queue >= 2 ? `<div style="position:absolute;top:-7px;left:-7px;font-size:8px;font-weight:700;line-height:1;z-index:2;background:#eab308;color:#000;border-radius:50%;width:13px;height:13px;display:flex;align-items:center;justify-content:center;border:1px solid #0d0d18;">${queue}</div>` : "";
-  const size = starred ? 20 : 16;
-  const outerRing = brandColor ? `<div style="position:absolute;inset:-3px;border-radius:50%;border:1.5px solid ${brandColor}99;pointer-events:none;z-index:0;"></div>` : "";
+  const size = starred ? 22 : 16;
+  const outerSize = size + 8;
+
+  // Pulse ring — availability color, slower for green, faster for red
+  const pulseDur = status === "green" ? "2.4s" : status === "yellow" ? "1.7s" : "1.1s";
+  const pulseStyle = `position:absolute;top:50%;left:50%;width:${outerSize}px;height:${outerSize}px;border-radius:50%;background:${avColor};transform:translate(-50%,-50%);animation:mrkPulse ${pulseDur} ease-out infinite;`;
+
+  // Outer brand ring — network color, larger radius
+  const outerRing = brandColor
+    ? `<div style="position:absolute;top:50%;left:50%;width:${outerSize + 8}px;height:${outerSize + 8}px;border-radius:50%;border:1.5px solid ${brandColor}bb;transform:translate(-50%,-50%);pointer-events:none;box-shadow:0 0 10px ${brandColor}55,inset 0 0 4px ${brandColor}22;"></div>`
+    : "";
+
+  const starBadge = starred ? `<div style="position:absolute;top:-8px;right:-8px;font-size:9px;line-height:1;z-index:3;filter:drop-shadow(0 0 3px #f59e0b);">⭐</div>` : "";
+  const queueBadge = queue >= 4
+    ? `<div style="position:absolute;top:-8px;left:-8px;font-size:7px;font-weight:700;z-index:3;background:#FF1744;color:#fff;border-radius:50%;width:13px;height:13px;display:flex;align-items:center;justify-content:center;border:1px solid #0d0d18;">${queue}</div>`
+    : queue >= 2
+    ? `<div style="position:absolute;top:-8px;left:-8px;font-size:7px;font-weight:700;z-index:3;background:#FFD600;color:#000;border-radius:50%;width:13px;height:13px;display:flex;align-items:center;justify-content:center;border:1px solid #0d0d18;">${queue}</div>`
+    : "";
+
   return L.divIcon({
-    html: `<style>@keyframes mrkPulse{0%,100%{transform:scale(1);opacity:0.4}50%{transform:scale(1.55);opacity:0}}</style>
+    html: `<style>@keyframes mrkPulse{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:.5}50%{transform:translate(-50%,-50%) scale(2.2);opacity:0}}</style>
     <div style="position:relative;width:${size}px;height:${size}px;">
-      ${pulse}
+      <div style="${pulseStyle}"></div>
       ${outerRing}
       ${starBadge}
       ${queueBadge}
       <div style="
         width:${size}px;height:${size}px;border-radius:50%;
-        background:radial-gradient(circle at 35% 30%, ${color}ff, ${color}99);
-        border:${starred ? "2px solid #f59e0b" : brandColor ? `1.5px solid ${brandColor}cc` : "1.5px solid rgba(255,255,255,0.35)"};
-        box-shadow:0 0 12px ${color}99,0 0 4px ${color},${starred ? "0 0 8px #f59e0b66," : ""}${brandColor ? `0 0 6px ${brandColor}55,` : ""}0 2px 4px #00000066;
-        position:relative;z-index:1;
+        background:radial-gradient(circle at 35% 30%, #ffffff44, ${avColor});
+        border:${starred ? `2px solid #f59e0b` : brandColor ? `1.5px solid ${brandColor}cc` : `1.5px solid rgba(255,255,255,0.4)`};
+        box-shadow:0 0 14px ${avColor}cc,0 0 6px ${avColor},${starred ? "0 0 10px #f59e0b66," : ""}${brandColor ? `0 0 8px ${brandColor}55,` : ""}0 2px 6px #00000077;
+        position:relative;z-index:2;
       "></div>
     </div>`,
     className: "",
@@ -134,9 +165,26 @@ const REGION_BOUNDS: { name: string; latMin: number; latMax: number; lngMin: num
 ];
 
 function availabilityColor(pct: number): string {
-  if (pct >= 60) return "#22c55e";
-  if (pct >= 25) return "#eab308";
-  return "#ef4444";
+  if (pct >= 60) return "#00E676";
+  if (pct >= 25) return "#FFD600";
+  return "#FF1744";
+}
+
+// Mercedes ambient light strip — flowing glow line that shifts with brand color
+function AmbientStrip({ color, axis = "h", thickness = 1.5, style = {} }: {
+  color: string; axis?: "h" | "v"; thickness?: number; style?: React.CSSProperties;
+}) {
+  const grad = `linear-gradient(90deg, transparent 0%, ${color}00 5%, ${color}cc 30%, ${color} 50%, ${color}cc 70%, ${color}00 95%, transparent 100%)`;
+  return (
+    <div className="ambient-strip" style={{
+      position: "absolute",
+      background: grad,
+      height: axis === "h" ? thickness : "100%",
+      width:  axis === "v" ? thickness : "100%",
+      pointerEvents: "none",
+      ...style,
+    }} />
+  );
 }
 
 function PopupContent({ station }: { station: GasStation }) {
@@ -144,7 +192,7 @@ function PopupContent({ station }: { station: GasStation }) {
   const avg = station.fuel_statuses.length
     ? Math.round(station.fuel_statuses.reduce((a, b) => a + b.availability_pct, 0) / station.fuel_statuses.length)
     : 0;
-  const color = avg >= 60 ? "#22c55e" : avg >= 25 ? "#eab308" : "#ef4444";
+  const color = avg >= 60 ? "#00E676" : avg >= 25 ? "#FFD600" : "#FF1744";
   return (
     <div style={{
       background: "#0d0d18", color: "#e2e8f0",
@@ -365,6 +413,10 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
     ? stations.find((s) => s.id === selectedStationId)
     : null;
 
+  // Derive brand ambient color from selected station's network
+  const selectedBrand = selectedStation ? getBrandAccent(selectedStation.network ?? "") : null;
+  const ambientColor  = selectedBrand ?? "#6366f1";
+
   return (
     <div
       style={{
@@ -377,6 +429,7 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
         pointerEvents: visible ? "auto" : "none",
       }}
     >
+      <style>{AMBIENT_CSS}</style>
       {/* Filter Bar — clean: Filters button + Search only */}
       {/* ── Top floating controls: glass search bar + fuel chips ── */}
       <div
@@ -982,7 +1035,7 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
         const gs = filtered.filter(s => { const a = s.fuel_statuses.length ? s.fuel_statuses.reduce((x,f) => x+f.availability_pct,0)/s.fuel_statuses.length : 0; return a >= 60; }).length;
         const ys = filtered.filter(s => { const a = s.fuel_statuses.length ? s.fuel_statuses.reduce((x,f) => x+f.availability_pct,0)/s.fuel_statuses.length : 0; return a >= 25 && a < 60; }).length;
         const rs = filtered.length - gs - ys;
-        const legend: [string,string,number][] = [["#22c55e","≥60%",gs],["#eab308","25–60%",ys],["#ef4444","<25%",rs]];
+        const legend: [string,string,number][] = [["#00E676","≥60%",gs],["#FFD600","25–60%",ys],["#FF1744","<25%",rs]];
         return (
           <div style={{
             position: "fixed",
@@ -1127,26 +1180,29 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
                 if (el.scrollTop === 0) dragControls.start(e);
               }}
               style={{
-                background: "rgba(20,20,32,0.95)",
-                backdropFilter: "blur(24px)",
+                background: "rgba(8,8,28,0.97)",
+                backdropFilter: "blur(32px)",
                 borderRadius: "28px 28px 0 0",
-                border: "1px solid rgba(255,255,255,0.08)",
+                border: `1px solid ${ambientColor}22`,
                 borderBottom: "none",
-                boxShadow: "0 -12px 48px rgba(0,0,0,0.6), 0 -1px 0 rgba(255,255,255,0.06)",
+                boxShadow: `0 -12px 48px rgba(0,0,0,0.7), 0 -2px 0 ${ambientColor}33`,
                 maxHeight: "72vh",
                 overflowY: "auto",
                 position: "relative",
+                overflow: "hidden",
               }}
             >
-              {/* Top glare */}
-              <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: "linear-gradient(90deg,transparent,rgba(255,255,255,0.15),transparent)", borderRadius: "28px 28px 0 0" }} />
+              {/* Mercedes ambient strip — brand color, top edge */}
+              <AmbientStrip color={ambientColor} thickness={2} style={{ top: 0, left: 0, right: 0, borderRadius: "28px 28px 0 0" }} />
+              {/* Subtle brand glow bloom inside top */}
+              <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 140, background: `radial-gradient(ellipse at 50% 0%, ${ambientColor}18 0%, transparent 70%)`, pointerEvents: "none", zIndex: 0 }} />
 
-              {/* Drag handle */}
+              {/* Drag handle — brand color */}
               <div
                 onPointerDown={(e) => dragControls.start(e)}
-                style={{ display: "flex", justifyContent: "center", paddingTop: "12px", paddingBottom: "4px", cursor: "grab", touchAction: "none" }}
+                style={{ display: "flex", justifyContent: "center", paddingTop: "14px", paddingBottom: "4px", cursor: "grab", touchAction: "none", position: "relative", zIndex: 1 }}
               >
-                <div style={{ width: "40px", height: "4px", background: "rgba(255,255,255,0.2)", borderRadius: "99px" }} />
+                <div style={{ width: "40px", height: "4px", background: `${ambientColor}77`, borderRadius: "99px", boxShadow: `0 0 8px ${ambientColor}66` }} />
               </div>
 
               <div style={{ position: "relative", paddingBottom: "6rem" }}>
@@ -1161,31 +1217,36 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
                 position: "sticky",
                 bottom: 0,
                 padding: "0.75rem 1.25rem 1.25rem",
-                background: "linear-gradient(to top, rgba(20,20,32,1) 70%, transparent)",
+                background: "linear-gradient(to top, rgba(8,8,28,1) 70%, transparent)",
               }}>
                 <button
                   onClick={() => { impact("medium"); selectStation(null); }}
                   style={{
                     width: "100%",
                     padding: "1rem",
-                    borderRadius: "14px",
-                    background: "#a78bfa",
-                    color: "#08090f",
-                    fontWeight: 700,
+                    borderRadius: "16px",
+                    background: "linear-gradient(135deg, #E8622A 0%, #c04010 60%, #9a2f08 100%)",
+                    color: "#fff",
+                    fontWeight: 900,
                     fontSize: "1rem",
+                    letterSpacing: "0.05em",
+                    textTransform: "uppercase",
                     border: "none",
                     cursor: "pointer",
-                    boxShadow: "0 4px 20px rgba(167,139,250,0.4)",
+                    boxShadow: `0 4px 24px rgba(232,98,42,0.55), 0 0 0 1px rgba(232,98,42,0.2)`,
                     position: "relative",
                     overflow: "hidden",
                   }}
                 >
-                  <span style={{ position: "relative", zIndex: 1 }}>Зарезервировать →</span>
+                  <span style={{ position: "relative", zIndex: 1 }}>Зарезервировать ⛽</span>
+                  {/* Shimmer sweep */}
                   <div style={{
                     position: "absolute", inset: 0,
-                    background: "linear-gradient(90deg,transparent,rgba(255,255,255,0.15),transparent)",
-                    animation: "shimmer 2s infinite",
+                    background: "linear-gradient(90deg,transparent,rgba(255,255,255,0.18),transparent)",
+                    animation: "shimmer 2.2s infinite",
                   }} />
+                  {/* Ambient strip on button bottom edge — brand color */}
+                  <AmbientStrip color={ambientColor} thickness={2} style={{ bottom: 0, left: 0, right: 0, opacity: 0.7 }} />
                   <style>{`@keyframes shimmer { 0%{transform:translateX(-100%)} 100%{transform:translateX(100%)} }`}</style>
                 </button>
               </div>
