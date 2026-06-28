@@ -154,12 +154,12 @@ function CatalogStrip({ color, style = {} }: { color: string; style?: React.CSSP
 }
 
 const NETWORK_LOGOS: Record<string, { src: string; bg: string; padding: number }> = {
-  "Лукойл":       { src: "/logo-lukoil-clean.png",   bg: "#C8102E",              padding: 4  },
-  "Роснефть":     { src: "/logo-rosneft-clean.png",  bg: "#ffffff",              padding: 5  },
-  "Газпромнефть": { src: "/logo-gazprom-clean.png",  bg: "#ffffff",              padding: 5  },
-  "Башнефть":     { src: "/logo-bashneft-clean.png", bg: "#ffffff",              padding: 4  },
-  "Татнефть":     { src: "/logo-tatneft-clean.png",  bg: "#ffffff",              padding: 6  },
-  "ННК":          { src: "/logo-nnk-clean.png",      bg: "#ffffff",              padding: 5  },
+  "Лукойл":       { src: "/logo-lukoil-clean.png",   bg: "#C8102E",              padding: 1  },
+  "Роснефть":     { src: "/logo-rosneft-clean.png",  bg: "#ffffff",              padding: 2  },
+  "Газпромнефть": { src: "/logo-gazprom-clean.png",  bg: "#ffffff",              padding: 2  },
+  "Башнефть":     { src: "/logo-bashneft-clean.png", bg: "#ffffff",              padding: 1  },
+  "Татнефть":     { src: "/logo-tatneft-clean.png",  bg: "#ffffff",              padding: 3  },
+  "ННК":          { src: "/logo-nnk-clean.png",      bg: "#ffffff",              padding: 2  },
 };
 
 function NetworkLogo({ net }: { net: Net }) {
