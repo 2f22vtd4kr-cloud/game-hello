@@ -861,9 +861,6 @@ function FuelPriceBreakdown() {
 
   return (
     <div style={{ padding: "0 1rem 0.75rem" }}>
-      <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.43rem", letterSpacing: "0.14em", marginBottom: "0.35rem" }}>
-        ЦЕНЫ ТОПЛИВА · МИН / СРЕД / МАКС ₽/л
-      </div>
       <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
         {stats.map(({ fuel, min, max, avg, count }, si) => {
           const color = FUEL_COLORS[fuel] ?? "#6b7280";
@@ -970,7 +967,6 @@ function AIPricePredictions() {
         <div style={{ position: "absolute", inset: 0, pointerEvents: "none", opacity: 0.02, background: "repeating-linear-gradient(0deg,transparent,transparent 3px,#3b82f6 3px,#3b82f6 4px)" }} />
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.7rem" }}>
           <div>
-            <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.43rem", letterSpacing: "0.14em", marginBottom: "0.15rem" }}>АЛГОРИТМ ПРОГНОЗА · ИИ</div>
             <p style={{ margin: 0, color: "#e2e8f0", fontSize: "0.88rem", fontWeight: 800 }}>🤖 AI Прогноз цен</p>
           </div>
           <button
@@ -2309,9 +2305,6 @@ function NetworkPriceTableWidget() {
 
   return (
     <div style={{ padding: "0 1rem 1.5rem" }}>
-      <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.43rem", letterSpacing: "0.14em", marginBottom: "0.45rem" }}>
-        ЦЕНЫ ПО СЕТЯМ · СРАВНЕНИЕ · ИЮНЬ 2026
-      </div>
       <div style={{ background: "linear-gradient(135deg,#0a0a14,#0d0818)", border: "1px solid #a855f718", borderRadius: "14px", padding: "0.75rem", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: "linear-gradient(90deg,transparent,#a855f744,transparent)" }} />
         <div style={{ display: "flex", gap: "0.3rem", marginBottom: "0.6rem" }}>
@@ -2399,9 +2392,6 @@ function RegionLeaderboardWidget() {
 
   return (
     <div style={{ padding: "0 1rem 1.5rem" }}>
-      <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.43rem", letterSpacing: "0.14em", marginBottom: "0.45rem" }}>
-        РЕЙТИНГ РЕГИОНОВ · НАЛИЧИЕ ТОПЛИВА · LIVE
-      </div>
       <div style={{ background: "linear-gradient(135deg,#0a0a14,#0d0818)", border: "1px solid #a855f718", borderRadius: "14px", padding: "0.75rem", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: "linear-gradient(90deg,transparent,#22c55e44,transparent)" }} />
 
@@ -2494,9 +2484,6 @@ function CrisisForecastWidget() {
 
   return (
     <div style={{ padding: "0 1rem 1.5rem" }}>
-      <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.43rem", letterSpacing: "0.14em", marginBottom: "0.45rem" }}>
-        ПРОГНОЗ ДЕФИЦИТА · AI_АНАЛИЗ · ПРИОРИТЕТ
-      </div>
       <div style={{ background: "linear-gradient(135deg,#0f0505,#12060a)", border: "1px solid #ef444422", borderRadius: "14px", padding: "0.75rem", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: "linear-gradient(90deg,transparent,#ef444444,transparent)" }} />
         <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#FF1744", fontSize: "0.52rem", letterSpacing: "0.1em", marginBottom: "0.5rem" }}>

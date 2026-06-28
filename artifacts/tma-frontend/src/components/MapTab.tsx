@@ -547,11 +547,11 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
                 }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.4rem", padding: "0 0.15rem" }}>
-                  <span style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.48rem", letterSpacing: "0.12em" }}>НЕДАВНИЕ ПОИСКИ</span>
+                  <span style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.6rem", fontWeight: 500 }}>Недавние поиски</span>
                   <button
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => { setMapRecentSearches([]); localStorage.removeItem("tma-map-recent-searches"); }}
-                    style={{ background: "none", border: "none", color: "#374151", fontSize: "0.65rem", cursor: "pointer", padding: "0 0.15rem", lineHeight: 1 }}
+                    style={{ background: "none", border: "none", color: "rgba(255,255,255,0.3)", fontSize: "0.65rem", cursor: "pointer", padding: "0 0.15rem", lineHeight: 1 }}
                   >✕</button>
                 </div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "0.3rem" }}>
@@ -622,12 +622,12 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
               left: "0.75rem",
               right: "0.75rem",
               zIndex: 1000,
-              background: "rgba(10,10,18,0.97)",
-              border: "1px solid #a855f722",
-              borderRadius: "16px",
-              padding: "0.85rem",
-              backdropFilter: "blur(24px)",
-              boxShadow: "0 8px 32px #00000088, 0 0 0 1px #a855f710",
+              background: "rgba(10,10,20,0.98)",
+              border: "1px solid rgba(168,85,247,0.18)",
+              borderRadius: "22px",
+              padding: "1rem",
+              backdropFilter: "blur(32px)",
+              boxShadow: "0 16px 48px rgba(0,0,0,0.7), 0 0 0 1px rgba(168,85,247,0.08), inset 0 1px 0 rgba(255,255,255,0.04)",
               overflow: "hidden",
             }}
           >
@@ -636,10 +636,10 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
 
             {/* Header */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.65rem" }}>
-              <span style={{ fontFamily: "'JetBrains Mono',monospace", color: "#4b5563", fontSize: "0.55rem", letterSpacing: "0.14em" }}>ФИЛЬТР МАТРИЦА</span>
+              <span style={{ color: "rgba(255,255,255,0.75)", fontSize: "0.88rem", fontWeight: 700, letterSpacing: "-0.01em" }}>Фильтры</span>
               <button
                 onClick={() => setShowFilters(false)}
-                style={{ background: "none", border: "none", color: "#374151", cursor: "pointer", fontSize: "0.7rem", padding: "0.1rem 0.3rem" }}
+                style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "8px", color: "rgba(255,255,255,0.5)", cursor: "pointer", fontSize: "0.7rem", padding: "0.2rem 0.45rem", lineHeight: 1 }}
               >✕</button>
             </div>
 
@@ -702,7 +702,7 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
             </div>
 
             {/* Quick actions */}
-            <p style={{ color: "#374151", fontSize: "0.6rem", margin: "0 0 0.35rem", textTransform: "uppercase", letterSpacing: "0.12em" }}>Быстрые действия</p>
+            <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.65rem", fontWeight: 500, margin: "0 0 0.4rem" }}>Быстрые действия</p>
             <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap", marginBottom: "0.65rem" }}>
               {/* Geolocation nearest */}
               <button
@@ -832,7 +832,7 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
             </div>
 
             {/* Zone quick-filters */}
-            <p style={{ color: "#374151", fontSize: "0.6rem", margin: "0 0 0.35rem", textTransform: "uppercase", letterSpacing: "0.12em" }}>Зона</p>
+            <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.65rem", fontWeight: 500, margin: "0 0 0.35rem" }}>Зона</p>
             <div style={{ display: "flex", gap: "0.35rem", marginBottom: "0.65rem" }}>
               {([
                 { z: "critical", label: "🔴 Кризисная", title: "Кризисная зона" },
@@ -859,7 +859,7 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
             </div>
 
             {/* Status */}
-            <p style={{ color: "#374151", fontSize: "0.6rem", margin: "0 0 0.35rem", textTransform: "uppercase", letterSpacing: "0.12em" }}>Статус АЗС</p>
+            <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.65rem", fontWeight: 500, margin: "0 0 0.35rem" }}>Статус АЗС</p>
             <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap", marginBottom: "0.65rem" }}>
               {(["all", "green", "yellow", "red"] as const).map((s) => {
                 const colors = { all: "#a855f7", green: "#22c55e", yellow: "#eab308", red: "#ef4444" };
@@ -886,7 +886,7 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
             </div>
 
             {/* Fuel */}
-            <p style={{ color: "#374151", fontSize: "0.6rem", margin: "0 0 0.35rem", textTransform: "uppercase", letterSpacing: "0.12em" }}>Тип топлива</p>
+            <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.65rem", fontWeight: 500, margin: "0 0 0.35rem" }}>Тип топлива</p>
             <div style={{ display: "flex", gap: "0.3rem", flexWrap: "wrap", marginBottom: "0.65rem" }}>
               {[null, ...FUEL_OPTIONS].map((f) => {
                 const active = f === null ? filterFuel === null : filterFuel === f;
@@ -910,7 +910,7 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
 
             {/* Region */}
             <div style={{ marginBottom: "0.55rem" }}>
-              <p style={{ color: "#374151", fontSize: "0.6rem", margin: "0 0 0.3rem", textTransform: "uppercase", letterSpacing: "0.12em" }}>Регион</p>
+              <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.65rem", fontWeight: 500, margin: "0 0 0.3rem" }}>Регион</p>
               {/* Quick city chips */}
               <div style={{ display: "flex", gap: "0.28rem", flexWrap: "wrap", marginBottom: "0.4rem" }}>
                 {[
@@ -947,7 +947,7 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
             </div>
 
             {/* Brand / Network chips */}
-            <p style={{ color: "#374151", fontSize: "0.6rem", margin: "0 0 0.35rem", textTransform: "uppercase", letterSpacing: "0.12em" }}>Сеть / Бренд</p>
+            <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.65rem", fontWeight: 500, margin: "0 0 0.35rem" }}>Сеть / Бренд</p>
             <div style={{ display: "flex", gap: "0.28rem", flexWrap: "wrap", marginBottom: "0.5rem" }}>
               {topNetworks.map((brand) => {
                 const active = filterNetwork === brand;
