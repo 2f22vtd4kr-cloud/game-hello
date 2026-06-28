@@ -457,9 +457,9 @@ export function AiTab({ onNavigate }: Props) {
 
       </header>
 
-      {/* Chat Area */}
-      <main className="flex-1 overflow-y-auto px-4 py-5 flex flex-col gap-5 z-10">
-        <div className="text-center text-[11px] font-medium my-2" style={{ color: "rgba(255,255,255,0.4)" }}>
+      {/* Chat Area — chips live here as scrollable quick replies */}
+      <main className="flex-1 overflow-y-auto px-4 pt-4 flex flex-col gap-4 z-10">
+        <div className="text-center text-[11px] font-medium my-1" style={{ color: "rgba(255,255,255,0.35)" }}>
           Сегодня
         </div>
 
@@ -472,34 +472,20 @@ export function AiTab({ onNavigate }: Props) {
           />
         ))}
         {thinking && <BotThinking />}
-        <div ref={bottomRef} />
-      </main>
 
-      {/* Bottom bar: chips + input, unified */}
-      <div
-        className="z-10 flex-shrink-0"
-        style={{
-          backgroundColor: C.glassDark,
-          backdropFilter: "blur(24px)",
-          WebkitBackdropFilter: "blur(24px)",
-          borderTop: `1px solid ${C.border}`,
-          paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 72px)",
-        }}
-      >
-        {/* Chips row */}
-        <div
-          className="overflow-x-auto whitespace-nowrap hide-scrollbar flex gap-2 px-3 pt-3 pb-2"
-        >
+        {/* Quick reply chips — inside scroll, no overlap */}
+        <div className="flex flex-wrap gap-2 pt-2 pb-1">
           {dynamicChips.map((chip, i) => (
             <button
               key={i}
               onClick={() => void send(chip.query)}
-              className="px-3.5 py-1.5 rounded-full text-[12px] font-medium transition-all active:scale-95"
+              className="px-4 py-2.5 rounded-2xl text-[14px] font-medium transition-all active:scale-95"
               style={{
-                backgroundColor: "rgba(255,255,255,0.08)",
-                border: `1px solid rgba(255,255,255,0.18)`,
-                color: "rgba(255,255,255,0.85)",
-                flexShrink: 0,
+                backgroundColor: "rgba(255,255,255,0.1)",
+                border: "1px solid rgba(255,255,255,0.22)",
+                color: "#fff",
+                backdropFilter: "blur(12px)",
+                WebkitBackdropFilter: "blur(12px)",
               }}
             >
               {chip.label}
@@ -507,20 +493,46 @@ export function AiTab({ onNavigate }: Props) {
           ))}
         </div>
 
-        {/* Input row */}
-        <form onSubmit={handleSubmit} className="flex items-center gap-2 px-3 pb-3">
+        <div ref={bottomRef} />
+      </main>
+
+      {/* Input bar — sits above BottomNav + floating buttons */}
+      <div
+        className="z-10 flex-shrink-0"
+        style={{
+          backgroundColor: C.glassDark,
+          backdropFilter: "blur(24px)",
+          WebkitBackdropFilter: "blur(24px)",
+          borderTop: `1px solid ${C.border}`,
+          padding: "12px 16px",
+          paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 136px)",
+        }}
+      >
+        <form onSubmit={handleSubmit} style={{ display: "flex", alignItems: "center", gap: "12px" }}>
           <div
-            className="flex-1 rounded-2xl flex items-center px-4 min-h-[46px]"
             style={{
-              backgroundColor: "rgba(255,255,255,0.09)",
-              border: `1px solid ${C.border}`,
+              flex: 1,
+              borderRadius: "26px",
+              display: "flex",
+              alignItems: "center",
+              padding: "0 18px",
+              minHeight: "52px",
+              backgroundColor: "rgba(255,255,255,0.1)",
+              border: "1px solid rgba(255,255,255,0.18)",
             }}
           >
             <input
               type="text"
               placeholder="Задать вопрос..."
-              className="bg-transparent border-none outline-none w-full text-[15px] py-3"
-              style={{ color: C.textMain }}
+              style={{
+                background: "transparent",
+                border: "none",
+                outline: "none",
+                width: "100%",
+                fontSize: "16px",
+                color: C.textMain,
+                padding: "14px 0",
+              }}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               disabled={thinking}
@@ -529,10 +541,23 @@ export function AiTab({ onNavigate }: Props) {
           <button
             type="submit"
             disabled={!input.trim() || thinking}
-            className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg active:scale-95 transition-all disabled:opacity-35"
-            style={{ background: input.trim() && !thinking ? C.coral : "rgba(255,255,255,0.15)" }}
+            style={{
+              width: "52px",
+              height: "52px",
+              borderRadius: "50%",
+              border: "none",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+              background: input.trim() && !thinking ? C.coral : "rgba(255,255,255,0.12)",
+              transition: "background 0.2s",
+              opacity: !input.trim() || thinking ? 0.45 : 1,
+              cursor: input.trim() && !thinking ? "pointer" : "default",
+              boxShadow: input.trim() && !thinking ? "0 4px 16px rgba(232,98,42,0.4)" : "none",
+            }}
           >
-            <Send size={17} color="#fff" style={{ marginLeft: 2 }} />
+            <Send size={19} color="#fff" style={{ marginLeft: 2 }} />
           </button>
         </form>
       </div>
