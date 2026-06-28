@@ -51,6 +51,7 @@ interface TelegramWebApp {
   ready: () => void;
   expand: () => void;
   close: () => void;
+  disableVerticalSwipes: () => void;
   setHeaderColor: (color: string) => void;
   setBackgroundColor: (color: string) => void;
   colorScheme?: "light" | "dark";
@@ -179,6 +180,7 @@ export default function App() {
     if (tg) {
       tg.ready();
       tg.expand();
+      try { tg.disableVerticalSwipes(); } catch {}
 
       try {
         tg.setHeaderColor("#1318B0");
