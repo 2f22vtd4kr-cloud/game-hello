@@ -530,11 +530,11 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
             <button
               onClick={jumpToSearchResult}
               style={{
-                background: filtered.length > 0 ? "rgba(219,39,119,0.15)" : "rgba(239,68,68,0.12)",
-                border: `1px solid ${filtered.length > 0 ? "#db277744" : "#ef444444"}`,
+                background: filtered.length > 0 ? "rgba(255,255,255,0.14)" : "rgba(239,68,68,0.12)",
+                border: `1px solid ${filtered.length > 0 ? "rgba(255,255,255,0.28)" : "#ef444444"}`,
                 borderRadius: "8px",
                 padding: "0.2rem 0.5rem",
-                color: filtered.length > 0 ? "#f472b6" : "#ef4444",
+                color: filtered.length > 0 ? "#ffffff" : "#ff6b6b",
                 fontSize: "0.62rem",
                 fontFamily: "'JetBrains Mono',monospace",
                 cursor: filtered.length > 0 ? "pointer" : "default",
@@ -567,9 +567,9 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
                 right: "0",
                 width: "7px",
                 height: "7px",
-                background: "#a855f7",
+                background: "#ffffff",
                 borderRadius: "50%",
-                boxShadow: "0 0 5px #a855f7",
+                boxShadow: "0 0 5px rgba(255,255,255,0.7)",
               }} />
             )}
           </button>
@@ -606,8 +606,8 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => { setSearchQuery(q); setMapSearchFocused(false); setTimeout(() => searchRef.current?.focus(), 0); }}
                       style={{
-                        background: "rgba(219,39,119,0.07)", border: "1px solid #db277722",
-                        borderRadius: "8px", color: "#9ca3af", fontSize: "0.65rem",
+                        background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)",
+                        borderRadius: "8px", color: "rgba(255,255,255,0.7)", fontSize: "0.65rem",
                         padding: "0.2rem 0.55rem", cursor: "pointer",
                         display: "flex", alignItems: "center", gap: "0.25rem",
                       }}
@@ -677,7 +677,7 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
             }}
           >
             {/* Top accent line */}
-            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: "linear-gradient(90deg,transparent,#a855f7,transparent)" }} />
+            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: "linear-gradient(90deg,transparent,rgba(255,255,255,0.35),transparent)" }} />
 
             {/* Header */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.65rem" }}>
@@ -735,7 +735,7 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
                   <span style={{
                     fontFamily: "'JetBrains Mono',monospace",
                     fontSize: "0.6rem",
-                    color: filtered.length < stations.length ? "#a855f7" : "#4b5563",
+                    color: filtered.length < stations.length ? "rgba(255,255,255,0.8)" : "#4b5563",
                     padding: "0 0.6rem",
                     marginLeft: "auto",
                   }}>
@@ -755,10 +755,10 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
                 disabled={geoLoading}
                 title="Ближайшая АЗС по GPS"
                 style={{
-                  background: geoLoading ? "rgba(168,85,247,0.18)" : "rgba(16,20,165,0.82)",
-                  border: `1px solid ${geoError ? "#ef444455" : geoLoading ? "#a855f755" : "rgba(255,255,255,0.08)"}`,
+                  background: geoLoading ? "rgba(255,255,255,0.12)" : "rgba(16,20,165,0.82)",
+                  border: `1px solid ${geoError ? "#ff6b6b55" : geoLoading ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.08)"}`,
                   borderRadius: "8px",
-                  color: geoError ? "#ef4444" : geoLoading ? "#a855f7" : "#e2e8f0",
+                  color: geoError ? "#ff6b6b" : geoLoading ? "#ffffff" : "#e2e8f0",
                   padding: "0.3rem 0.55rem",
                   fontSize: "0.72rem", cursor: geoLoading ? "default" : "pointer",
                   display: "flex", alignItems: "center", gap: "0.25rem",
@@ -791,10 +791,10 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
                 onClick={() => setShowHeatmap((v) => !v)}
                 title="Тепловая карта регионов"
                 style={{
-                  background: showHeatmap ? "rgba(168,85,247,0.22)" : "rgba(16,20,165,0.82)",
-                  border: `1px solid ${showHeatmap ? "#a855f755" : "rgba(255,255,255,0.08)"}`,
+                  background: showHeatmap ? "rgba(255,255,255,0.15)" : "rgba(16,20,165,0.82)",
+                  border: `1px solid ${showHeatmap ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.08)"}`,
                   borderRadius: "8px",
-                  color: showHeatmap ? "#a855f7" : "#9ca3af",
+                  color: showHeatmap ? "#ffffff" : "#9ca3af",
                   padding: "0.3rem 0.55rem",
                   fontSize: "0.72rem", cursor: "pointer",
                   display: "flex", alignItems: "center", gap: "0.25rem",
@@ -888,16 +888,16 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
                   onClick={() => setFilter("filterZone", filterZone === z ? null : z)}
                   title={title}
                   style={{
-                    background: filterZone === z ? "rgba(168,85,247,0.18)" : "rgba(14,18,158,0.75)",
-                    border: `1px solid ${filterZone === z ? "#a855f755" : "rgba(255,255,255,0.07)"}`,
+                    background: filterZone === z ? "rgba(255,255,255,0.15)" : "rgba(14,18,158,0.75)",
+                    border: `1px solid ${filterZone === z ? "rgba(255,255,255,0.32)" : "rgba(255,255,255,0.07)"}`,
                     borderRadius: "8px",
-                    color: filterZone === z ? "#c084fc" : "#4b5563",
+                    color: filterZone === z ? "#ffffff" : "#4b5563",
                     padding: "0.28rem 0.55rem",
                     fontSize: "0.7rem",
                     fontWeight: filterZone === z ? 700 : 400,
                     cursor: "pointer",
                     transition: "all 0.2s",
-                    boxShadow: filterZone === z ? "0 0 8px rgba(168,85,247,0.2)" : "none",
+                    boxShadow: filterZone === z ? "0 0 8px rgba(255,255,255,0.12)" : "none",
                   }}
                 >{label}</button>
               ))}
@@ -907,7 +907,7 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
             <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.65rem", fontWeight: 500, margin: "0 0 0.35rem" }}>Статус АЗС</p>
             <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap", marginBottom: "0.65rem" }}>
               {(["all", "green", "yellow", "red"] as const).map((s) => {
-                const colors = { all: "#a855f7", green: "#22c55e", yellow: "#eab308", red: "#ef4444" };
+                const colors = { all: "#ffffff", green: "#22c55e", yellow: "#eab308", red: "#ef4444" };
                 const labels = { all: "Все", green: "✓ Норма", yellow: "⚠ Мало", red: "✕ Нет" };
                 const active = filterStatus === s;
                 const c = colors[s];
@@ -937,10 +937,10 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
                 const active = f === null ? filterFuel === null : filterFuel === f;
                 return (
                   <button key={f ?? "__all"} onClick={() => setFilter("filterFuel", f)} style={{
-                    background: active ? "#a855f720" : "rgba(14,18,158,0.75)",
-                    border: `1px solid ${active ? "#a855f7" : "rgba(255,255,255,0.07)"}`,
+                    background: active ? "rgba(255,255,255,0.15)" : "rgba(14,18,158,0.75)",
+                    border: `1px solid ${active ? "rgba(255,255,255,0.32)" : "rgba(255,255,255,0.07)"}`,
                     borderRadius: "7px",
-                    color: active ? "#a855f7" : "#9ca3af",
+                    color: active ? "#ffffff" : "#9ca3af",
                     padding: "0.25rem 0.55rem",
                     fontSize: "0.7rem",
                     fontWeight: active ? 700 : 400,
@@ -1002,21 +1002,21 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
                     key={brand}
                     onClick={() => setFilter("filterNetwork", active ? null : brand)}
                     style={{
-                      background: active ? "#a855f720" : "rgba(14,18,158,0.75)",
-                      border: `1px solid ${active ? "#a855f7" : "rgba(255,255,255,0.07)"}`,
+                      background: active ? "rgba(255,255,255,0.15)" : "rgba(14,18,158,0.75)",
+                      border: `1px solid ${active ? "rgba(255,255,255,0.32)" : "rgba(255,255,255,0.07)"}`,
                       borderRadius: "7px",
-                      color: active ? "#c084fc" : "#9ca3af",
+                      color: active ? "#ffffff" : "#9ca3af",
                       padding: "0.22rem 0.5rem",
                       fontSize: "0.68rem",
                       fontWeight: active ? 700 : 400,
                       cursor: "pointer",
                       transition: "all 0.15s",
                       display: "flex", alignItems: "center", gap: "0.28rem",
-                      boxShadow: active ? "0 0 6px #a855f730" : "none",
+                      boxShadow: active ? "0 0 8px rgba(255,255,255,0.12)" : "none",
                     }}
                   >
                     {brand}
-                    <span style={{ fontFamily: "'JetBrains Mono',monospace", color: active ? "#a855f7aa" : "#374151", fontSize: "0.58rem" }}>{cnt}</span>
+                    <span style={{ fontFamily: "'JetBrains Mono',monospace", color: active ? "rgba(255,255,255,0.55)" : "#374151", fontSize: "0.58rem" }}>{cnt}</span>
                   </button>
                 );
               })}
@@ -1025,10 +1025,10 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
                 <button
                   onClick={() => setFilter("filterNetwork", null)}
                   style={{
-                    background: "#a855f720", border: "1px solid #a855f7", borderRadius: "7px",
-                    color: "#c084fc", padding: "0.22rem 0.5rem", fontSize: "0.68rem", fontWeight: 700,
+                    background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.32)", borderRadius: "7px",
+                    color: "#ffffff", padding: "0.22rem 0.5rem", fontSize: "0.68rem", fontWeight: 700,
                     cursor: "pointer", display: "flex", alignItems: "center", gap: "0.3rem",
-                    boxShadow: "0 0 6px #a855f730",
+                    boxShadow: "0 0 8px rgba(255,255,255,0.12)",
                   }}
                 >
                   {filterNetwork} <span style={{ fontSize: "0.62rem" }}>✕</span>
@@ -1039,7 +1039,7 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
             <select
               value={topNetworks.includes(filterNetwork ?? "") ? "" : (filterNetwork ?? "")}
               onChange={(e) => setFilter("filterNetwork", e.target.value || null)}
-              style={{ width: "100%", background: "rgba(14,18,158,0.75)", border: `1px solid ${filterNetwork && !topNetworks.includes(filterNetwork) ? "#a855f744" : "rgba(255,255,255,0.07)"}`, borderRadius: "8px", color: filterNetwork && !topNetworks.includes(filterNetwork) ? "#e2e8f0" : "#9ca3af", padding: "0.3rem 0.5rem", fontSize: "0.7rem", outline: "none", cursor: "pointer", marginBottom: "0.5rem" }}
+              style={{ width: "100%", background: "rgba(14,18,158,0.75)", border: `1px solid ${filterNetwork && !topNetworks.includes(filterNetwork) ? "rgba(255,255,255,0.28)" : "rgba(255,255,255,0.07)"}`, borderRadius: "8px", color: filterNetwork && !topNetworks.includes(filterNetwork) ? "#e2e8f0" : "#9ca3af", padding: "0.3rem 0.5rem", fontSize: "0.7rem", outline: "none", cursor: "pointer", marginBottom: "0.5rem" }}
             >
               <option value="">Другая сеть...</option>
               {uniqueNetworks.filter((n) => !topNetworks.includes(n)).map((n) => (
@@ -1160,13 +1160,13 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
             const count = cluster.getChildCount();
             return L.divIcon({
               html: `<div style="
-                background:linear-gradient(135deg,#a855f7,#db2777);
+                background:radial-gradient(circle at 38% 32%,#8b5cf6,#5b21b6);
                 border-radius:50%;
                 width:34px;height:34px;
                 display:flex;align-items:center;justify-content:center;
                 color:#fff;font-weight:700;font-size:0.75rem;
-                box-shadow:0 0 12px #a855f799;
-                border:2px solid rgba(255,255,255,0.2);
+                box-shadow:0 0 14px rgba(139,92,246,0.65);
+                border:2px solid rgba(255,255,255,0.22);
               ">${count}</div>`,
               className: "",
               iconSize: [34, 34],
