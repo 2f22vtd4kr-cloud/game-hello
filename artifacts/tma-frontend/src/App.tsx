@@ -18,6 +18,7 @@ import { ToastContainer } from "@/components/Toast";
 import { BottomNav } from "@/components/BottomNav";
 import { PriceAlertBanner } from "@/components/PriceAlertBanner";
 import { MapTab } from "@/components/MapTab";
+import { AnalyticsTab } from "@/components/AnalyticsTab";
 import { CatalogTab } from "@/components/CatalogTab";
 import { NewsTab } from "@/components/NewsTab";
 import { AiTab } from "@/components/AiTab";
@@ -209,8 +210,14 @@ export default function App() {
       setInitialPurchaseId(deepLink.purchaseId);
     }
 
-    if (new URLSearchParams(window.location.search).get("admin") === "1") {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("admin") === "1") {
       setShowAdmin(true);
+    }
+    const urlTab = urlParams.get("tab") as TabId | null;
+    const validTabs: TabId[] = ["map", "analytics", "catalog", "ai", "games", "news"];
+    if (urlTab && validTabs.includes(urlTab)) {
+      setActiveTab(urlTab);
     }
 
     const tgUser = tg?.initDataUnsafe?.user;
@@ -291,7 +298,7 @@ export default function App() {
     }
   };
 
-  const tabOrder: TabId[] = ["map", "catalog", "ai", "games", "news"];
+  const tabOrder: TabId[] = ["map", "analytics", "catalog", "ai", "games", "news"];
   const tabIndexRef = useRef(0);
   const prevTabIndex = tabIndexRef.current;
   const curTabIndex = tabOrder.indexOf(activeTab);
@@ -573,10 +580,11 @@ export default function App() {
               transition={{ duration: 0.22, ease: [0.25, 0.46, 0.45, 0.94] }}
               style={{ position: "absolute", top: `${TICKER_H + 8}px`, left: 0, right: 0, bottom: 0, overflowY: "auto", overflowX: "hidden" }}
             >
-              {activeTab === "catalog" && <CatalogTab initialStationId={initialStationId} onCalcOpenChange={setCalcOpen} />}
-              {activeTab === "ai"      && <AiTab onNavigate={handleTabChange} />}
-              {activeTab === "games"   && <GamesTab />}
-              {activeTab === "news"    && <NewsTab onNavigate={handleTabChange} />}
+              {activeTab === "analytics" && <AnalyticsTab />}
+              {activeTab === "catalog"   && <CatalogTab initialStationId={initialStationId} onCalcOpenChange={setCalcOpen} />}
+              {activeTab === "ai"        && <AiTab onNavigate={handleTabChange} />}
+              {activeTab === "games"     && <GamesTab />}
+              {activeTab === "news"      && <NewsTab onNavigate={handleTabChange} />}
             </motion.div>
           )}
         </AnimatePresence>

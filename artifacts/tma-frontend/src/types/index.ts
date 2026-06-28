@@ -165,7 +165,7 @@ export interface SubscriptionStatus {
   subscription_id?: number;
 }
 
-export type TabId = "map" | "catalog" | "ai" | "games" | "news";
+export type TabId = "map" | "analytics" | "catalog" | "ai" | "games" | "news";
 
 export interface TicketSuggestion {
   fuel_type: string;
