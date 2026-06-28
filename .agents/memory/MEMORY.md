@@ -13,3 +13,4 @@
 - [PostgreSQL in production](postgres-production.md) — DATABASE_URL secret is set → app uses PostgreSQL, not SQLite. tma.db stays 0 bytes. Raw SQL must use Python datetime not SQLite date('now'). Model columns added via ALTER TABLE in _run_migrations() at startup.
 - [Bot polling vs webhook](bot-polling-webhook.md) — production bot uses webhook mode (REPLIT_DEPLOYMENT set); dev uses polling. start.sh must NOT unset REPLIT_DEPLOYMENT or both bots poll the same token causing 409 conflict.
 - [sed class name collision](sed-classname-collision.md) — running sed 's/Station/GasStation/g' on code that already has GasStation creates GasGasStation. Always grep-verify after bulk sed replacements.
+- [Premium redesign mockups](redesign-mockups.md) — 7 canvas screens in redesign/ folder; canvas shapes ephemeral, topic file has full restoration script for new sessions.
