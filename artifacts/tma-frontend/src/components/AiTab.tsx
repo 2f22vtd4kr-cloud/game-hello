@@ -8,7 +8,6 @@ import type { AiMessage, TabId, TicketSuggestion } from "@/types";
 import {
   Zap,
   Send,
-  Shield,
   ChevronRight,
   TrendingUp,
   X,
@@ -456,18 +455,6 @@ export function AiTab({ onNavigate }: Props) {
           </div>
         </div>
 
-        {/* VPN Status Pill */}
-        <div
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-medium"
-          style={{
-            backgroundColor: showVpn ? "rgba(255,107,107,0.15)" : C.activeBg,
-            color: showVpn ? C.red : "#fff",
-            border: `1px solid ${showVpn ? "rgba(255,107,107,0.35)" : C.borderActive}`,
-          }}
-        >
-          <Shield size={12} />
-          <span>VPN {showVpn ? "нужен" : "вкл"}</span>
-        </div>
       </header>
 
       {/* Chat Area */}
