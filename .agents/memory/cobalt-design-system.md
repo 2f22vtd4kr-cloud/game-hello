@@ -134,8 +134,10 @@ export type TabId = "map" | "analytics" | "catalog" | "ai" | "games" | "news";
 - Thinking dots: coral-orange
 - VPN pill: white active-state chrome
 
-### 🔴 Still needs cobalt treatment
-- **GamesTab** — fully old palette
+### ✅ GamesTab / GamesPage — graduated to cobalt (prior session)
+- Cobalt gradient bg + 60-star deterministic starfield (`gt` keyframe)
+- White active-state sub-tab switcher (empire / minigames / xp)
+- All old violet/magenta palette removed
 
 ### Pattern to apply to each tab
 

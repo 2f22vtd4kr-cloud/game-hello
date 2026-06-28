@@ -20,8 +20,8 @@ The old "cyberpunk" palette (#050507 bg, #a855f7 violet, #db2777 magenta) was **
 - `#a855f7` violet — only allowed on map cluster markers; never in buttons/badges/borders/separators
 - `linear-gradient(135deg, #a855f7, #db2777)` CTA gradient — gone
 
-**Tabs graduated to cobalt:** MapTab ✅, VaultTab ✅, BottomNav ✅, MarketTicker ✅, IntroSplash ✅, AnalyticsTab ✅, CatalogTab ✅
-**Still old palette:** GamesTab 🔴, AiTab 🔴
+**Tabs graduated to cobalt:** MapTab ✅, VaultTab ✅, BottomNav ✅, MarketTicker ✅, IntroSplash ✅, AnalyticsTab ✅, CatalogTab ✅, GamesTab ✅, AiTab ✅
+**All tabs on Cobalt Starfield — none remaining.**
 
 ## Run & Operate
 
