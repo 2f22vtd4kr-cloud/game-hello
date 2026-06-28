@@ -955,7 +955,7 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
           <div style={{ padding: "0 1rem 0.5rem" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "0 0 0.5rem" }}>
               <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#22c55e", boxShadow: "0 0 8px #22c55e", animation: "tmaPulse 2s infinite", flexShrink: 0 }} />
-              <p style={{ color: "#22c55e", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.08em", margin: 0, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>
+              <p style={{ color: "#E8622A", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.2em", margin: 0, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>
                 Активные ваучеры · {singleVouchers.length}
               </p>
             </div>
@@ -999,7 +999,7 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
             </button>
           </div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.5rem" }}>
-            <p style={{ color: "rgba(255,255,255,0.45)", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.08em", margin: 0, fontFamily: "'JetBrains Mono',monospace" }}>
+            <p style={{ color: "rgba(255,255,255,0.45)", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.2em", margin: 0, fontFamily: "'JetBrains Mono',monospace" }}>
               История · {history.length}
             </p>
             <div style={{ display: "flex", gap: "0.25rem" }}>
@@ -1040,7 +1040,7 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
             <div>
               <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "rgba(255,255,255,0.45)", fontSize: "0.46rem", letterSpacing: "0.14em", marginBottom: "0.1rem" }}>МОНИТОРИНГ АЗС · АКТИВНЫЕ</div>
-              <p style={{ margin: 0, color: "#a855f7", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>
+              <p style={{ margin: 0, color: "#E8622A", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.2em", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>
                 🔔 Подписки · {subscriptions.length} АЗС
               </p>
             </div>
@@ -1137,7 +1137,7 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
             <div>
               <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "rgba(255,255,255,0.45)", fontSize: "0.46rem", letterSpacing: "0.14em", marginBottom: "0.1rem" }}>МОИ ЗАМЕТКИ · АЗС</div>
-              <p style={{ margin: 0, color: "#db2777", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>
+              <p style={{ margin: 0, color: "#E8622A", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.2em", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>
                 📝 Заметки · {stationNotes.length} АЗС
               </p>
             </div>
@@ -1204,7 +1204,7 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
       {favoriteStations.length > 0 && (
         <div style={{ padding: "0 1rem 0.75rem" }}>
           <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "rgba(255,255,255,0.45)", fontSize: "0.43rem", letterSpacing: "0.14em", marginBottom: "0.1rem" }}>ИЗБРАННЫЕ АЗС · БЫСТРЫЙ ДОСТУП</div>
-          <p style={{ color: "#f59e0b", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 0.5rem", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>
+          <p style={{ color: "#E8622A", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.2em", margin: "0 0 0.5rem", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>
             ⭐ Избранные АЗС · {favoriteStations.length}
           </p>
           <div style={{ display: "flex", gap: "0.4rem", overflowX: "auto", paddingBottom: "0.25rem" }}>
@@ -1262,7 +1262,7 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
       {favoriteRegions.length > 0 && (
         <div style={{ padding: "0 1rem 0.75rem" }}>
           <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "rgba(255,255,255,0.45)", fontSize: "0.43rem", letterSpacing: "0.14em", marginBottom: "0.1rem" }}>ИЗБРАННЫЕ РЕГИОНЫ · МОНИТОРИНГ</div>
-          <p style={{ color: "#eab308", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 0.5rem", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>
+          <p style={{ color: "#E8622A", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.2em", margin: "0 0 0.5rem", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>
             ⭐ Мониторинг · {favoriteRegions.length} регионов
           </p>
           {favoriteRegions.map((region) => (
@@ -1344,7 +1344,7 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
             <div>
               <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "rgba(255,255,255,0.45)", fontSize: "0.43rem", letterSpacing: "0.14em", marginBottom: "0.1rem" }}>ДОСТИЖЕНИЯ СИСТЕМЫ · РАЗБЛОКИРОВАНО</div>
-              <p style={{ margin: 0, color: "#f59e0b", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>
+              <p style={{ margin: 0, color: "#E8622A", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.2em", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>
                 🏆 Достижения · {achievements.filter(a => a.unlocked).length}/{achievements.length}
               </p>
             </div>
@@ -1451,7 +1451,7 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.45rem" }}>
             <div>
               <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "rgba(255,255,255,0.45)", fontSize: "0.43rem", letterSpacing: "0.14em", marginBottom: "0.1rem" }}>НЕЙРОКРЕДИТЫ · ТРАНЗАКЦИИ</div>
-              <p style={{ margin: 0, color: "#db2777", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>
+              <p style={{ margin: 0, color: "#E8622A", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.2em", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>
                 ⬡ НейроКредиты · история
               </p>
             </div>

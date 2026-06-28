@@ -66,7 +66,7 @@ const CSS = `
 .ct-section { margin-top:20px; }
 .ct-revealed { animation:ctReveal 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards; }
 @keyframes ctReveal { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
-.ct-section-title { font-size:17px; font-weight:700; color:#e2e8f0; margin:0 0 12px; letter-spacing:-0.3px; }
+.ct-section-title { font-size:17px; font-weight:800; color:#E8622A; margin:0 0 12px; letter-spacing:0.18em; text-transform:uppercase; }
 .ct-row { display:flex; align-items:baseline; justify-content:space-between; margin-bottom:12px; }
 .ct-row .ct-section-title { margin:0; }
 .ct-hint { font-size:12px; font-weight:600; opacity:0.85; }

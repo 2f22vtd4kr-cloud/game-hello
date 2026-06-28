@@ -125,7 +125,7 @@ function PriceMatrix({ regions }: { regions: Record<string, RegionalSupply> }) {
       <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid #1e1e2a", borderRadius: "14px", overflow: "hidden", boxShadow: "0 4px 24px #00000040" }}>
         {/* Header row */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr repeat(3, 68px)", background: "rgba(0,0,0,0.3)", borderBottom: "1px solid rgba(168,85,247,0.1)" }}>
-          <div style={{ padding: "0.45rem 0.7rem", color: "rgba(255,255,255,0.45)", fontSize: "0.58rem", textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono',monospace" }}>
+          <div style={{ padding: "0.45rem 0.7rem", color: "#E8622A", fontSize: "0.58rem", textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono',monospace" }}>
             регион
           </div>
           {FUELS.map((f, i) => (
@@ -460,7 +460,7 @@ function MarketAnalysis({ regions, data }: { regions: Record<string, RegionalSup
 
         {/* Header */}
         <div style={{ marginBottom: "0.75rem" }}>
-          <p style={{ margin: 0, color: "#e2e8f0", fontSize: "0.88rem", fontWeight: 800 }}>📈 Анализ топливного рынка</p>
+          <p style={{ margin: 0, color: "#E8622A", fontSize: "0.88rem", fontWeight: 800, letterSpacing: "0.18em", textTransform: "uppercase" }}>📈 Анализ топливного рынка</p>
         </div>
 
         {/* Health + Pressure row */}
@@ -967,7 +967,7 @@ function AIPricePredictions() {
         <div style={{ position: "absolute", inset: 0, pointerEvents: "none", opacity: 0.02, background: "repeating-linear-gradient(0deg,transparent,transparent 3px,#3b82f6 3px,#3b82f6 4px)" }} />
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.7rem" }}>
           <div>
-            <p style={{ margin: 0, color: "#e2e8f0", fontSize: "0.88rem", fontWeight: 800 }}>🤖 AI Прогноз цен</p>
+            <p style={{ margin: 0, color: "#E8622A", fontSize: "0.88rem", fontWeight: 800, letterSpacing: "0.18em", textTransform: "uppercase" }}>🤖 AI Прогноз цен</p>
           </div>
           <button
             onClick={generate}
@@ -998,7 +998,7 @@ function AIPricePredictions() {
                 >
                   <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: `linear-gradient(90deg, ${color}55, ${color})` }} />
                   <p style={{ margin: "0 0 0.1rem", color, fontSize: "0.52rem", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>{fuel}</p>
-                  <p style={{ margin: "0 0 0.12rem", color: "#e2e8f0", fontWeight: 800, fontSize: "0.88rem", lineHeight: 1, fontFamily: "'JetBrains Mono',monospace" }}>{p.curr}₽</p>
+                  <p style={{ margin: "0 0 0.12rem", color: "#E8622A", fontWeight: 800, letterSpacing: "0.18em", textTransform: "uppercase", fontSize: "0.88rem", lineHeight: 1, fontFamily: "'JetBrains Mono',monospace" }}>{p.curr}₽</p>
                   <div style={{ display: "flex", alignItems: "center", gap: "3px", marginBottom: "0.06rem" }}>
                     <span style={{ color: p.up ? "#00E676" : "#FF1744", fontSize: "0.72rem", fontWeight: 700, textShadow: p.up ? "0 0 6px #22c55e66" : "0 0 6px #ef444466" }}>
                       {p.up ? "↑" : "↓"}{p.p24h}₽
@@ -1234,7 +1234,7 @@ export function AnalyticsTab({ onNavigate }: Props) {
             <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: `linear-gradient(90deg, ${overallColor}66, ${overallColor})` }} />
             {/* Radial glow orb */}
             <div style={{ position: "absolute", bottom: "-20px", right: "-20px", width: "80px", height: "80px", borderRadius: "50%", background: `radial-gradient(circle,${overallColor}20,transparent 70%)`, pointerEvents: "none" }} />
-            <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.6rem", margin: "0 0 0.3rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>Индекс наличия</p>
+            <p style={{ color: "#E8622A", fontSize: "0.6rem", margin: "0 0 0.3rem", textTransform: "uppercase", letterSpacing: "0.2em" }}>Индекс наличия</p>
             <AnimatedCounter value={data?.availability_index ?? 0} suffix="%" color={overallColor} size="2.2rem" />
             <p style={{ margin: "0.35rem 0 0", color: criticalCount > 0 ? "#ef444488" : "#22c55e88", fontSize: "0.6rem", fontWeight: criticalCount > 0 ? 600 : 400 }}>
               {criticalCount > 0 ? `⚠ ${criticalCount} крит. регионов` : "✓ Стабильно"}
@@ -1249,7 +1249,7 @@ export function AnalyticsTab({ onNavigate }: Props) {
             style={{ background: "rgba(255,255,255,0.05)", border: "1px solid #22222f", borderRadius: "14px", padding: "0.9rem 1rem", position: "relative", overflow: "hidden" }}
           >
             <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: "linear-gradient(90deg,#22c55e33,#eab30833,#ef444433)" }} />
-            <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.6rem", margin: "0 0 0.55rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>Статус АЗС</p>
+            <p style={{ color: "#E8622A", fontSize: "0.6rem", margin: "0 0 0.55rem", textTransform: "uppercase", letterSpacing: "0.2em" }}>Статус АЗС</p>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.3rem" }}>
               {([
                 { count: sc.green,  color: "#00E676", label: "норма" },
@@ -1331,7 +1331,7 @@ export function AnalyticsTab({ onNavigate }: Props) {
       {/* Live system stats — command center */}
       {sysStats && (
         <div style={{ padding: "0 1rem 0.75rem" }}>
-          <p style={{ color: "rgba(255,255,255,0.45)", fontSize: "0.58rem", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 0.5rem", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+          <p style={{ color: "#E8622A", fontSize: "0.58rem", textTransform: "uppercase", letterSpacing: "0.2em", margin: "0 0 0.5rem", display: "flex", alignItems: "center", gap: "0.4rem" }}>
             <span style={{ display: "inline-block", width: "5px", height: "5px", borderRadius: "50%", background: "#00E676", boxShadow: "0 0 6px #22c55e", animation: "tmaPulse 2s infinite" }} />
             Состояние системы · live
           </p>
