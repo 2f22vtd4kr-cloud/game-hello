@@ -32,7 +32,7 @@ const TYPE_CONFIG: Record<Toast["type"], { color: string; bg: string; icon: stri
   success: { color: "#22c55e", bg: "linear-gradient(135deg,#071a0f,#0a1a0f)", icon: "✓", label: "ОК" },
   error:   { color: "#ef4444", bg: "linear-gradient(135deg,#1a0708,#150505)", icon: "✕", label: "ОШИБКА" },
   warning: { color: "#eab308", bg: "linear-gradient(135deg,#1a1507,#14120a)", icon: "⚠", label: "ВНИМАНИЕ" },
-  info:    { color: "#a855f7", bg: "linear-gradient(135deg,#110d1a,#0f0d18)", icon: "ℹ", label: "ИНФО" },
+  info:    { color: "#38bdf8", bg: "linear-gradient(135deg,#110d1a,#0f0d18)", icon: "ℹ", label: "ИНФО" },
 };
 
 function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: () => void }) {

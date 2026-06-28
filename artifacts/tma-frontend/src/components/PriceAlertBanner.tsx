@@ -145,7 +145,7 @@ export function PriceAlertBanner({
               whileTap={{ scale: 0.93 }}
               onClick={handleBuy}
               style={{
-                background: "linear-gradient(135deg,#a855f7,#db2777)",
+                background: "linear-gradient(135deg,#E8622A,#E8622A)",
                 border: "none",
                 borderRadius: "8px",
                 color: "#fff",
@@ -154,7 +154,7 @@ export function PriceAlertBanner({
                 padding: "0.3rem 0.55rem",
                 cursor: "pointer",
                 flexShrink: 0,
-                boxShadow: "0 0 10px #a855f750",
+                boxShadow: "0 0 10px #E8622A50",
                 whiteSpace: "nowrap",
               }}
             >

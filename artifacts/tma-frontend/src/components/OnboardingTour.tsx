@@ -12,8 +12,8 @@ const STEPS = [
     title: "Покупайте топливо",
     desc: "Главная функция приложения — покупка топливных талонов. Выберите АЗС, тип топлива и объём. Оплата через Telegram Stars ⭐ или криптовалюту.",
     cta: "Дальше →",
-    color: "#a855f7",
-    bg: "radial-gradient(ellipse at 50% 0%, rgba(168,85,247,0.18) 0%, transparent 70%)",
+    color: "#E8622A",
+    bg: "radial-gradient(ellipse at 50% 0%, rgba(232,98,42,0.18) 0%, transparent 70%)",
   },
   {
     emoji: "🗺️",
@@ -48,8 +48,8 @@ const STEPS = [
     title: "Зарабатывайте XP",
     desc: "Каждый день — бонусные карточки и тап-игра. Копите XP, повышайте уровень и открывайте привилегии. Легенда Тавриды ждёт!",
     cta: "Начать работу ⚡",
-    color: "#db2777",
-    bg: "radial-gradient(ellipse at 50% 0%, rgba(219,39,119,0.18) 0%, transparent 70%)",
+    color: "#E8622A",
+    bg: "radial-gradient(ellipse at 50% 0%, rgba(232,98,42,0.18) 0%, transparent 70%)",
   },
 ];
 
@@ -102,7 +102,7 @@ export function OnboardingTour({ onDone }: Props) {
           {/* Scanline */}
           <div style={{
             position: "absolute", inset: 0, pointerEvents: "none",
-            background: "repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(168,85,247,0.012) 2px,rgba(168,85,247,0.012) 4px)",
+            background: "repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(232,98,42,0.012) 2px,rgba(232,98,42,0.012) 4px)",
           }} />
 
           {/* Skip */}
@@ -213,7 +213,7 @@ export function OnboardingTour({ onDone }: Props) {
                 style={{
                   width: "100%",
                   padding: "0.9rem",
-                  background: `linear-gradient(135deg, ${current.color}, #db2777)`,
+                  background: `linear-gradient(135deg, ${current.color}, #E8622A)`,
                   color: "#fff",
                   border: "none",
                   borderRadius: "14px",
@@ -234,7 +234,7 @@ export function OnboardingTour({ onDone }: Props) {
             position: "absolute",
             bottom: 0, left: 0, right: 0,
             background: "rgba(6,6,10,0.98)",
-            borderTop: "1px solid rgba(168,85,247,0.12)",
+            borderTop: "1px solid rgba(232,98,42,0.12)",
             display: "flex",
             paddingBottom: "env(safe-area-inset-bottom, 0px)",
           }}>
@@ -265,7 +265,7 @@ export function OnboardingTour({ onDone }: Props) {
                         top: 0, left: "15%", right: "15%",
                         height: "2px",
                         borderRadius: "0 0 2px 2px",
-                        background: `linear-gradient(90deg, ${current.color}, #db2777)`,
+                        background: `linear-gradient(90deg, ${current.color}, #E8622A)`,
                         boxShadow: `0 0 10px ${current.color}88`,
                       }}
                     />

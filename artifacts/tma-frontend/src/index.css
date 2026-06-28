@@ -28,16 +28,16 @@
   --border-bright:      rgba(168, 85, 247, 0.35);
 
   /* Accent palette */
-  --accent-primary:   #a78bfa;
-  --accent-secondary: #f472b6;
+  --accent-primary:   #E8622A;
+  --accent-secondary: #E8622A;
   --accent-danger:    #fb7185;
   --accent-success:   #34d399;
   --accent-fuel:      #fbbf24;
 
   /* Brand accents (legacy names kept) */
-  --violet:        #a78bfa;
+  --violet:        #E8622A;
   --violet-dim:    rgba(167, 139, 250, 0.15);
-  --magenta:       #f472b6;
+  --magenta:       #E8622A;
   --cyan:          #06b6d4;
   --cyan-dim:      rgba(6, 182, 212, 0.15);
 
@@ -68,7 +68,7 @@
 
   /* Shadows & Glows */
   --shadow-glass:   0 8px 32px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.12);
-  --glow-primary:   0 0 24px rgba(167,139,250,0.35);
+  --glow-primary:   0 0 24px rgba(232,98,42,0.35);
   --glow-fuel:      0 0 20px rgba(251,191,36,0.30);
   --glow-violet:    0 0 20px rgba(167, 139, 250, 0.4);
   --glow-cyan:      0 0 20px rgba(6, 182, 212, 0.4);
@@ -110,7 +110,7 @@ html, body {
   height: 100%;
   background:
     radial-gradient(ellipse at 20% 50%, rgba(88,28,135,0.18) 0%, transparent 60%),
-    radial-gradient(ellipse at 80% 20%, rgba(219,39,119,0.12) 0%, transparent 55%),
+    radial-gradient(ellipse at 80% 20%, rgba(232,98,42,0.12) 0%, transparent 55%),
     var(--bg-base);
   color: var(--text);
   font-family: var(--font-sans);
@@ -397,14 +397,14 @@ input::placeholder { color: var(--text-dim); }
 
 /* ── Glow pulse for active elements ─────────────────────────────── */
 @keyframes glowPulse {
-  0%, 100% { box-shadow: 0 0 8px rgba(168,85,247,0.4); }
-  50%       { box-shadow: 0 0 24px rgba(168,85,247,0.8), 0 0 40px rgba(219,39,119,0.3); }
+  0%, 100% { box-shadow: 0 0 8px rgba(232,98,42,0.4); }
+  50%       { box-shadow: 0 0 24px rgba(232,98,42,0.8), 0 0 40px rgba(232,98,42,0.3); }
 }
 
 /* ── Neon text flicker ───────────────────────────────────────────── */
 @keyframes neonFlicker {
   0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { 
-    text-shadow: 0 0 8px #a855f7, 0 0 16px #a855f7, 0 0 32px #db2777; 
+    text-shadow: 0 0 8px #E8622A, 0 0 16px #E8622A, 0 0 32px #E8622A; 
   }
   20%, 24%, 55% { text-shadow: none; }
 }
@@ -447,8 +447,8 @@ input::placeholder { color: var(--text-dim); }
 
 /* ── neonBorder — animated gradient border ───────────────────────── */
 @keyframes neonBorder {
-  0%, 100% { border-color: #a855f7; }
-  50%       { border-color: #db2777; }
+  0%, 100% { border-color: #E8622A; }
+  50%       { border-color: #E8622A; }
 }
 
 /* Utility */

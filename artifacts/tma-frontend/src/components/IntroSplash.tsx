@@ -104,7 +104,7 @@ export function IntroSplash({ onDone }: Props) {
                 userSelect: "none",
                 textShadow: col.bg === "#22D3EE"
                   ? "none"
-                  : "0 0 40px rgba(168,85,247,0.3)",
+                  : "0 0 40px rgba(232,98,42,0.3)",
               }}>
                 {col.text}
               </div>

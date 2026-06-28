@@ -37,10 +37,10 @@ function drawGroundTile(
   ctx.fill();
   if (hover) {
     drawDiamond(ctx, cx, cy, tW, tH);
-    ctx.fillStyle = "rgba(168,85,247,0.15)";
+    ctx.fillStyle = "rgba(232,98,42,0.15)";
     ctx.fill();
   }
-  ctx.strokeStyle = highlight ? "rgba(168,85,247,0.8)" : "rgba(255,255,255,0.07)";
+  ctx.strokeStyle = highlight ? "rgba(232,98,42,0.8)" : "rgba(255,255,255,0.07)";
   ctx.lineWidth = highlight ? 1.5 : 0.5;
   ctx.stroke();
 }

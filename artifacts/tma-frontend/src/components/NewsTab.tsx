@@ -122,7 +122,7 @@ function NewsCard({ item, onNavigate }: { item: NewsItem; onNavigate?: (tab: Tab
             style={{
               background: "none", border: "none", cursor: "pointer",
               display: "flex", alignItems: "center", gap: "3px",
-              color: "#a78bfa", fontSize: "0.7rem", padding: "2px 0", fontWeight: 500,
+              color: "#E8622A", fontSize: "0.7rem", padding: "2px 0", fontWeight: 500,
             }}
           >
             {expanded ? <><ChevronUp size={12} /> Свернуть</> : <><ChevronDown size={12} /> Читать далее</>}
@@ -141,9 +141,9 @@ function NewsCard({ item, onNavigate }: { item: NewsItem; onNavigate?: (tab: Tab
             style={{
               flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "5px",
               padding: "8px", borderRadius: "10px", border: "none", cursor: "pointer",
-              background: "linear-gradient(135deg, #7c3aed, #a855f7)",
+              background: "linear-gradient(135deg, #7c3aed, #E8622A)",
               color: "#fff", fontSize: "0.72rem", fontWeight: 600,
-              boxShadow: "0 0 12px rgba(168,85,247,0.3)",
+              boxShadow: "0 0 12px rgba(232,98,42,0.3)",
             }}
           >
             <Ticket size={12} />
@@ -303,8 +303,8 @@ export function NewsTab({ onNavigate }: Props) {
           <button
             onClick={() => setSortBy(s => s === "time" ? "severity" : "time")}
             style={{
-              background: "rgba(167,139,250,0.08)", border: "1px solid rgba(167,139,250,0.2)",
-              borderRadius: "10px", color: sortBy === "severity" ? "#a78bfa" : "rgba(255,255,255,0.45)",
+              background: "rgba(232,98,42,0.08)", border: "1px solid rgba(232,98,42,0.2)",
+              borderRadius: "10px", color: sortBy === "severity" ? "#E8622A" : "rgba(255,255,255,0.45)",
               fontSize: "0.6rem", padding: "0.28rem 0.6rem", cursor: "pointer", whiteSpace: "nowrap", fontWeight: 600,
             }}
           >{sortBy === "time" ? "⏱ Время" : "🔴 Важность"}</button>
@@ -330,7 +330,7 @@ export function NewsTab({ onNavigate }: Props) {
               borderRadius: "10px", cursor: "pointer", padding: 0,
             }}
           >
-            <RefreshCw size={14} style={{ animation: loading ? "spin 1s linear infinite" : "none", color: "#a78bfa" }} />
+            <RefreshCw size={14} style={{ animation: loading ? "spin 1s linear infinite" : "none", color: "#E8622A" }} />
           </button>
         </div>
       </div>
@@ -390,8 +390,8 @@ export function NewsTab({ onNavigate }: Props) {
                   onClick={() => setRegionFilter(key || null)}
                   style={{
                     flexShrink: 0,
-                    background: active ? "linear-gradient(135deg,#7c3aed,#a855f7)" : "rgba(255,255,255,0.04)",
-                    border: active ? "1px solid #a78bfa" : "1px solid rgba(255,255,255,0.08)",
+                    background: active ? "linear-gradient(135deg,#7c3aed,#E8622A)" : "rgba(255,255,255,0.04)",
+                    border: active ? "1px solid #E8622A" : "1px solid rgba(255,255,255,0.08)",
                     borderRadius: "20px",
                     padding: "0.24rem 0.7rem",
                     cursor: "pointer",
@@ -403,10 +403,10 @@ export function NewsTab({ onNavigate }: Props) {
                   <span style={{ color: active ? "#fff" : "rgba(255,255,255,0.5)", fontSize: "0.64rem", fontWeight: active ? 700 : 400 }}>{label}</span>
                   {count > 0 && (
                     <span style={{
-                      background: active ? "rgba(255,255,255,0.2)" : "rgba(167,139,250,0.12)",
+                      background: active ? "rgba(255,255,255,0.2)" : "rgba(232,98,42,0.12)",
                       borderRadius: "9px", padding: "0 4px",
                       fontSize: "0.52rem", fontWeight: 700,
-                      color: active ? "#fff" : "#a78bfa",
+                      color: active ? "#fff" : "#E8622A",
                       minWidth: "14px", textAlign: "center",
                     }}>{count}</span>
                   )}
@@ -424,9 +424,9 @@ export function NewsTab({ onNavigate }: Props) {
             onClick={() => setSeverityFilter(null)}
             style={{
               flexShrink: 0, padding: "4px 12px",
-              background: !severityFilter ? "rgba(167,139,250,0.15)" : "rgba(255,255,255,0.04)",
-              border: `1px solid ${!severityFilter ? "rgba(167,139,250,0.5)" : "rgba(255,255,255,0.08)"}`,
-              borderRadius: "999px", color: !severityFilter ? "#a78bfa" : "rgba(255,255,255,0.4)",
+              background: !severityFilter ? "rgba(232,98,42,0.15)" : "rgba(255,255,255,0.04)",
+              border: `1px solid ${!severityFilter ? "rgba(232,98,42,0.5)" : "rgba(255,255,255,0.08)"}`,
+              borderRadius: "999px", color: !severityFilter ? "#E8622A" : "rgba(255,255,255,0.4)",
               fontSize: "0.64rem", cursor: "pointer", fontWeight: 600,
             }}
           >Все · {news.length}</button>
@@ -460,7 +460,7 @@ export function NewsTab({ onNavigate }: Props) {
                     flexShrink: 0, padding: "4px 10px",
                     background: regionFilter === r ? "rgba(244,114,182,0.12)" : "rgba(255,255,255,0.03)",
                     border: `1px solid ${regionFilter === r ? "rgba(244,114,182,0.4)" : "rgba(255,255,255,0.07)"}`,
-                    borderRadius: "999px", color: regionFilter === r ? "#f472b6" : "rgba(255,255,255,0.35)",
+                    borderRadius: "999px", color: regionFilter === r ? "#E8622A" : "rgba(255,255,255,0.35)",
                     fontSize: "0.6rem", cursor: "pointer", fontWeight: 600,
                   }}
                 >{r}</button>

@@ -82,7 +82,7 @@ export function AdminPanel({ onClose }: Props) {
         backdropFilter: "blur(8px)",
       }}
     >
-      <div style={{ position: "absolute", inset: 0, pointerEvents: "none", background: "repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(168,85,247,0.015) 2px,rgba(168,85,247,0.015) 4px)" }} />
+      <div style={{ position: "absolute", inset: 0, pointerEvents: "none", background: "repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(232,98,42,0.015) 2px,rgba(232,98,42,0.015) 4px)" }} />
 
       <motion.div
         initial={{ y: "100%" }}
@@ -98,16 +98,16 @@ export function AdminPanel({ onClose }: Props) {
           width: "100%",
           maxHeight: "92dvh",
           background: "linear-gradient(180deg, #0d0d18 0%, #080810 100%)",
-          borderTop: "1px solid #a855f755",
+          borderTop: "1px solid #E8622A55",
           borderRadius: "24px 24px 0 0",
           overflow: "hidden",
           display: "flex",
           flexDirection: "column",
-          boxShadow: "0 -8px 60px rgba(168,85,247,0.15)",
+          boxShadow: "0 -8px 60px rgba(232,98,42,0.15)",
           touchAction: "none",
         }}
       >
-        <div style={{ height: "2px", background: "linear-gradient(90deg, transparent, #a855f7, #db2777, transparent)", flexShrink: 0 }} />
+        <div style={{ height: "2px", background: "linear-gradient(90deg, transparent, #E8622A, #E8622A, transparent)", flexShrink: 0 }} />
         <div style={{ display: "flex", justifyContent: "center", paddingTop: "10px", paddingBottom: "2px" }}>
           <div style={{ width: "40px", height: "4px", borderRadius: "99px", background: "rgba(255,255,255,0.12)" }} />
         </div>
@@ -120,7 +120,7 @@ export function AdminPanel({ onClose }: Props) {
           flexShrink: 0,
         }}>
           <div>
-            <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#a855f7", fontSize: "0.52rem", letterSpacing: "0.2em", marginBottom: "0.2rem" }}>
+            <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#E8622A", fontSize: "0.52rem", letterSpacing: "0.2em", marginBottom: "0.2rem" }}>
               ADMIN · СИСТЕМА УПРАВЛЕНИЯ
             </div>
             <h2 style={{ color: "#e2e8f0", fontSize: "1rem", fontWeight: 800, margin: 0 }}>
@@ -153,8 +153,8 @@ export function AdminPanel({ onClose }: Props) {
                 flex: 1,
                 padding: "0.6rem 0.25rem",
                 background: "none", border: "none",
-                borderBottom: activeSection === s.id ? "2px solid #a855f7" : "2px solid transparent",
-                color: activeSection === s.id ? "#a855f7" : "#4b5563",
+                borderBottom: activeSection === s.id ? "2px solid #E8622A" : "2px solid transparent",
+                color: activeSection === s.id ? "#E8622A" : "#4b5563",
                 fontSize: "0.58rem",
                 fontWeight: 600,
                 cursor: "pointer",
@@ -185,7 +185,7 @@ export function AdminPanel({ onClose }: Props) {
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
                       {[
                         { label: "Станций", value: stats.stations_total, color: "#22c55e", icon: "⛽" },
-                        { label: "Пользователей", value: stats.users_total, color: "#a855f7", icon: "👥" },
+                        { label: "Пользователей", value: stats.users_total, color: "#E8622A", icon: "👥" },
                         { label: "Покупок", value: stats.vouchers_total, color: "#06b6d4", icon: "🎫" },
                         { label: "Репортов (24ч)", value: stats.reports_24h, color: "#eab308", icon: "📝" },
                       ].map((m) => (
@@ -258,10 +258,10 @@ export function AdminPanel({ onClose }: Props) {
                     <button
                       onClick={() => triggerJob(job.id, job.label)}
                       style={{
-                        background: "linear-gradient(135deg,rgba(168,85,247,0.15),rgba(219,39,119,0.15))",
-                        border: "1px solid #a855f740",
+                        background: "linear-gradient(135deg,rgba(232,98,42,0.15),rgba(232,98,42,0.15))",
+                        border: "1px solid #E8622A40",
                         borderRadius: "8px",
-                        color: "#a855f7",
+                        color: "#E8622A",
                         fontSize: "0.63rem",
                         fontWeight: 700,
                         padding: "0.35rem 0.65rem",

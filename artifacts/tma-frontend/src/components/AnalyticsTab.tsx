@@ -97,7 +97,7 @@ function CrisisBanner({ count, onNavigate }: { count: number; onNavigate?: (t: T
 function PriceMatrix({ regions }: { regions: Record<string, RegionalSupply> }) {
   const prices = usePriceStore((s) => s.prices);
   const FUELS = ["АИ-92", "АИ-95", "ДТ"];
-  const FUEL_COLORS = ["#a855f7", "#db2777", "#f59e0b"];
+  const FUEL_COLORS = ["#38bdf8", "#E8622A", "#f59e0b"];
 
   const crisisRegions = Object.entries(regions)
     .sort((a, b) => a[1].avg_pct - b[1].avg_pct)
@@ -124,7 +124,7 @@ function PriceMatrix({ regions }: { regions: Record<string, RegionalSupply> }) {
 
       <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid #1e1e2a", borderRadius: "14px", overflow: "hidden", boxShadow: "0 4px 24px #00000040" }}>
         {/* Header row */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr repeat(3, 68px)", background: "rgba(0,0,0,0.3)", borderBottom: "1px solid rgba(168,85,247,0.1)" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr repeat(3, 68px)", background: "rgba(0,0,0,0.3)", borderBottom: "1px solid rgba(232,98,42,0.1)" }}>
           <div style={{ padding: "0.45rem 0.7rem", color: "#E8622A", fontSize: "0.58rem", textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono',monospace" }}>
             регион
           </div>
@@ -251,7 +251,7 @@ function RegionMonitor({ regions }: { regions: Record<string, RegionalSupply> })
   const zoneLabel: Record<string, string> = { critical: "Крит", standard: "Стандарт", eastern: "Восток" };
   return (
     <div style={{ background: "#0b0b0f", border: "1px solid #1e1e2a", borderRadius: "12px", padding: "0.75rem 1rem", display: "flex", alignItems: "center", gap: "0.75rem" }}>
-      <div style={{ width: "8px", height: "8px", borderRadius: "50%", flexShrink: 0, background: "#a855f7", boxShadow: "0 0 8px #a855f7", animation: "tmaPulse 1.5s infinite" }} />
+      <div style={{ width: "8px", height: "8px", borderRadius: "50%", flexShrink: 0, background: "#E8622A", boxShadow: "0 0 8px #E8622A", animation: "tmaPulse 1.5s infinite" }} />
       <div style={{ flex: 1, minWidth: 0, transition: "opacity 0.28s", opacity: vis ? 1 : 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
           <span style={{ color: "rgba(255,255,255,0.55)", fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.06em", flexShrink: 0 }}>СКАН</span>
@@ -266,7 +266,7 @@ function RegionMonitor({ regions }: { regions: Record<string, RegionalSupply> })
       </div>
       <div style={{ display: "flex", gap: "3px", flexShrink: 0 }}>
         {Array.from({ length: Math.min(entries.length, 8) }).map((_, i) => (
-          <div key={i} style={{ width: "5px", height: "5px", borderRadius: "50%", background: i === (idx % Math.min(entries.length, 8)) ? "#a855f7" : "#22222f", transition: "background 0.3s" }} />
+          <div key={i} style={{ width: "5px", height: "5px", borderRadius: "50%", background: i === (idx % Math.min(entries.length, 8)) ? "#E8622A" : "#22222f", transition: "background 0.3s" }} />
         ))}
       </div>
     </div>
@@ -288,15 +288,15 @@ function RegionCard({ region, data, isFav, onToggleFav }: { region: string; data
       whileTap={{ scale: 0.97 }}
       style={{
         background: isCritical ? "linear-gradient(135deg,#14080a,#1a0c0e)" : "linear-gradient(135deg,#0f0f18,#14141c)",
-        border: `1px solid ${isFav ? "#a855f740" : isCritical ? "#ef444430" : "#1e1e2a"}`,
+        border: `1px solid ${isFav ? "#E8622A40" : isCritical ? "#ef444430" : "#1e1e2a"}`,
         borderRadius: "14px",
         padding: "0.8rem",
         position: "relative",
         overflow: "hidden",
-        boxShadow: isCritical ? "0 0 20px #ef444418" : isFav ? "0 0 16px #a855f712" : "none",
+        boxShadow: isCritical ? "0 0 20px #ef444418" : isFav ? "0 0 16px #E8622A12" : "none",
       }}
     >
-      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: isCritical ? "linear-gradient(90deg,#ef4444,#dc2626)" : isFav ? "linear-gradient(90deg,#a855f7,#db2777)" : `linear-gradient(90deg,${color}88,${color})` }} />
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: isCritical ? "linear-gradient(90deg,#ef4444,#dc2626)" : isFav ? "linear-gradient(90deg,#E8622A,#E8622A)" : `linear-gradient(90deg,${color}88,${color})` }} />
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.3rem" }}>
         <p style={{ color: isCritical ? "#fca5a5" : "rgba(255,255,255,0.72)", fontSize: "0.63rem", margin: 0, flex: 1, lineHeight: 1.3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: isCritical ? 600 : 400 }}>
           {region.length > 20 ? region.slice(0, 20) + "…" : region}
@@ -330,7 +330,7 @@ function RegionCard({ region, data, isFav, onToggleFav }: { region: string; data
 // ── Period button ─────────────────────────────────────────────────
 function PBtn({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
   return (
-    <button onClick={onClick} style={{ background: active ? "linear-gradient(135deg,#a855f7,#db2777)" : "#14141c", border: active ? "none" : "1px solid #22222f", color: active ? "#fff" : "rgba(255,255,255,0.65)", borderRadius: "8px", padding: "0.3rem 0.7rem", fontSize: "0.72rem", fontWeight: active ? 700 : 400, cursor: "pointer", transition: "all 0.2s" }}>
+    <button onClick={onClick} style={{ background: active ? "linear-gradient(135deg,#E8622A,#E8622A)" : "#14141c", border: active ? "none" : "1px solid #22222f", color: active ? "#fff" : "rgba(255,255,255,0.65)", borderRadius: "8px", padding: "0.3rem 0.7rem", fontSize: "0.72rem", fontWeight: active ? 700 : 400, cursor: "pointer", transition: "all 0.2s" }}>
       {label}
     </button>
   );
@@ -449,14 +449,14 @@ function MarketAnalysis({ regions, data }: { regions: Record<string, RegionalSup
     <div style={{ padding: "0 1rem 1rem" }}>
       <div style={{
         background: "rgba(255,255,255,0.05)",
-        border: "1px solid #a855f722",
+        border: "1px solid #E8622A22",
         borderRadius: "16px",
         padding: "0.9rem",
         position: "relative",
         overflow: "hidden",
       }}>
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: "linear-gradient(90deg,transparent,#a855f7,#db2777,transparent)" }} />
-        <div style={{ position: "absolute", inset: 0, pointerEvents: "none", opacity: 0.018, backgroundImage: "linear-gradient(#a855f7 1px, transparent 1px), linear-gradient(90deg, #a855f7 1px, transparent 1px)", backgroundSize: "20px 20px" }} />
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: "linear-gradient(90deg,transparent,#E8622A,#E8622A,transparent)" }} />
+        <div style={{ position: "absolute", inset: 0, pointerEvents: "none", opacity: 0.018, backgroundImage: "linear-gradient(#E8622A 1px, transparent 1px), linear-gradient(90deg, #E8622A 1px, transparent 1px)", backgroundSize: "20px 20px" }} />
 
         {/* Header */}
         <div style={{ marginBottom: "0.75rem" }}>
@@ -504,7 +504,7 @@ function MarketAnalysis({ regions, data }: { regions: Record<string, RegionalSup
           <div style={{ display: "flex", flexDirection: "column", gap: "0.3rem" }}>
             {fuelPressure.map(({ fuel, pressure: fp }) => {
               const fpColor = fp <= 0 ? "#00E676" : fp <= 8 ? "#FFD600" : "#FF1744";
-              const FUEL_COLORS: Record<string, string> = { "АИ-92": "#a855f7", "АИ-95": "#db2777", "ДТ": "#f59e0b", "Газ": "#00E676" };
+              const FUEL_COLORS: Record<string, string> = { "АИ-92": "#38bdf8", "АИ-95": "#E8622A", "ДТ": "#f59e0b", "Газ": "#00E676" };
               const fc = FUEL_COLORS[fuel] ?? "#6b7280";
               return (
                 <div key={fuel} style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
@@ -592,9 +592,9 @@ function RegionRanking({ regions }: { regions: Record<string, RegionalSupply> })
         <div style={{ display: "flex", gap: "0.3rem" }}>
           {(["pct", "name"] as const).map((k) => (
             <button key={k} onClick={() => setSortKey(k)} style={{
-              background: sortKey === k ? "rgba(168,85,247,0.15)" : "none",
-              border: `1px solid ${sortKey === k ? "#a855f7" : "#22222f"}`,
-              borderRadius: "5px", color: sortKey === k ? "#a855f7" : "rgba(255,255,255,0.55)",
+              background: sortKey === k ? "rgba(232,98,42,0.15)" : "none",
+              border: `1px solid ${sortKey === k ? "#E8622A" : "#22222f"}`,
+              borderRadius: "5px", color: sortKey === k ? "#E8622A" : "rgba(255,255,255,0.55)",
               fontSize: "0.58rem", padding: "0.1rem 0.35rem", cursor: "pointer",
             }}>{k === "pct" ? "Наличие" : "А→Я"}</button>
           ))}
@@ -683,7 +683,7 @@ function SupplyForecast({ regions }: { regions: Record<string, RegionalSupply> }
         overflow: "hidden",
         position: "relative",
       }}>
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: "linear-gradient(90deg,transparent,#a855f744,transparent)" }} />
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: "linear-gradient(90deg,transparent,#E8622A44,transparent)" }} />
 
         {/* Current state */}
         <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.75rem" }}>
@@ -740,7 +740,7 @@ function PriceHistoryChart() {
   const [loading, setLoading] = useState(false);
   const [empty, setEmpty] = useState(false);
 
-  const FUEL_COLORS: Record<string, string> = { "АИ-92": "#a855f7", "АИ-95": "#db2777", "ДТ": "#f59e0b" };
+  const FUEL_COLORS: Record<string, string> = { "АИ-92": "#38bdf8", "АИ-95": "#E8622A", "ДТ": "#f59e0b" };
   const FUELS = ["АИ-92", "АИ-95", "ДТ"];
 
   const load = useCallback(async (h: number) => {
@@ -761,7 +761,7 @@ function PriceHistoryChart() {
     max: Math.round(p.max * 10) / 10,
   }));
 
-  const color = FUEL_COLORS[activeFuel] ?? "#a855f7";
+  const color = FUEL_COLORS[activeFuel] ?? "#E8622A";
 
   return (
     <div style={{ padding: "0 1rem 0.75rem" }}>
@@ -790,7 +790,7 @@ function PriceHistoryChart() {
         ))}
         <div style={{ marginLeft: "auto", display: "flex", gap: "0.25rem" }}>
           {([12, 24, 48] as const).map((h) => (
-            <button key={h} onClick={() => setHours(h)} style={{ background: hours === h ? "#a855f720" : "#0b0b10", border: `1px solid ${hours === h ? "#a855f7" : "#1e1e2a"}`, borderRadius: "6px", color: hours === h ? "#a855f7" : "rgba(255,255,255,0.55)", padding: "0.22rem 0.45rem", fontSize: "0.62rem", cursor: "pointer" }}>{h}ч</button>
+            <button key={h} onClick={() => setHours(h)} style={{ background: hours === h ? "#E8622A20" : "#0b0b10", border: `1px solid ${hours === h ? "#E8622A" : "#1e1e2a"}`, borderRadius: "6px", color: hours === h ? "#E8622A" : "rgba(255,255,255,0.55)", padding: "0.22rem 0.45rem", fontSize: "0.62rem", cursor: "pointer" }}>{h}ч</button>
           ))}
         </div>
       </div>
@@ -841,8 +841,8 @@ function FuelPriceBreakdown() {
 
   const FUELS = ["АИ-92", "АИ-95", "ДТ"];
   const FUEL_COLORS: Record<string, string> = {
-    "АИ-92": "#a855f7",
-    "АИ-95": "#db2777",
+    "АИ-92": "#38bdf8",
+    "АИ-95": "#E8622A",
     "ДТ": "#f59e0b",
   };
 
@@ -945,7 +945,7 @@ function AIPricePredictions() {
     }
   }, [prices]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const FUEL_COLORS: Record<string, string> = { "АИ-92": "#a855f7", "АИ-95": "#db2777", "ДТ": "#f59e0b" };
+  const FUEL_COLORS: Record<string, string> = { "АИ-92": "#38bdf8", "АИ-95": "#E8622A", "ДТ": "#f59e0b" };
 
   return (
     <div style={{ padding: "0 1rem 0.75rem" }}>
@@ -958,7 +958,7 @@ function AIPricePredictions() {
         overflow: "hidden",
         boxShadow: "0 0 24px rgba(59,130,246,0.06)",
       }}>
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: "linear-gradient(90deg,transparent,#3b82f6,#a855f7,transparent)" }} />
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: "linear-gradient(90deg,transparent,#3b82f6,#E8622A,transparent)" }} />
         <div style={{ position: "absolute", inset: 0, pointerEvents: "none", opacity: 0.02, background: "repeating-linear-gradient(0deg,transparent,transparent 3px,#3b82f6 3px,#3b82f6 4px)" }} />
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.7rem" }}>
           <div>
@@ -1000,7 +1000,7 @@ function AIPricePredictions() {
                     </span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: "3px", marginBottom: "0.2rem" }}>
-                    <span style={{ color: up3d ? "#a855f766" : "#ef444466", fontSize: "0.52rem", fontFamily: "'JetBrains Mono',monospace" }}>
+                    <span style={{ color: up3d ? "#E8622A66" : "#ef444466", fontSize: "0.52rem", fontFamily: "'JetBrains Mono',monospace" }}>
                       3д:{up3d ? "↑" : "↓"}{p.p3d}₽
                     </span>
                   </div>
@@ -1131,17 +1131,17 @@ export function AnalyticsTab({ onNavigate }: Props) {
           <line x1="66%" y1="0" x2="66%" y2="100%" stroke="#818cf8" strokeWidth=".8"/>
         </svg>
         {/* Ambient blooms */}
-        <div style={{ position: "absolute", top: "-60px", left: "50%", transform: "translateX(-50%)", width: 320, height: 200, borderRadius: "50%", background: "radial-gradient(ellipse,rgba(168,85,247,0.2) 0%,transparent 70%)", filter: "blur(20px)" }} />
-        <div style={{ position: "absolute", bottom: "10%", right: "-40px", width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(ellipse,rgba(219,39,119,0.12) 0%,transparent 70%)", filter: "blur(24px)" }} />
+        <div style={{ position: "absolute", top: "-60px", left: "50%", transform: "translateX(-50%)", width: 320, height: 200, borderRadius: "50%", background: "radial-gradient(ellipse,rgba(232,98,42,0.2) 0%,transparent 70%)", filter: "blur(20px)" }} />
+        <div style={{ position: "absolute", bottom: "10%", right: "-40px", width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(ellipse,rgba(232,98,42,0.12) 0%,transparent 70%)", filter: "blur(24px)" }} />
       </div>
       <div style={{ position: "relative", zIndex: 1 }}>
 
       {/* Header — sticky cobalt glass */}
       <div style={{ padding: "0.75rem 1rem 0.6rem", position: "sticky", top: 0, zIndex: 10, background: "rgba(4,5,68,0.88)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(120,140,255,0.1)" }}>
-        <AmbientStrip color="#a855f7" style={{ bottom: 0, left: 0, right: 0 }} />
+        <AmbientStrip color="#E8622A" style={{ bottom: 0, left: 0, right: 0 }} />
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
-            <h2 style={{ margin: 0, fontSize: "1.25rem", fontWeight: 900, background: "linear-gradient(90deg,#fff 0%,#a855f7 60%,#db2777 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+            <h2 style={{ margin: 0, fontSize: "1.25rem", fontWeight: 900, background: "linear-gradient(90deg,#fff 0%,#E8622A 60%,#E8622A 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
               Аналитика
             </h2>
           </div>
@@ -1157,7 +1157,7 @@ export function AnalyticsTab({ onNavigate }: Props) {
               <button
                 onClick={async () => { setRefreshing(true); await Promise.all([loadAnalytics(), loadTrend()]).catch(() => {}); setRefreshing(false); }}
                 disabled={refreshing}
-                style={{ background: refreshing ? "rgba(14,14,40,0.4)" : "rgba(168,85,247,0.12)", border: `1px solid ${refreshing ? "rgba(34,34,60,0.6)" : "#a855f733"}`, borderRadius: "7px", color: refreshing ? "rgba(255,255,255,0.55)" : "#a855f7", fontSize: "0.6rem", padding: "0.2rem 0.5rem", cursor: refreshing ? "default" : "pointer", transition: "all 0.2s", fontWeight: 600 }}
+                style={{ background: refreshing ? "rgba(14,14,40,0.4)" : "rgba(232,98,42,0.12)", border: `1px solid ${refreshing ? "rgba(34,34,60,0.6)" : "#E8622A33"}`, borderRadius: "7px", color: refreshing ? "rgba(255,255,255,0.55)" : "#E8622A", fontSize: "0.6rem", padding: "0.2rem 0.5rem", cursor: refreshing ? "default" : "pointer", transition: "all 0.2s", fontWeight: 600 }}
               >
                 {refreshing ? "↻ …" : "↻"}
               </button>
@@ -1185,8 +1185,8 @@ export function AnalyticsTab({ onNavigate }: Props) {
           <div style={{ overflow: "hidden", borderTop: "1px solid #0c0c14", borderBottom: "1px solid #0c0c14", background: "#04040b", height: "26px", display: "flex", alignItems: "stretch", marginBottom: "0.65rem" }}>
             <style>{`@keyframes tmaTickerScroll { 0% { transform:translateX(0) } 100% { transform:translateX(-50%) } }`}</style>
             <div style={{ flexShrink: 0, padding: "0 8px", borderRight: "1px solid #13131c", display: "flex", alignItems: "center", gap: "4px" }}>
-              <div style={{ width: "5px", height: "5px", borderRadius: "50%", background: "#a855f7", boxShadow: "0 0 5px #a855f7", animation: "tmaPulse 2s infinite" }} />
-              <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.43rem", color: "#a855f7", fontWeight: 700, letterSpacing: "0.10em", whiteSpace: "nowrap" }}>LIVE</span>
+              <div style={{ width: "5px", height: "5px", borderRadius: "50%", background: "#E8622A", boxShadow: "0 0 5px #E8622A", animation: "tmaPulse 2s infinite" }} />
+              <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.43rem", color: "#E8622A", fontWeight: 700, letterSpacing: "0.10em", whiteSpace: "nowrap" }}>LIVE</span>
             </div>
             <div style={{ flex: 1, overflow: "hidden", position: "relative" }}>
               <div style={{ display: "inline-flex", animation: "tmaTickerScroll 28s linear infinite", whiteSpace: "nowrap" }}>
@@ -1259,7 +1259,7 @@ export function AnalyticsTab({ onNavigate }: Props) {
       {Object.keys(regions).length > 0 && (() => {
         const CITY_DEFS = [
           { label: "Москва",     key: "Москва",           emoji: "🏙", color: "#3b82f6" },
-          { label: "Крым",       key: "Севастополь",      emoji: "🌊", color: "#a855f7" },
+          { label: "Крым",       key: "Севастополь",      emoji: "🌊", color: "#E8622A" },
           { label: "Питер",      key: "Санкт-Петербург",  emoji: "⚓", color: "#06b6d4" },
           { label: "Татарстан",  key: "Татарстан",        emoji: "🛢", color: "#00E676" },
         ];
@@ -1325,10 +1325,10 @@ export function AnalyticsTab({ onNavigate }: Props) {
           </p>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
             {[
-              { icon: "👥", value: sysStats.total_users.toLocaleString("ru"), label: "Операторов", color: "#a855f7", sub: "активных пользователей" },
+              { icon: "👥", value: sysStats.total_users.toLocaleString("ru"), label: "Операторов", color: "#E8622A", sub: "активных пользователей" },
               { icon: "📋", value: sysStats.total_reports.toLocaleString("ru"), label: "Репортов", color: "#3b82f6", sub: "гражданских данных" },
               { icon: "🛢", value: `${sysStats.avg_availability_pct}%`, label: "Ср. наличие", color: sysStats.avg_availability_pct >= 60 ? "#00E676" : sysStats.avg_availability_pct >= 25 ? "#FFD600" : "#FF1744", sub: "по сети АЗС" },
-              { icon: "🧾", value: sysStats.active_purchases.toLocaleString("ru"), label: "Талонов", color: "#db2777", sub: "активных ордеров" },
+              { icon: "🧾", value: sysStats.active_purchases.toLocaleString("ru"), label: "Талонов", color: "#E8622A", sub: "активных ордеров" },
             ].map(({ icon, value, label, color, sub }) => (
               <motion.div
                 key={label}
@@ -1385,7 +1385,7 @@ export function AnalyticsTab({ onNavigate }: Props) {
           <div style={{ marginTop: "0.5rem" }}>
             <button
               onClick={() => onNavigate?.("catalog")}
-              style={{ width: "100%", background: "linear-gradient(135deg,#a855f7,#db2777)", border: "none", borderRadius: "10px", color: "#fff", fontSize: "0.78rem", fontWeight: 700, padding: "0.55rem", cursor: "pointer", boxShadow: "0 0 12px #a855f740" }}
+              style={{ width: "100%", background: "linear-gradient(135deg,#E8622A,#E8622A)", border: "none", borderRadius: "10px", color: "#fff", fontSize: "0.78rem", fontWeight: 700, padding: "0.55rem", cursor: "pointer", boxShadow: "0 0 12px #E8622A40" }}
             >
               🎫 Купить талон
             </button>
@@ -1418,8 +1418,8 @@ export function AnalyticsTab({ onNavigate }: Props) {
                     onClick={() => setSelectedRegion(key === "" ? "" : (exactMatch ?? ""))}
                     style={{
                       flexShrink: 0,
-                      background: active ? "linear-gradient(135deg,#a855f7,#db2777)" : "rgba(255,255,255,0.04)",
-                      border: active ? "1px solid #a855f7" : "1px solid rgba(255,255,255,0.09)",
+                      background: active ? "linear-gradient(135deg,#E8622A,#E8622A)" : "rgba(255,255,255,0.04)",
+                      border: active ? "1px solid #E8622A" : "1px solid rgba(255,255,255,0.09)",
                       borderRadius: "20px",
                       padding: "0.2rem 0.6rem",
                       cursor: "pointer",
@@ -1431,7 +1431,7 @@ export function AnalyticsTab({ onNavigate }: Props) {
                     <span style={{ color: active ? "#fff" : "rgba(255,255,255,0.65)", fontSize: "0.6rem", fontWeight: active ? 700 : 400 }}>{label}</span>
                     {avgPct != null && (
                       <span style={{
-                        background: active ? "rgba(255,255,255,0.25)" : "rgba(168,85,247,0.1)",
+                        background: active ? "rgba(255,255,255,0.25)" : "rgba(232,98,42,0.1)",
                         borderRadius: "9px", padding: "0 4px",
                         fontSize: "0.5rem", fontWeight: 700,
                         color: active ? "#fff" : (avgPct >= 60 ? "#00E676" : avgPct >= 25 ? "#FFD600" : "#FF1744"),
@@ -1445,13 +1445,13 @@ export function AnalyticsTab({ onNavigate }: Props) {
           );
         })()}
         <div style={{ position: "relative" }}>
-          <div style={{ position: "absolute", left: "0.65rem", top: "50%", transform: "translateY(-50%)", fontFamily: "'JetBrains Mono',monospace", color: "#a855f7", fontSize: "0.6rem", pointerEvents: "none", zIndex: 1 }}>
+          <div style={{ position: "absolute", left: "0.65rem", top: "50%", transform: "translateY(-50%)", fontFamily: "'JetBrains Mono',monospace", color: "#E8622A", fontSize: "0.6rem", pointerEvents: "none", zIndex: 1 }}>
             ▸
           </div>
           <select
             value={selectedRegion}
             onChange={(e) => setSelectedRegion(e.target.value)}
-            style={{ width: "100%", background: "linear-gradient(135deg,#0d0d18,#110c1a)", border: "1px solid #a855f722", borderRadius: "10px", color: "#e2e8f0", fontSize: "0.75rem", padding: "0.5rem 0.6rem 0.5rem 1.6rem", outline: "none", cursor: "pointer", appearance: "none", WebkitAppearance: "none" }}
+            style={{ width: "100%", background: "linear-gradient(135deg,#0d0d18,#110c1a)", border: "1px solid #E8622A22", borderRadius: "10px", color: "#e2e8f0", fontSize: "0.75rem", padding: "0.5rem 0.6rem 0.5rem 1.6rem", outline: "none", cursor: "pointer", appearance: "none", WebkitAppearance: "none" }}
           >
             <option value="">Все регионы · {Object.keys(regions).length} зон</option>
             {Object.keys(regions).sort().map((r) => {
@@ -1462,7 +1462,7 @@ export function AnalyticsTab({ onNavigate }: Props) {
               );
             })}
           </select>
-          <div style={{ position: "absolute", right: "0.65rem", top: "50%", transform: "translateY(-50%)", color: "#a855f7", fontSize: "0.6rem", pointerEvents: "none" }}>
+          <div style={{ position: "absolute", right: "0.65rem", top: "50%", transform: "translateY(-50%)", color: "#E8622A", fontSize: "0.6rem", pointerEvents: "none" }}>
             ▼
           </div>
         </div>
@@ -1474,7 +1474,7 @@ export function AnalyticsTab({ onNavigate }: Props) {
           <div>
             <p style={{ color: "rgba(255,255,255,0.55)", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.05em", margin: 0, fontWeight: 700 }}>
               График
-              {selectedRegion && <span style={{ color: "#a855f7" }}> · {selectedRegion.split(" ").slice(-1)[0]}</span>}
+              {selectedRegion && <span style={{ color: "#E8622A" }}> · {selectedRegion.split(" ").slice(-1)[0]}</span>}
             </p>
           </div>
           <div style={{ display: "flex", gap: "0.35rem" }}>
@@ -1485,20 +1485,20 @@ export function AnalyticsTab({ onNavigate }: Props) {
         </div>
 
         {trendData.length < 2 ? (
-          <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(168,85,247,0.15)", borderRadius: "14px", padding: "2rem 1rem", textAlign: "center" }}>
+          <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(232,98,42,0.15)", borderRadius: "14px", padding: "2rem 1rem", textAlign: "center" }}>
             <p style={{ color: "rgba(255,255,255,0.55)", fontSize: "0.8rem", margin: 0 }}>
               ⏳ Данные накапливаются…<br />
               <span style={{ fontSize: "0.68rem" }}>График появится после первых замеров</span>
             </p>
           </div>
         ) : (
-          <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(168,85,247,0.15)", borderRadius: "14px", padding: "1rem 1rem 0.5rem" }}>
+          <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(232,98,42,0.15)", borderRadius: "14px", padding: "1rem 1rem 0.5rem" }}>
             <ResponsiveContainer width="100%" height={160}>
               <AreaChart data={trendData} margin={{ top: 4, right: 4, left: -28, bottom: 0 }}>
                 <defs>
                   <linearGradient id="trendGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#a855f7" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#a855f7" stopOpacity={0} />
+                    <stop offset="5%" stopColor="#E8622A" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#E8622A" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#1e1e2a" />
@@ -1514,7 +1514,7 @@ export function AnalyticsTab({ onNavigate }: Props) {
                 />
                 <YAxis domain={[0, 100]} tick={{ fill: "#4b5563", fontSize: 9 }} stroke="#22222f" />
                 <Tooltip
-                  contentStyle={{ background: "rgba(12,14,100,0.95)", border: "1px solid rgba(168,85,247,0.2)", borderRadius: "8px", fontSize: "0.75rem" }}
+                  contentStyle={{ background: "rgba(12,14,100,0.95)", border: "1px solid rgba(232,98,42,0.2)", borderRadius: "8px", fontSize: "0.75rem" }}
                   labelStyle={{ color: "rgba(255,255,255,0.72)" }}
                   formatter={(v: number) => [`${v.toFixed(1)}%`, "Доступность"]}
                   labelFormatter={(t: string) => {
@@ -1524,7 +1524,7 @@ export function AnalyticsTab({ onNavigate }: Props) {
                 />
                 <ReferenceLine y={60} stroke="#00E676" strokeDasharray="4 3" strokeWidth={1} strokeOpacity={0.45} label={{ value: "60%", fill: "#22c55e88", fontSize: 8, position: "insideTopRight" }} />
                 <ReferenceLine y={25} stroke="#FF1744" strokeDasharray="4 3" strokeWidth={1} strokeOpacity={0.45} label={{ value: "25%", fill: "#ef444488", fontSize: 8, position: "insideTopRight" }} />
-                <Area type="monotone" dataKey="availability" stroke="#a855f7" strokeWidth={2} fill="url(#trendGrad)" dot={false} activeDot={{ r: 4, fill: "#a855f7" }} />
+                <Area type="monotone" dataKey="availability" stroke="#E8622A" strokeWidth={2} fill="url(#trendGrad)" dot={false} activeDot={{ r: 4, fill: "#E8622A" }} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -1608,14 +1608,14 @@ function NewsFeed() {
         style={{
           width: "100%",
           background: criticalCount > 0 ? "linear-gradient(135deg,#1f0606,#1a0508)" : "linear-gradient(135deg,#0d0d18,#120c1a)",
-          border: `1px solid ${criticalCount > 0 ? "#ef444444" : "#a855f728"}`,
+          border: `1px solid ${criticalCount > 0 ? "#ef444444" : "#E8622A28"}`,
           borderRadius: "16px", padding: "0.85rem 1rem", cursor: "pointer",
           display: "flex", justifyContent: "space-between", alignItems: "center",
           boxShadow: criticalCount > 0 ? "0 0 24px #ef444422" : "0 4px 20px #00000030",
           position: "relative", overflow: "hidden",
         }}
       >
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: criticalCount > 0 ? "linear-gradient(90deg,transparent,#ef4444,transparent)" : "linear-gradient(90deg,transparent,#a855f7,transparent)" }} />
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: criticalCount > 0 ? "linear-gradient(90deg,transparent,#ef4444,transparent)" : "linear-gradient(90deg,transparent,#E8622A,transparent)" }} />
         <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
           <span style={{ fontSize: "1.1rem" }}>{criticalCount > 0 ? "🚨" : "📡"}</span>
           <div style={{ textAlign: "left" }}>
@@ -1630,7 +1630,7 @@ function NewsFeed() {
             </span>
           )}
         </div>
-        <span style={{ color: loading ? "#a855f7" : "rgba(255,255,255,0.45)", fontSize: "0.75rem" }}>
+        <span style={{ color: loading ? "#E8622A" : "rgba(255,255,255,0.45)", fontSize: "0.75rem" }}>
           {loading ? "⟳" : open ? "▲" : "▼"}
         </span>
       </button>
@@ -1663,10 +1663,10 @@ function NewsFeed() {
                 key={sev}
                 onClick={() => setFilterSeverity(sev)}
                 style={{
-                  background: filterSeverity === sev ? (sev === "critical" ? "#ef444418" : sev === "warning" ? "#f59e0b18" : sev === "info" ? "#3b82f618" : "#a855f718") : "#0b0b10",
-                  border: `1px solid ${filterSeverity === sev ? (SEVERITY_COLOR[sev] ?? "#a855f7") : "#1e1e2a"}`,
+                  background: filterSeverity === sev ? (sev === "critical" ? "#ef444418" : sev === "warning" ? "#f59e0b18" : sev === "info" ? "#3b82f618" : "#E8622A18") : "#0b0b10",
+                  border: `1px solid ${filterSeverity === sev ? (SEVERITY_COLOR[sev] ?? "#E8622A") : "#1e1e2a"}`,
                   borderRadius: "7px",
-                  color: filterSeverity === sev ? (SEVERITY_COLOR[sev] ?? "#a855f7") : "rgba(255,255,255,0.55)",
+                  color: filterSeverity === sev ? (SEVERITY_COLOR[sev] ?? "#E8622A") : "rgba(255,255,255,0.55)",
                   fontSize: "0.62rem",
                   padding: "0.28rem 0.45rem",
                   cursor: "pointer",
@@ -1682,7 +1682,7 @@ function NewsFeed() {
 
           {(searchQuery || filterSeverity) && lastNewsRefresh && (
             <p style={{ color: "rgba(255,255,255,0.45)", fontSize: "0.6rem", margin: "0 0 0.1rem", textAlign: "right" }}>
-              <span style={{ color: "#a855f7" }}>{displayedNews.length} из {news.length}</span>
+              <span style={{ color: "#E8622A" }}>{displayedNews.length} из {news.length}</span>
             </p>
           )}
           {displayedNews.length === 0 && (
@@ -1793,8 +1793,8 @@ function NetworkDistributionChart() {
 
   return (
     <div style={{ padding: "0 1rem 0.75rem" }}>
-      <div style={{ background: "linear-gradient(135deg,#0d0d18,#0f0c1a)", border: "1px solid #a855f722", borderRadius: "14px", padding: "0.75rem", position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: "linear-gradient(90deg,transparent,#a855f7,transparent)" }} />
+      <div style={{ background: "linear-gradient(135deg,#0d0d18,#0f0c1a)", border: "1px solid #E8622A22", borderRadius: "14px", padding: "0.75rem", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: "linear-gradient(90deg,transparent,#E8622A,transparent)" }} />
         <div style={{ display: "flex", flexDirection: "column", gap: "0.32rem" }}>
           {top.map(([name, count], ni) => {
             const pct = Math.round((count / stations.length) * 100);
@@ -1844,8 +1844,8 @@ function RegionalPricesTable() {
       .catch(() => { setError(true); setLoading(false); });
   }, []);
 
-  const FUEL_COLORS: Record<string, string> = { "АИ-92": "#a855f7", "АИ-95": "#db2777", "ДТ": "#f59e0b" };
-  const color = FUEL_COLORS[fuel] ?? "#a855f7";
+  const FUEL_COLORS: Record<string, string> = { "АИ-92": "#38bdf8", "АИ-95": "#E8622A", "ДТ": "#f59e0b" };
+  const color = FUEL_COLORS[fuel] ?? "#E8622A";
 
   const rows = Object.entries(data)
     .map(([region, prices]) => ({ region, price: prices[fuel] ?? 0 }))
@@ -1941,7 +1941,7 @@ function NetworkReliabilityWidget() {
   const zones = ["critical", "standard", "eastern"] as const;
   const zoneInfo: Record<string, { label: string; color: string; emoji: string }> = {
     critical: { label: "Кризисная", color: "#FF1744", emoji: "🔴" },
-    standard: { label: "Стандарт",  color: "#a855f7", emoji: "🟣" },
+    standard: { label: "Стандарт",  color: "#E8622A", emoji: "🟣" },
     eastern:  { label: "Восток",    color: "#f59e0b", emoji: "🟡" },
   };
   const zoneStats = zones.map((z) => {
@@ -1969,7 +1969,7 @@ function NetworkReliabilityWidget() {
       }}>
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: `linear-gradient(90deg,transparent,${reliColor}44,transparent)` }} />
         {[
-          { label: "Всего АЗС", value: total, color: "#a855f7", suffix: "" },
+          { label: "Всего АЗС", value: total, color: "#E8622A", suffix: "" },
           { label: "С топливом", value: withFuel, color: reliColor, suffix: "" },
           { label: "Надёжность", value: reliabilityPct, color: reliColor, suffix: "%" },
           { label: "Ср. очередь", value: avgQueue, color: "rgba(255,255,255,0.65)", suffix: "авт" },
@@ -2137,7 +2137,7 @@ function TopCheapestStations() {
 
   if (!stations.length) return null;
 
-  const FUEL_COLORS: Record<string, string> = { "АИ-92": "#a855f7", "АИ-95": "#db2777", "ДТ": "#f59e0b" };
+  const FUEL_COLORS: Record<string, string> = { "АИ-92": "#38bdf8", "АИ-95": "#E8622A", "ДТ": "#f59e0b" };
   const STATIC: Record<string, number> = { "АИ-92": 65, "АИ-95": 71, "ДТ": 79 };
   const color = FUEL_COLORS[fuel];
 
@@ -2224,7 +2224,7 @@ function FuelSavingsWidget() {
   if (!stations.length) return null;
 
   const FUELS = ["АИ-92", "АИ-95", "ДТ", "Газ"] as const;
-  const FUEL_COLORS: Record<string, string> = { "АИ-92": "#a855f7", "АИ-95": "#db2777", "ДТ": "#f59e0b", "Газ": "#14b8a6" };
+  const FUEL_COLORS: Record<string, string> = { "АИ-92": "#38bdf8", "АИ-95": "#E8622A", "ДТ": "#f59e0b", "Газ": "#14b8a6" };
   const STATIC: Record<string, number> = { "АИ-92": 65, "АИ-95": 71, "ДТ": 79, "Газ": 35 };
 
   const spreads = FUELS.map((fuel) => {
@@ -2254,7 +2254,7 @@ function FuelSavingsWidget() {
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: "0.45rem" }}>
           {spreads.map(({ fuel, min, max, avg, spread }, si) => {
-            const color = FUEL_COLORS[fuel] ?? "#a855f7";
+            const color = FUEL_COLORS[fuel] ?? "#E8622A";
             const barPct = maxSpread > 0 ? (spread / maxSpread) * 100 : 0;
             return (
               <motion.div
@@ -2311,7 +2311,7 @@ function NetworkPriceTableWidget() {
   }, []);
 
   const FUELS = ["АИ-92", "АИ-95", "ДТ"] as const;
-  const FUEL_COLORS: Record<string, string> = { "АИ-92": "#a855f7", "АИ-95": "#db2777", "ДТ": "#f59e0b" };
+  const FUEL_COLORS: Record<string, string> = { "АИ-92": "#38bdf8", "АИ-95": "#E8622A", "ДТ": "#f59e0b" };
 
   const NETWORKS = [
     { name: "Лукойл",       color: "#FF1744", icon: "🔴" },
@@ -2336,8 +2336,8 @@ function NetworkPriceTableWidget() {
 
   return (
     <div style={{ padding: "0 1rem 1.5rem" }}>
-      <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid #a855f718", borderRadius: "14px", padding: "0.75rem", position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: "linear-gradient(90deg,transparent,#a855f744,transparent)" }} />
+      <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid #E8622A18", borderRadius: "14px", padding: "0.75rem", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: "linear-gradient(90deg,transparent,#E8622A44,transparent)" }} />
         <div style={{ display: "flex", gap: "0.3rem", marginBottom: "0.6rem" }}>
           {FUELS.map(f => (
             <button key={f} onClick={() => setActiveFuel(f)} style={{
@@ -2385,7 +2385,7 @@ function NetworkPriceTableWidget() {
             );
           })}
         </div>
-        <div style={{ marginTop: "0.55rem", padding: "0.3rem 0.5rem", background: "rgba(168,85,247,0.04)", border: "1px solid #a855f712", borderRadius: "6px" }}>
+        <div style={{ marginTop: "0.55rem", padding: "0.3rem 0.5rem", background: "rgba(232,98,42,0.04)", border: "1px solid #E8622A12", borderRadius: "6px" }}>
           <span style={{ color: "rgba(255,255,255,0.55)", fontSize: "0.55rem" }}>
             🏆 Выгоднее всего: <strong style={{ color: "#00E676" }}>{sorted[0]?.name}</strong> — {prices[sorted[0]?.name]?.[activeFuel]?.toFixed(1)}₽/л за {activeFuel}
           </span>
@@ -2423,7 +2423,7 @@ function RegionLeaderboardWidget() {
 
   return (
     <div style={{ padding: "0 1rem 1.5rem" }}>
-      <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid #a855f718", borderRadius: "14px", padding: "0.75rem", position: "relative", overflow: "hidden" }}>
+      <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid #E8622A18", borderRadius: "14px", padding: "0.75rem", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: "linear-gradient(90deg,transparent,#22c55e44,transparent)" }} />
 
         {/* Top 5 */}

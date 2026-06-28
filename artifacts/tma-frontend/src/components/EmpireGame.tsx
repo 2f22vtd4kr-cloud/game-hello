@@ -1272,7 +1272,7 @@ function PrestigeModal({
         <div style={{ fontWeight: 900, fontSize: "1.15rem", color: "#e9d5ff", marginBottom: "8px" }}>
           Престиж #{nextPrestige}
         </div>
-        <div style={{ fontSize: "0.8rem", color: "#a78bfa", marginBottom: "20px", lineHeight: 1.6 }}>
+        <div style={{ fontSize: "0.8rem", color: "#E8622A", marginBottom: "20px", lineHeight: 1.6 }}>
           Все здания сбрасываются до нуля.<br />
           Взамен вы получаете постоянный<br />
           множитель дохода <strong style={{ color: "#fbbf24" }}>×{newMultiplier}</strong>
@@ -1669,7 +1669,7 @@ export function EmpireGame() {
                   marginTop: "6px",
                   background: "linear-gradient(135deg, #7c3aed, #6d28d9)",
                   color: "#fff",
-                  border: "1px solid rgba(167,139,250,0.5)",
+                  border: "1px solid rgba(232,98,42,0.5)",
                   borderRadius: "10px",
                   padding: "4px 14px",
                   fontWeight: 800,

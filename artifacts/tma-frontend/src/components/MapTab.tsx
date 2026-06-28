@@ -284,7 +284,7 @@ function PopupContent({ station }: { station: GasStation }) {
               fontSize: "0.68rem",
             }}>
               <span style={{ color: "rgba(255,255,255,0.55)" }}>{ft} </span>
-              <span style={{ color: crisis ? "#ef4444" : "#a855f7", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>
+              <span style={{ color: crisis ? "#ef4444" : "#E8622A", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>
                 {p.effective}₽{crisis && "▲"}
               </span>
             </span>
@@ -558,7 +558,7 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
               flexShrink: 0,
             }}
           >
-            <SlidersHorizontal size={20} style={{ color: activeFilterCount > 0 || showFavoritesOnly ? "#a78bfa" : "rgba(255,255,255,0.5)" }} />
+            <SlidersHorizontal size={20} style={{ color: activeFilterCount > 0 || showFavoritesOnly ? "#E8622A" : "rgba(255,255,255,0.5)" }} />
             {(activeFilterCount > 0 || showFavoritesOnly) && (
               <span style={{
                 position: "absolute",
@@ -584,7 +584,7 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
                 style={{
                   position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0,
                   background: "rgba(20,24,190,0.96)", backdropFilter: "blur(24px)",
-                  border: "1px solid rgba(168,85,247,0.25)", borderRadius: "14px",
+                  border: "1px solid rgba(232,98,42,0.25)", borderRadius: "14px",
                   padding: "0.5rem",
                   boxShadow: "0 12px 32px #00000099",
                   zIndex: 9999,
@@ -667,11 +667,11 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
               right: "0.75rem",
               zIndex: 1000,
               background: "rgba(20,24,190,0.96)",
-              border: "1px solid rgba(168,85,247,0.22)",
+              border: "1px solid rgba(232,98,42,0.22)",
               borderRadius: "22px",
               padding: "1rem",
               backdropFilter: "blur(32px)",
-              boxShadow: "0 16px 48px rgba(0,0,0,0.7), 0 0 0 1px rgba(168,85,247,0.08), inset 0 1px 0 rgba(255,255,255,0.04)",
+              boxShadow: "0 16px 48px rgba(0,0,0,0.7), 0 0 0 1px rgba(232,98,42,0.08), inset 0 1px 0 rgba(255,255,255,0.04)",
               overflow: "hidden",
             }}
           >
@@ -943,7 +943,7 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
                 {[
                   { label: "🌐 Все",    value: null,                          color: "rgba(255,255,255,0.65)", coords: null as [number,number]|null, zoom: 5  },
                   { label: "🏙 Москва", value: "г. Москва и Новая Москва",    color: "#3b82f6", coords: [55.75, 37.62] as [number,number], zoom: 11 },
-                  { label: "🌊 Крым",   value: "Севастополь",                 color: "#a855f7", coords: [44.60, 33.52] as [number,number], zoom: 10 },
+                  { label: "🌊 Крым",   value: "Севастополь",                 color: "#E8622A", coords: [44.60, 33.52] as [number,number], zoom: 10 },
                   { label: "⚓ Питер",  value: "г. Санкт-Петербург",          color: "#06b6d4", coords: [59.95, 30.32] as [number,number], zoom: 11 },
                 ].map(({ label, value, color, coords, zoom }) => {
                   const active = filterRegion === value;

@@ -65,7 +65,7 @@ function NearbyAlternatives({ station }: { station: GasStation }) {
               key={s.id}
               onClick={() => window.open(`https://yandex.ru/maps/?rtext=~${s.lat},${s.lng}&rtt=auto`, "_blank")}
               style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.35rem 0.5rem", background: "#0b0b0f", border: "1px solid #1e1e2a", borderRadius: "8px", cursor: "pointer", transition: "border-color 0.15s" }}
-              onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#a855f733")}
+              onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#E8622A33")}
               onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#1e1e2a")}
             >
               <div style={{ width: "7px", height: "7px", borderRadius: "50%", background: dotColor, boxShadow: `0 0 5px ${dotColor}`, flexShrink: 0 }} />
@@ -115,8 +115,8 @@ function ShareStationButton({ station }: { station: GasStation }) {
       onClick={handleShare}
       style={{
         width: "100%",
-        background: copied ? "rgba(34,197,94,0.12)" : "rgba(168,85,247,0.08)",
-        border: `1px solid ${copied ? "#22c55e44" : "#a855f722"}`,
+        background: copied ? "rgba(34,197,94,0.12)" : "rgba(232,98,42,0.08)",
+        border: `1px solid ${copied ? "#22c55e44" : "#E8622A22"}`,
         borderRadius: "10px",
         color: copied ? "#22c55e" : "#6b7280",
         fontSize: "0.75rem",
@@ -134,7 +134,7 @@ function ShareStationButton({ station }: { station: GasStation }) {
 
 const ZONE_LABEL: Record<string, { label: string; color: string }> = {
   critical: { label: "Крит. зона", color: "#ef4444" },
-  standard: { label: "Стандарт", color: "#a855f7" },
+  standard: { label: "Стандарт", color: "#E8622A" },
   eastern:  { label: "Восток", color: "#f59e0b" },
 };
 
@@ -162,8 +162,8 @@ function CopyTicketButton({ stationName }: { stationName: string }) {
       style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
         width: "100%", padding: "0.5rem 0.75rem",
-        background: copied ? "rgba(34,197,94,0.1)" : "rgba(168,85,247,0.08)",
-        border: `1px solid ${copied ? "#22c55e55" : "#a855f744"}`,
+        background: copied ? "rgba(34,197,94,0.1)" : "rgba(232,98,42,0.08)",
+        border: `1px solid ${copied ? "#22c55e55" : "#E8622A44"}`,
         borderRadius: "10px", cursor: "pointer",
         transition: "all 0.2s",
       }}
@@ -348,7 +348,7 @@ export function StationCard({ station, onClose }: Props) {
               <span style={{ background: `${zoneInfo.color}15`, border: `1px solid ${zoneInfo.color}35`, borderRadius: "5px", color: zoneInfo.color, fontSize: "0.58rem", fontWeight: 700, padding: "0.05rem 0.35rem" }}>
                 {zoneInfo.label}
               </span>
-              <span style={{ background: station.queue_cars > 8 ? "#ef444415" : "#a855f710", border: `1px solid ${station.queue_cars > 8 ? "#ef444435" : "#a855f730"}`, borderRadius: "5px", color: station.queue_cars > 8 ? "#ef4444" : "#a855f7", fontSize: "0.58rem", fontWeight: 700, padding: "0.05rem 0.35rem" }}>
+              <span style={{ background: station.queue_cars > 8 ? "#ef444415" : "#E8622A10", border: `1px solid ${station.queue_cars > 8 ? "#ef444435" : "#E8622A30"}`, borderRadius: "5px", color: station.queue_cars > 8 ? "#ef4444" : "#E8622A", fontSize: "0.58rem", fontWeight: 700, padding: "0.05rem 0.35rem" }}>
                 🚗 {station.queue_cars} авто
               </span>
             </div>
@@ -430,11 +430,11 @@ export function StationCard({ station, onClose }: Props) {
           style={{
             display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
             width: "100%", padding: "0.6rem",
-            background: "linear-gradient(135deg, rgba(168,85,247,0.18), rgba(219,39,119,0.12))",
-            border: "1px solid rgba(168,85,247,0.35)",
+            background: "linear-gradient(135deg, rgba(232,98,42,0.18), rgba(232,98,42,0.12))",
+            border: "1px solid rgba(232,98,42,0.35)",
             borderRadius: "12px",
             color: "#c084fc", fontSize: "0.85rem", fontWeight: 700,
-            boxShadow: "0 0 16px rgba(168,85,247,0.14)",
+            boxShadow: "0 0 16px rgba(232,98,42,0.14)",
           }}
         >
           🎫 Купить талоны
@@ -606,7 +606,7 @@ export function StationCard({ station, onClose }: Props) {
               <div
                 onClick={() => setNoteEditing(true)}
                 style={{
-                  background: "rgba(168,85,247,0.05)", border: "1px solid #a855f720",
+                  background: "rgba(232,98,42,0.05)", border: "1px solid #E8622A20",
                   borderRadius: "8px", padding: "0.5rem 0.65rem",
                   color: "#9ca3af", fontSize: "0.72rem", lineHeight: 1.5,
                   cursor: "pointer", whiteSpace: "pre-wrap", wordBreak: "break-word",
@@ -638,7 +638,7 @@ export function StationCard({ station, onClose }: Props) {
                 autoFocus
                 style={{
                   width: "100%", boxSizing: "border-box", resize: "none",
-                  background: "#0b0b12", border: "1px solid #a855f744",
+                  background: "#0b0b12", border: "1px solid #E8622A44",
                   borderRadius: "8px", color: "#e2e8f0",
                   padding: "0.5rem 0.65rem", fontSize: "0.72rem", lineHeight: 1.5,
                   outline: "none", fontFamily: "inherit",
@@ -653,7 +653,7 @@ export function StationCard({ station, onClose }: Props) {
                 <button
                   onClick={handleSaveNote}
                   disabled={noteSaving}
-                  style={{ background: "rgba(168,85,247,0.2)", border: "1px solid #a855f755", borderRadius: "6px", color: "#a855f7", fontSize: "0.65rem", padding: "0.25rem 0.6rem", cursor: "pointer", fontWeight: 700 }}
+                  style={{ background: "rgba(232,98,42,0.2)", border: "1px solid #E8622A55", borderRadius: "6px", color: "#E8622A", fontSize: "0.65rem", padding: "0.25rem 0.6rem", cursor: "pointer", fontWeight: 700 }}
                 >{noteSaving ? "…" : "Сохранить"}</button>
               </div>
             </div>

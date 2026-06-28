@@ -127,14 +127,14 @@ export function BottomNav({ active, onChange, visible = true, badges = {} }: Pro
                 style={{
                   position: "absolute",
                   top: "6px", right: "calc(50% - 20px)",
-                  background: "linear-gradient(135deg, #a855f7, #db2777)",
+                  background: "linear-gradient(135deg, #E8622A, #E8622A)",
                   color: "#fff",
                   borderRadius: "999px",
                   minWidth: "16px", height: "16px",
                   fontSize: "0.44rem", fontWeight: 800,
                   display: "flex", alignItems: "center", justifyContent: "center",
                   padding: "0 3px",
-                  boxShadow: "0 0 8px rgba(168,85,247,0.7)",
+                  boxShadow: "0 0 8px rgba(232,98,42,0.7)",
                   border: "1.5px solid rgba(14,18,175,0.9)",
                   zIndex: 2,
                 }}

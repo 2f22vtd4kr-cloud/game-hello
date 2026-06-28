@@ -310,8 +310,8 @@ export default function App() {
 
       {/* Deep Field — nebula background blobs */}
       <div aria-hidden style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none", overflow: "hidden" }}>
-        <div style={{ position: "absolute", top: "-10%", right: "-15%", width: 360, height: 360, background: "rgba(168,85,247,0.08)", borderRadius: "50%", filter: "blur(120px)" }} />
-        <div style={{ position: "absolute", bottom: "-10%", left: "-15%", width: 400, height: 400, background: "rgba(219,39,119,0.05)", borderRadius: "50%", filter: "blur(120px)" }} />
+        <div style={{ position: "absolute", top: "-10%", right: "-15%", width: 360, height: 360, background: "rgba(232,98,42,0.08)", borderRadius: "50%", filter: "blur(120px)" }} />
+        <div style={{ position: "absolute", bottom: "-10%", left: "-15%", width: 400, height: 400, background: "rgba(232,98,42,0.05)", borderRadius: "50%", filter: "blur(120px)" }} />
       </div>
 
       {/* Price change alert banners — slide in from top when fuel moves ≥1% */}
@@ -440,13 +440,13 @@ export default function App() {
                   initial={{ scale: 0 }} animate={{ scale: 1 }}
                   style={{
                     position: "absolute", top: "-4px", right: "-4px",
-                    background: "linear-gradient(135deg,#a855f7,#db2777)",
+                    background: "linear-gradient(135deg,#E8622A,#E8622A)",
                     color: "#fff", borderRadius: "999px",
                     minWidth: "16px", height: "16px",
                     fontSize: "0.44rem", fontWeight: 800,
                     display: "flex", alignItems: "center", justifyContent: "center",
                     padding: "0 3px",
-                    boxShadow: "0 0 8px rgba(168,85,247,0.7)",
+                    boxShadow: "0 0 8px rgba(232,98,42,0.7)",
                     border: "1.5px solid rgba(8,8,16,0.9)",
                     zIndex: 1,
                   }}
@@ -462,11 +462,11 @@ export default function App() {
                   width: "38px", height: "38px",
                   borderRadius: "50%",
                   background: activeCount > 0
-                    ? "linear-gradient(135deg, #a855f7, #f59e0b)"
+                    ? "linear-gradient(135deg, #E8622A, #f59e0b)"
                     : "linear-gradient(135deg, #fbbf24, #f59e0b)",
                   border: "none",
                   boxShadow: activeCount > 0
-                    ? "0 0 16px rgba(168,85,247,0.55)"
+                    ? "0 0 16px rgba(232,98,42,0.55)"
                     : "0 0 14px rgba(251,191,36,0.45)",
                   cursor: "pointer",
                   display: "flex", alignItems: "center", justifyContent: "center",
@@ -492,11 +492,11 @@ export default function App() {
             style={{
               position: "fixed", top: `${TICKER_H + 4}px`, left: "12px", right: "12px",
               zIndex: 9750,
-              background: "linear-gradient(135deg, rgba(168,85,247,0.15), rgba(219,39,119,0.1))",
-              border: "1px solid rgba(168,85,247,0.3)",
+              background: "linear-gradient(135deg, rgba(232,98,42,0.15), rgba(232,98,42,0.1))",
+              border: "1px solid rgba(232,98,42,0.3)",
               borderRadius: "12px", padding: "8px 12px",
               backdropFilter: "blur(12px)",
-              boxShadow: "0 4px 20px rgba(168,85,247,0.2)",
+              boxShadow: "0 4px 20px rgba(232,98,42,0.2)",
               display: "flex", alignItems: "center", gap: "8px",
             }}
           >
@@ -512,7 +512,7 @@ export default function App() {
             <button
               onClick={() => { handleTabChange("catalog"); setShowAiBanner(false); localStorage.setItem(AI_BANNER_KEY, "1"); }}
               style={{
-                background: "linear-gradient(135deg,#a855f7,#db2777)", border: "none",
+                background: "linear-gradient(135deg,#E8622A,#E8622A)", border: "none",
                 borderRadius: "7px", color: "#fff", fontSize: "0.62rem", fontWeight: 700,
                 padding: "4px 8px", cursor: "pointer", flexShrink: 0, whiteSpace: "nowrap",
               }}
@@ -532,7 +532,7 @@ export default function App() {
       {/* Ambient dot-grid */}
       <div aria-hidden style={{
         position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none",
-        backgroundImage: "radial-gradient(circle, rgba(168,85,247,0.07) 1px, transparent 1px)",
+        backgroundImage: "radial-gradient(circle, rgba(232,98,42,0.07) 1px, transparent 1px)",
         backgroundSize: "28px 28px",
         maskImage: "radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%)",
         WebkitMaskImage: "radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%)",

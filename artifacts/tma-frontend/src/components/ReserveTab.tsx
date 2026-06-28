@@ -16,14 +16,14 @@ const TIER_COLORS: Record<string, string> = {
   "🛵 Мопедист":         "#3b82f6",
   "🚗 Извозчик":         "#eab308",
   "🚛 Дальнобойщик":     "#f97316",
-  "⚡ Бензиновый Барон": "#a855f7",
-  "👑 Владелец НПЗ":     "#db2777",
+  "⚡ Бензиновый Барон": "#E8622A",
+  "👑 Владелец НПЗ":     "#E8622A",
 };
 
 const RESULT_GLOW: Record<string, string> = {
-  mythic:    "#db2777",
+  mythic:    "#E8622A",
   legendary: "#f59e0b",
-  epic:      "#a855f7",
+  epic:      "#E8622A",
   rare:      "#3b82f6",
   cursed:    "#ef4444",
   common:    "#6b7280",
@@ -146,7 +146,7 @@ function FlipGame() {
   const [played, setPlayed] = useState(false);
 
   const hasAttempts = flipsRemaining > 0 && !played;
-  const glowColor = result ? RESULT_GLOW[result.result_type] ?? "#6b7280" : "#a855f7";
+  const glowColor = result ? RESULT_GLOW[result.result_type] ?? "#6b7280" : "#E8622A";
 
   const handleDraw = async () => {
     if (!user || loading || !hasAttempts) return;
@@ -193,7 +193,7 @@ function FlipGame() {
         position: "relative",
         overflow: "hidden",
       }}>
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: result ? `linear-gradient(90deg,transparent,${glowColor},transparent)` : "linear-gradient(90deg,transparent,#a855f7,transparent)" }} />
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: result ? `linear-gradient(90deg,transparent,${glowColor},transparent)` : "linear-gradient(90deg,transparent,#E8622A,transparent)" }} />
         {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.55rem" }}>
           <div>
@@ -203,9 +203,9 @@ function FlipGame() {
             </h3>
           </div>
           <span style={{
-            background: hasAttempts ? "#a855f718" : "#14141c",
-            border: `1px solid ${hasAttempts ? "#a855f740" : "#22222f"}`,
-            color: hasAttempts ? "#a855f7" : "#374151",
+            background: hasAttempts ? "#E8622A18" : "#14141c",
+            border: `1px solid ${hasAttempts ? "#E8622A40" : "#22222f"}`,
+            color: hasAttempts ? "#E8622A" : "#374151",
             borderRadius: "8px", padding: "0.2rem 0.5rem",
             fontSize: "0.65rem", fontWeight: 700, fontFamily: "'JetBrains Mono',monospace",
           }}>
@@ -229,8 +229,8 @@ function FlipGame() {
                     transition={{ duration: 2, repeat: Infinity, delay: i * 0.2, ease: "easeInOut" }}
                     style={{
                       width: "36px", height: "52px", borderRadius: "6px",
-                      background: `linear-gradient(135deg,#1e1e2a,#a855f718)`,
-                      border: "1px solid #a855f733",
+                      background: `linear-gradient(135deg,#1e1e2a,#E8622A18)`,
+                      border: "1px solid #E8622A33",
                       display: "flex", alignItems: "center", justifyContent: "center",
                       fontSize: "1.1rem",
                       boxShadow: "0 4px 12px #00000040",
@@ -245,13 +245,13 @@ function FlipGame() {
               onClick={handleDraw}
               disabled={!hasAttempts || loading}
               style={{
-                background: (!hasAttempts || loading) ? "#14141c" : "linear-gradient(135deg,#a855f7,#db2777)",
+                background: (!hasAttempts || loading) ? "#14141c" : "linear-gradient(135deg,#E8622A,#E8622A)",
                 color: (!hasAttempts || loading) ? "#374151" : "#fff",
                 border: `1px solid ${(!hasAttempts || loading) ? "#22222f" : "transparent"}`,
                 borderRadius: "14px", padding: "0.85rem 2.5rem",
                 fontSize: "0.92rem", fontWeight: 700,
                 cursor: (!hasAttempts || loading) ? "not-allowed" : "pointer",
-                boxShadow: (!hasAttempts || loading) ? "none" : "0 0 24px #a855f760, 0 4px 16px #00000040",
+                boxShadow: (!hasAttempts || loading) ? "none" : "0 0 24px #E8622A60, 0 4px 16px #00000040",
               }}
             >
               {loading ? "🔀 Перемешиваю…" : played ? "⏳ Завтра" : "🃏 Вскрыть 5 карт"}
@@ -559,7 +559,7 @@ function TapGame() {
                     style={{ height: "100%", borderRadius: "3px" }}
                     animate={{
                       width: `${timePercent}%`,
-                      background: timeLeft > 15 ? "#a855f7" : timeLeft > 8 ? "#f59e0b" : "#ef4444",
+                      background: timeLeft > 15 ? "#E8622A" : timeLeft > 8 ? "#f59e0b" : "#ef4444",
                       boxShadow: timeLeft <= 8 ? "0 0 8px #ef4444" : "none",
                     }}
                     transition={{ duration: 0.8, ease: "linear" }}
@@ -585,16 +585,16 @@ function TapGame() {
               background: "#050508",
               borderRadius: "14px",
               overflow: "hidden",
-              border: `1px solid ${timeLeft <= 8 ? "#ef444444" : "#a855f722"}`,
+              border: `1px solid ${timeLeft <= 8 ? "#ef444444" : "#E8622A22"}`,
               userSelect: "none",
               WebkitUserSelect: "none",
-              boxShadow: timeLeft <= 8 ? "0 0 20px #ef444422, inset 0 0 30px #ef444408" : "inset 0 0 30px #a855f708",
+              boxShadow: timeLeft <= 8 ? "0 0 20px #ef444422, inset 0 0 30px #ef444408" : "inset 0 0 30px #E8622A08",
               transition: "border-color 0.3s, box-shadow 0.3s",
             }}>
               {/* Grid background */}
               <div style={{
                 position: "absolute", inset: 0, opacity: 0.06, pointerEvents: "none",
-                backgroundImage: "linear-gradient(#a855f7 1px,transparent 1px),linear-gradient(90deg,#a855f7 1px,transparent 1px)",
+                backgroundImage: "linear-gradient(#E8622A 1px,transparent 1px),linear-gradient(90deg,#E8622A 1px,transparent 1px)",
                 backgroundSize: "32px 32px",
               }} />
               {/* Tap particles */}
@@ -658,7 +658,7 @@ function TapGame() {
         {phase === "result" && (() => {
           const isRecord = score > 0 && score >= tapHighScore;
           const grade = score >= 25 ? { icon: "🏆", label: "Легенда", color: "#f59e0b" }
-            : score >= 15 ? { icon: "🎖️", label: "Профи", color: "#a855f7" }
+            : score >= 15 ? { icon: "🎖️", label: "Профи", color: "#E8622A" }
             : score >= 8  ? { icon: "⛽", label: "Оператор", color: "#22c55e" }
             : { icon: "📉", label: "Новичок", color: "#6b7280" };
 
@@ -722,11 +722,11 @@ function TapGame() {
                 <button
                   onClick={() => setPhase("idle")}
                   style={{
-                    background: "linear-gradient(135deg,#a855f7,#db2777)",
+                    background: "linear-gradient(135deg,#E8622A,#E8622A)",
                     color: "#fff", border: "none", borderRadius: "10px",
                     padding: "0.6rem 1.8rem", fontSize: "0.82rem",
                     fontWeight: 700, cursor: "pointer",
-                    boxShadow: "0 0 16px #a855f740",
+                    boxShadow: "0 0 16px #E8622A40",
                   }}
                 >
                   Играть снова
@@ -746,8 +746,8 @@ const GUESS_FUELS = ["АИ-92", "АИ-95", "ДТ"] as const;
 type GuessFuel = typeof GUESS_FUELS[number];
 
 const FUEL_COLORS_GUESS: Record<GuessFuel, string> = {
-  "АИ-92": "#a855f7",
-  "АИ-95": "#db2777",
+  "АИ-92": "#38bdf8",
+  "АИ-95": "#E8622A",
   "ДТ": "#f59e0b",
 };
 
@@ -829,7 +829,7 @@ function PriceGuessGame() {
   return (
     <div style={{ padding: "0 1rem 1rem" }}>
       <div style={{ background: "linear-gradient(160deg,#0d0d18,#0f0a1c)", border: "1px solid #f59e0b22", borderRadius: "16px", overflow: "hidden", position: "relative" }}>
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: "linear-gradient(90deg,transparent,#f59e0b,#a855f7,transparent)" }} />
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: "linear-gradient(90deg,transparent,#f59e0b,#E8622A,transparent)" }} />
         <div style={{ padding: "0.85rem 1rem 0.6rem", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <div>
             <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.43rem", letterSpacing: "0.14em", marginBottom: "0.15rem" }}>ТОПЛИВНЫЙ ТРЕЙДЕР · МИНИ ИГРА</div>
@@ -975,7 +975,7 @@ function XpTiers() {
   return (
     <div style={{ padding: "0 1rem 2rem" }}>
       <div style={{ background: "linear-gradient(160deg,#0d0d18,#0f0b1a)", border: "1px solid #1e1e2a", borderRadius: "16px", padding: "1rem", position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: "linear-gradient(90deg,transparent,#a855f7,transparent)" }} />
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: "linear-gradient(90deg,transparent,#E8622A,transparent)" }} />
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
           <div>
             <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.46rem", letterSpacing: "0.14em", marginBottom: "0.15rem" }}>РАНГОВЫЙ ПУТЬ · УЧАСТНИКА</div>
@@ -995,10 +995,10 @@ function XpTiers() {
           <div style={{
             height: "100%",
             width: `${progressPct}%`,
-            background: `linear-gradient(90deg, ${TIER_COLORS[current?.name ?? ""] ?? "#a855f7"}, ${TIER_COLORS[next?.name ?? ""] ?? "#db2777"})`,
+            background: `linear-gradient(90deg, ${TIER_COLORS[current?.name ?? ""] ?? "#E8622A"}, ${TIER_COLORS[next?.name ?? ""] ?? "#E8622A"})`,
             borderRadius: "3px",
             transition: "width 1s ease",
-            boxShadow: "0 0 6px #a855f799",
+            boxShadow: "0 0 6px #E8622A99",
           }} />
         </div>
 
@@ -1136,15 +1136,15 @@ function DailyCheckin() {
           background: done
             ? "linear-gradient(135deg,#0a1a0a,#0d1f0d)"
             : "linear-gradient(135deg,#0d0d18,#1a0a1f)",
-          border: `1px solid ${done ? "#22c55e44" : "#a855f733"}`,
+          border: `1px solid ${done ? "#22c55e44" : "#E8622A33"}`,
           borderRadius: "18px",
           padding: "1rem",
           position: "relative",
           overflow: "hidden",
-          boxShadow: done ? "0 0 24px #22c55e12" : "0 0 24px #a855f712",
+          boxShadow: done ? "0 0 24px #22c55e12" : "0 0 24px #E8622A12",
         }}
       >
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: done ? "linear-gradient(90deg,transparent,#22c55e,transparent)" : "linear-gradient(90deg,transparent,#a855f7,#db2777,transparent)" }} />
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: done ? "linear-gradient(90deg,transparent,#22c55e,transparent)" : "linear-gradient(90deg,transparent,#E8622A,#E8622A,transparent)" }} />
         <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
           <motion.div
             animate={done ? {} : { scale: [1, 1.1, 1], rotate: [0, 5, -5, 0] }}
@@ -1168,7 +1168,7 @@ function DailyCheckin() {
             <p style={{ margin: "0 0 0.5rem", color: "#4b5563", fontSize: "0.68rem" }}>
               {done
                 ? countdown
-                  ? <span>Следующий через <span style={{ fontFamily: "'JetBrains Mono',monospace", color: "#a855f7", fontWeight: 700 }}>{countdown}</span></span>
+                  ? <span>Следующий через <span style={{ fontFamily: "'JetBrains Mono',monospace", color: "#E8622A", fontWeight: 700 }}>{countdown}</span></span>
                   : `Получен${nextTime ? ` · следующий в ${nextTime}` : " · до завтра"}`
                 : streak < 7
                   ? <span>Серия <strong style={{ color: "#f59e0b" }}>{streak}</strong> дн · следующий порог <strong style={{ color: "#fde047" }}>{streak < 2 ? 2 : streak < 3 ? 3 : streak < 5 ? 5 : 7} дн</strong> = +{streak < 2 ? 25 : streak < 3 ? 50 : streak < 5 ? 75 : 100}%&nbsp;XP</span>
@@ -1283,10 +1283,10 @@ function LeaderboardSection() {
     <div style={{ padding: "0 1rem 1rem" }}>
       <div style={{
         background: "linear-gradient(160deg,#0d0d18,#120c1a)",
-        border: "1px solid #a855f722",
+        border: "1px solid #E8622A22",
         borderRadius: "20px",
         overflow: "hidden",
-        boxShadow: "0 0 24px #a855f710",
+        boxShadow: "0 0 24px #E8622A10",
       }}>
         {/* Header button */}
         <button
@@ -1296,7 +1296,7 @@ function LeaderboardSection() {
             justifyContent: "space-between",
             padding: "0.9rem 1rem",
             background: "none", border: "none", cursor: "pointer",
-            borderBottom: open ? "1px solid #a855f722" : "none",
+            borderBottom: open ? "1px solid #E8622A22" : "none",
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
@@ -1323,7 +1323,7 @@ function LeaderboardSection() {
               <motion.span
                 animate={{ rotate: 360 }}
                 transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-                style={{ color: "#a855f7", fontSize: "0.8rem", display: "inline-block" }}
+                style={{ color: "#E8622A", fontSize: "0.8rem", display: "inline-block" }}
               >
                 ⟳
               </motion.span>
@@ -1352,19 +1352,19 @@ function LeaderboardSection() {
               {board.user_rank && (
                 <div style={{
                   margin: "0.6rem 0.75rem",
-                  background: "linear-gradient(135deg,#a855f718,#db277718)",
-                  border: "1px solid #a855f744",
+                  background: "linear-gradient(135deg,#E8622A18,#E8622A18)",
+                  border: "1px solid #E8622A44",
                   borderRadius: "12px",
                   padding: "0.55rem 0.85rem",
                   display: "flex", justifyContent: "space-between", alignItems: "center",
                 }}>
                   <div>
-                    <p style={{ margin: 0, color: "#a855f7", fontSize: "0.62rem", textTransform: "uppercase", letterSpacing: "0.08em" }}>Ваша позиция</p>
+                    <p style={{ margin: 0, color: "#E8622A", fontSize: "0.62rem", textTransform: "uppercase", letterSpacing: "0.08em" }}>Ваша позиция</p>
                     <p style={{ margin: 0, color: "#e2e8f0", fontWeight: 800, fontSize: "0.9rem" }}>#{board.user_rank}</p>
                   </div>
                   <div style={{ textAlign: "right" }}>
                     <p style={{ margin: 0, color: "#6b7280", fontSize: "0.6rem" }}>XP</p>
-                    <p style={{ margin: 0, fontFamily: "'JetBrains Mono',monospace", color: "#a855f7", fontWeight: 700, fontSize: "0.9rem" }}>
+                    <p style={{ margin: 0, fontFamily: "'JetBrains Mono',monospace", color: "#E8622A", fontWeight: 700, fontSize: "0.9rem" }}>
                       {(board.user_xp ?? 0).toLocaleString("ru")}
                     </p>
                   </div>
@@ -1376,7 +1376,7 @@ function LeaderboardSection() {
                 {board.entries.slice(0, 10).map((entry, i) => {
                   const isMe = entry.user_id === user?.id;
                   const rs = RANK_STYLES[entry.rank];
-                  const rowColor = rs?.color ?? (isMe ? "#a855f7" : "#9ca3af");
+                  const rowColor = rs?.color ?? (isMe ? "#E8622A" : "#9ca3af");
                   const maxXp = board.entries[0]?.xp ?? 1;
                   const barPct = Math.round((entry.xp / maxXp) * 100);
 
@@ -1387,8 +1387,8 @@ function LeaderboardSection() {
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: i * 0.05 }}
                       style={{
-                        background: rs ? rs.bg : isMe ? "#a855f710" : "#0d0d14",
-                        border: `1px solid ${rs ? rs.border : isMe ? "#a855f733" : "#1a1a24"}`,
+                        background: rs ? rs.bg : isMe ? "#E8622A10" : "#0d0d14",
+                        border: `1px solid ${rs ? rs.border : isMe ? "#E8622A33" : "#1a1a24"}`,
                         borderRadius: "10px",
                         padding: "0.5rem 0.7rem",
                         position: "relative",
@@ -1407,9 +1407,9 @@ function LeaderboardSection() {
                           {rs ? rs.badge : `#${entry.rank}`}
                         </span>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <p style={{ margin: 0, color: isMe ? "#a855f7" : rs ? rowColor : "#e2e8f0", fontSize: "0.8rem", fontWeight: (isMe || rs) ? 700 : 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          <p style={{ margin: 0, color: isMe ? "#E8622A" : rs ? rowColor : "#e2e8f0", fontSize: "0.8rem", fontWeight: (isMe || rs) ? 700 : 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                             {entry.username ? `@${entry.username}` : `Пользователь #${entry.user_id}`}
-                            {isMe && <span style={{ color: "#a855f7", fontSize: "0.6rem", marginLeft: "0.3rem" }}>· вы</span>}
+                            {isMe && <span style={{ color: "#E8622A", fontSize: "0.6rem", marginLeft: "0.3rem" }}>· вы</span>}
                           </p>
                           <p style={{ margin: 0, color: "#374151", fontSize: "0.58rem" }}>{entry.level}</p>
                         </div>
@@ -1475,23 +1475,23 @@ function ReferralSection() {
     <div style={{ padding: "0 1rem 1.5rem" }}>
       <div style={{
         background: "linear-gradient(160deg,#0d0d18,#120c1a)",
-        border: "1px solid #a855f725",
+        border: "1px solid #E8622A25",
         borderRadius: "20px",
         padding: "1rem",
         position: "relative",
         overflow: "hidden",
-        boxShadow: "0 0 20px #a855f710",
+        boxShadow: "0 0 20px #E8622A10",
       }}>
         {/* Top line */}
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: "linear-gradient(90deg,transparent,#a855f7,#db2777,transparent)" }} />
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: "linear-gradient(90deg,transparent,#E8622A,#E8622A,transparent)" }} />
 
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginBottom: "0.5rem" }}>
           <div style={{
             width: "38px", height: "38px", borderRadius: "10px", flexShrink: 0,
-            background: "rgba(168,85,247,0.12)", border: "1px solid rgba(168,85,247,0.28)",
+            background: "rgba(232,98,42,0.12)", border: "1px solid rgba(232,98,42,0.28)",
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: "1.1rem", boxShadow: "0 0 10px rgba(168,85,247,0.2)",
+            fontSize: "1.1rem", boxShadow: "0 0 10px rgba(232,98,42,0.2)",
           }}>🔗</div>
           <div>
             <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.46rem", letterSpacing: "0.14em", marginBottom: "0.1rem" }}>РЕФЕРАЛ ПРОГРАММА · +200_XP</div>
@@ -1506,13 +1506,13 @@ function ReferralSection() {
 
         {/* Bonus banner */}
         <div style={{
-          background: "#a855f710", border: "1px solid #a855f730",
+          background: "#E8622A10", border: "1px solid #E8622A30",
           borderRadius: "10px", padding: "0.45rem 0.75rem",
           display: "flex", alignItems: "center", gap: "0.5rem",
           marginBottom: "0.65rem",
         }}>
           <span style={{ fontSize: "0.9rem" }}>⭐</span>
-          <p style={{ margin: 0, color: "#a855f7", fontSize: "0.7rem", lineHeight: 1.4 }}>
+          <p style={{ margin: 0, color: "#E8622A", fontSize: "0.7rem", lineHeight: 1.4 }}>
             Пригласите друга — оба получают <span style={{ fontWeight: 800 }}>+200 XP</span> мгновенно при активации кода
           </p>
         </div>
@@ -1524,7 +1524,7 @@ function ReferralSection() {
             onClick={handleCopy}
             style={{
               background: "#050507",
-              border: "1px dashed #a855f750",
+              border: "1px dashed #E8622A50",
               borderRadius: "12px",
               padding: "0.7rem 0.9rem",
               display: "flex", justifyContent: "space-between", alignItems: "center",
@@ -1538,8 +1538,8 @@ function ReferralSection() {
               <p style={{ margin: "0 0 0.1rem", color: "#4b5563", fontSize: "0.55rem", textTransform: "uppercase", letterSpacing: "0.1em" }}>Ваш реф. код</p>
               <span style={{
                 fontFamily: "'JetBrains Mono', monospace",
-                color: "#a855f7", fontSize: "0.92rem", fontWeight: 800, letterSpacing: "0.06em",
-                textShadow: "0 0 10px #a855f766",
+                color: "#E8622A", fontSize: "0.92rem", fontWeight: 800, letterSpacing: "0.06em",
+                textShadow: "0 0 10px #E8622A66",
               }}>
                 {info.code}
               </span>
@@ -1570,13 +1570,13 @@ function ReferralSection() {
             onClick={handleUse}
             disabled={submitting || !inputCode.trim()}
             style={{
-              background: submitting || !inputCode.trim() ? "#1a1a24" : "linear-gradient(135deg,#a855f7,#db2777)",
+              background: submitting || !inputCode.trim() ? "#1a1a24" : "linear-gradient(135deg,#E8622A,#E8622A)",
               border: "none", borderRadius: "10px",
               color: submitting || !inputCode.trim() ? "#4b5563" : "#fff",
               padding: "0.55rem 0.9rem",
               fontSize: "0.75rem", fontWeight: 700,
               cursor: submitting || !inputCode.trim() ? "not-allowed" : "pointer",
-              boxShadow: submitting || !inputCode.trim() ? "none" : "0 0 12px #a855f740",
+              boxShadow: submitting || !inputCode.trim() ? "none" : "0 0 12px #E8622A40",
               whiteSpace: "nowrap",
             }}
           >
@@ -1596,7 +1596,7 @@ function OperatorConsole() {
   const tierIdx = TIERS.findIndex((t) => xp >= t.min && (t.max === null || xp <= t.max));
   const tier = TIERS[Math.max(0, tierIdx)];
   const next = TIERS[tierIdx + 1] ?? null;
-  const color = TIER_COLORS[tier.name] ?? "#a855f7";
+  const color = TIER_COLORS[tier.name] ?? "#E8622A";
   const progressPct = tier && next
     ? Math.min(100, ((xp - tier.min) / (next.min - tier.min)) * 100)
     : 100;
@@ -1616,7 +1616,7 @@ function OperatorConsole() {
         {/* Decorative grid lines */}
         <div style={{
           position: "absolute", inset: 0, pointerEvents: "none", opacity: 0.03,
-          backgroundImage: "linear-gradient(#a855f7 1px, transparent 1px), linear-gradient(90deg, #a855f7 1px, transparent 1px)",
+          backgroundImage: "linear-gradient(#E8622A 1px, transparent 1px), linear-gradient(90deg, #E8622A 1px, transparent 1px)",
           backgroundSize: "28px 28px",
         }} />
 
@@ -1663,7 +1663,7 @@ function OperatorConsole() {
                 transition={{ duration: 1.2, ease: "easeOut" }}
                 style={{
                   height: "100%",
-                  background: `linear-gradient(90deg, ${color}, ${TIER_COLORS[next?.name ?? ""] ?? "#db2777"})`,
+                  background: `linear-gradient(90deg, ${color}, ${TIER_COLORS[next?.name ?? ""] ?? "#E8622A"})`,
                   borderRadius: "3px",
                   boxShadow: `0 0 8px ${color}88`,
                 }}
@@ -1755,7 +1755,7 @@ function OperatorConsole() {
             </div>
             <div style={{ width: "1px", background: "#22222f" }} />
             <div style={{ flex: 1, textAlign: "center" }}>
-              <p style={{ margin: 0, color: "#db2777", fontWeight: 700, fontSize: "0.9rem", fontFamily: "'JetBrains Mono', monospace" }}>
+              <p style={{ margin: 0, color: "#E8622A", fontWeight: 700, fontSize: "0.9rem", fontFamily: "'JetBrains Mono', monospace" }}>
                 ⬡ {user.neurocredits}
               </p>
               <p style={{ margin: 0, color: "#4b5563", fontSize: "0.58rem" }}>нейрокредиты</p>

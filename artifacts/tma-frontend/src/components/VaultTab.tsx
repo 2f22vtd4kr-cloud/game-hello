@@ -33,7 +33,7 @@ function expiryInfo(expiresAt: string | null | undefined): { color: string; labe
 
 const VAULT_NET_COLORS: Record<string, string> = {
   "Роснефть": "#ef4444", "Лукойл": "#f59e0b", "Газпром": "#3b82f6",
-  "Shell": "#eab308", "BP": "#22c55e", "Тотал": "#a855f7",
+  "Shell": "#eab308", "BP": "#22c55e", "Тотал": "#E8622A",
   "Татнефть": "#06b6d4",
 };
 
@@ -51,7 +51,7 @@ function QRModal({ hash, onClose, expiresAt, networkName, fuelType, volume, pric
   const [saving, setSaving] = useState(false);
   const now = new Date();
   const expiry = expiryInfo(expiresAt);
-  const netColor = networkName ? (VAULT_NET_COLORS[networkName] ?? "#a855f7") : "#a855f7";
+  const netColor = networkName ? (VAULT_NET_COLORS[networkName] ?? "#E8622A") : "#E8622A";
 
   useEffect(() => {
     QRCode.toDataURL(hash, {
@@ -120,7 +120,7 @@ function QRModal({ hash, onClose, expiresAt, networkName, fuelType, volume, pric
       }}
     >
       {/* Scan line */}
-      <div style={{ position: "absolute", inset: 0, pointerEvents: "none", background: "repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(168,85,247,0.02) 3px,rgba(168,85,247,0.02) 4px)" }} />
+      <div style={{ position: "absolute", inset: 0, pointerEvents: "none", background: "repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(232,98,42,0.02) 3px,rgba(232,98,42,0.02) 4px)" }} />
       <motion.div
         initial={{ scale: 0.85, y: 20 }}
         animate={{ scale: 1, y: 0 }}
@@ -137,15 +137,15 @@ function QRModal({ hash, onClose, expiresAt, networkName, fuelType, volume, pric
           width: "100%",
           position: "relative",
           overflow: "hidden",
-          boxShadow: `0 0 60px ${netColor}22, 0 0 120px #db277711`,
+          boxShadow: `0 0 60px ${netColor}22, 0 0 120px #E8622A11`,
         }}
       >
         {/* Top glow */}
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: `linear-gradient(90deg, transparent, ${netColor}, #db2777, transparent)` }} />
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: `linear-gradient(90deg, transparent, ${netColor}, #E8622A, transparent)` }} />
 
         {/* Header */}
         <div style={{ marginBottom: "1rem" }}>
-          <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#a855f7", fontSize: "0.5rem", letterSpacing: "0.2em", marginBottom: "0.25rem" }}>
+          <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#E8622A", fontSize: "0.5rem", letterSpacing: "0.2em", marginBottom: "0.25rem" }}>
             ⛽️ ТОПЛИВНЫЙ ВАУЧЕР
           </div>
           {networkName && (
@@ -153,15 +153,15 @@ function QRModal({ hash, onClose, expiresAt, networkName, fuelType, volume, pric
               <div style={{ color: "#e2e8f0", fontWeight: 800, fontSize: "1.05rem", margin: 0, letterSpacing: "0.02em" }}>
                 {networkName}
               </div>
-              <div style={{ color: "#a855f7", fontSize: "0.62rem", fontFamily: "'JetBrains Mono',monospace", marginTop: "2px" }}>
+              <div style={{ color: "#E8622A", fontSize: "0.62rem", fontFamily: "'JetBrains Mono',monospace", marginTop: "2px" }}>
                 {fuelType && <span style={{ fontWeight: 700 }}>{fuelType}</span>}
                 {volume && <span style={{ color: "rgba(255,255,255,0.65)" }}> · {volume}л</span>}
                 {price && price > 0 && <span style={{ color: "rgba(255,255,255,0.55)" }}> · ₽{price.toLocaleString("ru")}</span>}
               </div>
               <div style={{
                 marginTop: "0.4rem",
-                background: "rgba(168,85,247,0.08)",
-                border: "1px solid #a855f730",
+                background: "rgba(232,98,42,0.08)",
+                border: "1px solid #E8622A30",
                 borderRadius: "8px",
                 padding: "0.28rem 0.55rem",
                 display: "inline-block",
@@ -266,7 +266,7 @@ function QRModal({ hash, onClose, expiresAt, networkName, fuelType, volume, pric
           ].map(({ icon, label, onClick }) => (
             <button key={label} onClick={onClick} disabled={saving}
               style={{
-                background: "rgba(168,85,247,0.1)", border: "1px solid rgba(168,85,247,0.25)",
+                background: "rgba(232,98,42,0.1)", border: "1px solid rgba(232,98,42,0.25)",
                 borderRadius: "10px", padding: "0.5rem 0.35rem",
                 color: "#c4b5fd", fontSize: "0.65rem", fontWeight: 600,
                 cursor: saving ? "wait" : "pointer",
@@ -283,10 +283,10 @@ function QRModal({ hash, onClose, expiresAt, networkName, fuelType, volume, pric
           onClick={onClose}
           style={{
             width: "100%", padding: "0.7rem",
-            background: "linear-gradient(135deg,#a855f7,#db2777)",
+            background: "linear-gradient(135deg,#E8622A,#E8622A)",
             border: "none", borderRadius: "12px",
             color: "#fff", fontSize: "0.85rem", fontWeight: 700,
-            cursor: "pointer", boxShadow: "0 0 16px #a855f740",
+            cursor: "pointer", boxShadow: "0 0 16px #E8622A40",
           }}
         >
           Закрыть
@@ -297,8 +297,8 @@ function QRModal({ hash, onClose, expiresAt, networkName, fuelType, volume, pric
 }
 
 const FUEL_ACCENT: Record<string, string> = {
-  "АИ-92": "#a855f7",
-  "АИ-95": "#db2777",
+  "АИ-92": "#38bdf8",
+  "АИ-95": "#E8622A",
   "ДТ":    "#f59e0b",
   "Газ":   "#22c55e",
 };
@@ -309,7 +309,7 @@ function PurchaseCard({ purchase, accentColor }: { purchase: Purchase; accentCol
   const date = new Date(purchase.created_at).toLocaleDateString("ru-RU", {
     day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit",
   });
-  const fuelColor = accentColor ?? FUEL_ACCENT[purchase.fuel_type] ?? "#a855f7";
+  const fuelColor = accentColor ?? FUEL_ACCENT[purchase.fuel_type] ?? "#E8622A";
   const isActive = purchase.status === "active";
 
   return (
@@ -354,7 +354,7 @@ function PurchaseCard({ purchase, accentColor }: { purchase: Purchase; accentCol
         <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "3px", background: isActive ? `linear-gradient(180deg,${fuelColor},${fuelColor}55)` : "#1a1a24", borderRadius: "16px 0 0 16px" }} />
 
         {isActive && (
-          <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: `linear-gradient(90deg,transparent,${fuelColor},#db2777,transparent)` }} />
+          <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: `linear-gradient(90deg,transparent,${fuelColor},#E8622A,transparent)` }} />
         )}
 
         {/* Top row */}
@@ -385,7 +385,7 @@ function PurchaseCard({ purchase, accentColor }: { purchase: Purchase; accentCol
               <motion.span
                 animate={{ opacity: [1, 0.65, 1] }}
                 transition={{ duration: 1.8, repeat: Infinity }}
-                style={{ background: `linear-gradient(135deg,${fuelColor},#db2777)`, borderRadius: "6px", padding: "0.12rem 0.4rem", color: "#fff", fontSize: "0.6rem", fontWeight: 700, boxShadow: `0 0 8px ${fuelColor}40` }}
+                style={{ background: `linear-gradient(135deg,${fuelColor},#E8622A)`, borderRadius: "6px", padding: "0.12rem 0.4rem", color: "#fff", fontSize: "0.6rem", fontWeight: 700, boxShadow: `0 0 8px ${fuelColor}40` }}
               >
                 📱 QR
               </motion.span>
@@ -513,7 +513,7 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
         {/* Title row */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "12px" }}>
           <div>
-            <h2 style={{ margin: 0, color: "#fff", fontSize: "2rem", fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1, textShadow: "0 0 30px rgba(168,85,247,0.4)" }}>
+            <h2 style={{ margin: 0, color: "#fff", fontSize: "2rem", fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1, textShadow: "0 0 30px rgba(232,98,42,0.4)" }}>
               Хранилище
             </h2>
             <p style={{ margin: "4px 0 0", color: "rgba(255,255,255,0.4)", fontSize: "0.65rem" }}>
@@ -566,13 +566,13 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
                 return sum + Math.max(0, market - actual);
               }, 0);
             const items: { label: string; value: string; icon: string; color: string }[] = [
-              { label: "Всего топлива", value: `${totalLiters.toLocaleString("ru")}л`, icon: "⛽", color: "#a855f7" },
+              { label: "Всего топлива", value: `${totalLiters.toLocaleString("ru")}л`, icon: "⛽", color: "#E8622A" },
               { label: "Использовано", value: `${usedLiters.toLocaleString("ru")}л`, icon: "✓", color: "#22c55e" },
-              { label: "Потрачено", value: totalSpent > 0 ? `${totalSpent.toLocaleString("ru")}₽` : "—", icon: "💳", color: "#db2777" },
+              { label: "Потрачено", value: totalSpent > 0 ? `${totalSpent.toLocaleString("ru")}₽` : "—", icon: "💳", color: "#E8622A" },
               { label: "Ср. объём", value: avgVolume > 0 ? `${avgVolume}л` : "—", icon: "📊", color: "#f59e0b" },
             ];
             if (networkActiveCount > 0) {
-              items.splice(2, 0, { label: "Сетевых", value: String(networkActiveCount), icon: "🎫", color: "#a855f7" });
+              items.splice(2, 0, { label: "Сетевых", value: String(networkActiveCount), icon: "🎫", color: "#E8622A" });
             }
             if (totalSaved > 0) {
               items.splice(items.length, 0, { label: "Сэкономлено", value: `${Math.round(totalSaved).toLocaleString("ru")}₽`, icon: "💚", color: "#22c55e" });
@@ -600,7 +600,7 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
 
       {/* Fuel type spending breakdown */}
       {purchases.length > 0 && (() => {
-        const FUEL_COLORS: Record<string, string> = { "АИ-92": "#22c55e", "АИ-95": "#3b82f6", "АИ-98": "#a855f7", "ДТ": "#f59e0b", "Газ": "#06b6d4" };
+        const FUEL_COLORS: Record<string, string> = { "АИ-92": "#22c55e", "АИ-95": "#3b82f6", "АИ-98": "#38bdf8", "ДТ": "#f59e0b", "Газ": "#06b6d4" };
         const fuelBreakdown = purchases.reduce<Record<string, number>>((acc, p) => {
           const f = p.fuel_type ?? "—";
           acc[f] = (acc[f] ?? 0) + (p.volume ?? 0);
@@ -645,7 +645,7 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
           ? Math.min(100, ((user.xp - currentTier.min) / (currentTier.max - currentTier.min)) * 100)
           : 100;
         const tierIdx = XP_TIER_THRESHOLDS.findIndex(t => t === currentTier);
-        const tierColor = tierIdx >= 5 ? "#f59e0b" : tierIdx >= 3 ? "#db2777" : "#a855f7";
+        const tierColor = tierIdx >= 5 ? "#f59e0b" : tierIdx >= 3 ? "#E8622A" : "#E8622A";
         return (
           <div style={{
             margin: "0 1rem 0.75rem",
@@ -656,7 +656,7 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
             boxShadow: `0 0 20px ${tierColor}18`,
           }}>
             {/* Top gradient bar */}
-            <div style={{ height: "3px", background: `linear-gradient(90deg, ${tierColor}88, ${tierColor}, #db2777)` }} />
+            <div style={{ height: "3px", background: `linear-gradient(90deg, ${tierColor}88, ${tierColor}, #E8622A)` }} />
 
             <div style={{ padding: "0.9rem 1rem 0.75rem" }}>
               {/* User row */}
@@ -714,7 +714,7 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
               {/* Stats row */}
               <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem" }}>
                 <div style={{ flex: 1, background: "#0b0b0f", borderRadius: "8px", padding: "0.4rem", textAlign: "center" }}>
-                  <p style={{ margin: 0, fontFamily: "'JetBrains Mono',monospace", fontSize: "1rem", fontWeight: 700, color: "#a855f7" }}>
+                  <p style={{ margin: 0, fontFamily: "'JetBrains Mono',monospace", fontSize: "1rem", fontWeight: 700, color: "#E8622A" }}>
                     {active.length}
                   </p>
                   <p style={{ margin: 0, color: "rgba(255,255,255,0.45)", fontSize: "0.58rem" }}>ваучеров</p>
@@ -733,7 +733,7 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
                 </div>
                 {user.neurocredits > 0 && (
                   <div style={{ flex: 1, background: "#0b0b0f", borderRadius: "8px", padding: "0.4rem", textAlign: "center" }}>
-                    <p style={{ margin: 0, fontFamily: "'JetBrains Mono',monospace", fontSize: "1rem", fontWeight: 700, color: "#db2777" }}>
+                    <p style={{ margin: 0, fontFamily: "'JetBrains Mono',monospace", fontSize: "1rem", fontWeight: 700, color: "#E8622A" }}>
                       {user.neurocredits}
                     </p>
                     <p style={{ margin: 0, color: "rgba(255,255,255,0.45)", fontSize: "0.58rem" }}>NC</p>
@@ -756,14 +756,14 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
                   style={{
                     marginTop: "0.6rem",
                     background: "#050507",
-                    border: "1px dashed #a855f733",
+                    border: "1px dashed #E8622A33",
                     borderRadius: "8px",
                     padding: "0.4rem 0.6rem",
                     display: "flex", justifyContent: "space-between", alignItems: "center",
                     cursor: "pointer",
                   }}
                 >
-                  <span style={{ fontFamily: "'JetBrains Mono', monospace", color: "#a855f7", fontSize: "0.78rem", letterSpacing: "0.06em" }}>
+                  <span style={{ fontFamily: "'JetBrains Mono', monospace", color: "#E8622A", fontSize: "0.78rem", letterSpacing: "0.06em" }}>
                     {referral.code}
                   </span>
                   <span style={{ color: "rgba(255,255,255,0.55)", fontSize: "0.65rem" }}>
@@ -780,8 +780,8 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
       {!loading && (
         <div style={{ margin: "0 1rem 0.75rem", display: "flex", gap: "0.4rem" }}>
           {[
-            { icon: "🎫", label: "Каталог", tab: "catalog" as const, color: "#a855f7" },
-            { icon: "🎮", label: "Игры", tab: "games" as const, color: "#db2777" },
+            { icon: "🎫", label: "Каталог", tab: "catalog" as const, color: "#E8622A" },
+            { icon: "🎮", label: "Игры", tab: "games" as const, color: "#E8622A" },
             { icon: "🗺️", label: "Карта", tab: "map" as const, color: "#22c55e" },
             { icon: "📰", label: "Новости", tab: "news" as const, color: "#f59e0b" },
           ].map(({ icon, label, tab, color }) => (
@@ -823,15 +823,15 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
         const fuelCounts: Record<string, number> = {};
         for (const p of purchases) { fuelCounts[p.fuel_type] = (fuelCounts[p.fuel_type] ?? 0) + (p.volume ?? 0); }
         const topFuel = Object.entries(fuelCounts).sort((a, b) => b[1] - a[1])[0];
-        const FUEL_COLORS: Record<string, string> = { "АИ-92": "#a855f7", "АИ-95": "#db2777", "АИ-95+": "#8b5cf6", "ДТ": "#f59e0b", "Газ": "#14b8a6" };
+        const FUEL_COLORS: Record<string, string> = { "АИ-92": "#38bdf8", "АИ-95": "#E8622A", "АИ-95+": "#60a5fa", "ДТ": "#f59e0b", "Газ": "#14b8a6" };
         return (
-          <div style={{ margin: "0 1rem 0.75rem", background: "linear-gradient(135deg,#0d0d18,#110a18)", border: "1px solid #a855f722", borderRadius: "14px", padding: "0.75rem", position: "relative", overflow: "hidden" }}>
-            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: "linear-gradient(90deg,transparent,#a855f7,#db2777,transparent)" }} />
+          <div style={{ margin: "0 1rem 0.75rem", background: "linear-gradient(135deg,#0d0d18,#110a18)", border: "1px solid #E8622A22", borderRadius: "14px", padding: "0.75rem", position: "relative", overflow: "hidden" }}>
+            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: "linear-gradient(90deg,transparent,#E8622A,#E8622A,transparent)" }} />
             <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "rgba(255,255,255,0.45)", fontSize: "0.4rem", letterSpacing: "0.14em", marginBottom: "0.45rem" }}>СТАТИСТИКА РАСХОДА · ВСЕГО</div>
             <div style={{ display: "flex", gap: "0.4rem" }}>
               {[
                 { label: "Топлива", value: `${totalVolume}л`, color: "#22c55e" },
-                { label: "Потрачено", value: `${totalSpent.toLocaleString("ru")}`, color: "#a855f7", suffix: " ₽" },
+                { label: "Потрачено", value: `${totalSpent.toLocaleString("ru")}`, color: "#E8622A", suffix: " ₽" },
                 { label: "Покупок", value: purchases.length, color: "#3b82f6" },
                 topFuel ? { label: "Любимое", value: topFuel[0], color: FUEL_COLORS[topFuel[0]] ?? "rgba(255,255,255,0.65)" } : null,
               ].filter(Boolean).map((item) => item && (
@@ -850,7 +850,7 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
         const NET_COLORS: Record<string, string> = {
           "Роснефть": "#ef4444", "Лукойл": "#f59e0b", "Газпромнефть": "#3b82f6",
           "Газпром": "#3b82f6", "Башнефть": "#f97316", "Татнефть": "#06b6d4",
-          "ННК": "#a855f7", "Shell": "#eab308", "BP": "#22c55e", "Тотал": "#db2777",
+          "ННК": "#E8622A", "Shell": "#eab308", "BP": "#22c55e", "Тотал": "#E8622A",
         };
         const networkVouchers = active.filter((p) => p.station_name?.startsWith("Любая АЗС сети "));
         if (!networkVouchers.length) return null;
@@ -864,16 +864,16 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
           <div style={{ padding: "0 1rem 0.5rem" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "0 0 0.6rem" }}>
               <span style={{ fontSize: "0.9rem" }}>🎫</span>
-              <p style={{ color: "#a855f7", fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.1em", margin: 0, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, flex: 1 }}>
+              <p style={{ color: "#E8622A", fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.1em", margin: 0, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, flex: 1 }}>
                 Сетевые талоны · {networkVouchers.length}
               </p>
               {onNavigate && (
                 <button
                   onClick={() => onNavigate("catalog")}
                   style={{
-                    background: "rgba(168,85,247,0.1)", border: "1px solid #a855f733",
+                    background: "rgba(232,98,42,0.1)", border: "1px solid #E8622A33",
                     borderRadius: "6px", padding: "0.15rem 0.45rem",
-                    color: "#a855f7", fontSize: "0.52rem", fontWeight: 700,
+                    color: "#E8622A", fontSize: "0.52rem", fontWeight: 700,
                     cursor: "pointer", fontFamily: "'JetBrains Mono',monospace",
                     letterSpacing: "0.04em",
                   }}
@@ -881,7 +881,7 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
               )}
             </div>
             {Object.entries(byNetwork).map(([net, vouchers]) => {
-              const netColor = NET_COLORS[net] ?? "#a855f7";
+              const netColor = NET_COLORS[net] ?? "#E8622A";
               return (
                 <div key={net} style={{
                   background: `linear-gradient(135deg,#0d0d18,${netColor}06)`,
@@ -990,7 +990,7 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
                 a.click(); URL.revokeObjectURL(url);
               }}
               style={{
-                background: "rgba(168,85,247,0.1)", border: "1px solid #a855f722",
+                background: "rgba(232,98,42,0.1)", border: "1px solid #E8622A22",
                 borderRadius: "6px", color: "rgba(255,255,255,0.65)", fontSize: "0.6rem",
                 padding: "0.15rem 0.45rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.25rem",
               }}
@@ -1047,7 +1047,7 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
             {subscriptions.length > 3 && (
               <button
                 onClick={() => setShowAllSubs(!showAllSubs)}
-                style={{ background: "none", border: "none", color: "#a855f7", fontSize: "0.7rem", cursor: "pointer", padding: 0 }}
+                style={{ background: "none", border: "none", color: "#E8622A", fontSize: "0.7rem", cursor: "pointer", padding: 0 }}
               >
                 {showAllSubs ? "Скрыть" : "Все"}
               </button>
@@ -1144,7 +1144,7 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
             {stationNotes.length > 3 && (
               <button
                 onClick={() => setShowAllNotes(!showAllNotes)}
-                style={{ background: "none", border: "none", color: "#db2777", fontSize: "0.7rem", cursor: "pointer", padding: 0 }}
+                style={{ background: "none", border: "none", color: "#E8622A", fontSize: "0.7rem", cursor: "pointer", padding: 0 }}
               >
                 {showAllNotes ? "Скрыть" : "Все"}
               </button>
@@ -1158,8 +1158,8 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
               animate={{ opacity: 1, y: 0 }}
               style={{
                 background: "linear-gradient(160deg,#0e0e1a,#110a18)",
-                border: "1px solid #db277720",
-                borderLeft: "3px solid #db277766",
+                border: "1px solid #E8622A20",
+                borderLeft: "3px solid #E8622A66",
                 borderRadius: "10px",
                 padding: "0.55rem 0.75rem",
                 marginBottom: "0.4rem",
@@ -1167,7 +1167,7 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
                 overflow: "hidden",
               }}
             >
-              <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: "linear-gradient(90deg,#db277733,transparent)" }} />
+              <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: "linear-gradient(90deg,#E8622A33,transparent)" }} />
               <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "0.5rem" }}>
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <p style={{ margin: "0 0 0.15rem", color: "#e2e8f0", fontSize: "0.78rem", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -1350,7 +1350,7 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
             </div>
             <button
               onClick={() => setShowAllAch(!showAllAch)}
-              style={{ background: "none", border: "none", color: "#a855f7", fontSize: "0.7rem", cursor: "pointer", padding: 0 }}
+              style={{ background: "none", border: "none", color: "#E8622A", fontSize: "0.7rem", cursor: "pointer", padding: 0 }}
             >
               {showAllAch ? "Скрыть" : "Все"}
             </button>
@@ -1361,7 +1361,7 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
             <div style={{
               height: "100%",
               width: `${(achievements.filter(a => a.unlocked).length / achievements.length) * 100}%`,
-              background: "linear-gradient(90deg,#a855f7,#db2777)",
+              background: "linear-gradient(90deg,#E8622A,#E8622A)",
               transition: "width 0.6s",
             }} />
           </div>
@@ -1377,7 +1377,7 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
                   background: ach.unlocked
                     ? "linear-gradient(135deg,#14141c,#1a0d22)"
                     : "#0b0b0f",
-                  border: `1px solid ${ach.unlocked ? "#a855f740" : "#1a1a24"}`,
+                  border: `1px solid ${ach.unlocked ? "#E8622A40" : "#1a1a24"}`,
                   borderRadius: "12px",
                   padding: "0.6rem 0.75rem",
                   display: "flex",
@@ -1386,19 +1386,19 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
                   opacity: ach.unlocked ? 1 : 0.35,
                   position: "relative",
                   overflow: "hidden",
-                  boxShadow: ach.unlocked ? "0 0 16px #a855f715" : "none",
+                  boxShadow: ach.unlocked ? "0 0 16px #E8622A15" : "none",
                 }}
               >
                 {ach.unlocked && (
-                  <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: "linear-gradient(90deg,transparent,#a855f766,transparent)" }} />
+                  <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: "linear-gradient(90deg,transparent,#E8622A66,transparent)" }} />
                 )}
                 <div style={{
                   width: "36px", height: "36px", borderRadius: "10px", flexShrink: 0,
-                  background: ach.unlocked ? "rgba(168,85,247,0.15)" : "#14141c",
-                  border: `1px solid ${ach.unlocked ? "#a855f740" : "#22222f"}`,
+                  background: ach.unlocked ? "rgba(232,98,42,0.15)" : "#14141c",
+                  border: `1px solid ${ach.unlocked ? "#E8622A40" : "#22222f"}`,
                   display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: "1.1rem",
-                  boxShadow: ach.unlocked ? "0 0 14px #a855f738" : "none",
+                  boxShadow: ach.unlocked ? "0 0 14px #E8622A38" : "none",
                   position: "relative",
                   overflow: "hidden",
                 }}>
@@ -1409,7 +1409,7 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
                       transition={{ delay: i * 0.08, duration: 0.55, ease: "easeInOut", repeat: Infinity, repeatDelay: 4 }}
                       style={{
                         position: "absolute", top: 0, bottom: 0, width: "50%",
-                        background: "linear-gradient(90deg,transparent,rgba(168,85,247,0.22),transparent)",
+                        background: "linear-gradient(90deg,transparent,rgba(232,98,42,0.22),transparent)",
                         pointerEvents: "none",
                       }}
                     />
@@ -1420,15 +1420,15 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
                   <p style={{ margin: 0, color: ach.unlocked ? "#e2e8f0" : "rgba(255,255,255,0.55)", fontSize: "0.75rem", fontWeight: 700 }}>
                     {ach.label}
                   </p>
-                  <p style={{ margin: 0, color: ach.unlocked ? "#a855f7" : "rgba(255,255,255,0.45)", fontSize: "0.62rem" }}>
+                  <p style={{ margin: 0, color: ach.unlocked ? "#E8622A" : "rgba(255,255,255,0.45)", fontSize: "0.62rem" }}>
                     +{ach.xp_bonus} XP {!ach.unlocked && "· заблокировано"}
                   </p>
                 </div>
                 {ach.unlocked && (
                   <span style={{
-                    flexShrink: 0, background: "#a855f722", border: "1px solid #a855f744",
+                    flexShrink: 0, background: "#E8622A22", border: "1px solid #E8622A44",
                     borderRadius: "6px", padding: "0.15rem 0.4rem",
-                    color: "#a855f7", fontSize: "0.58rem", fontWeight: 700,
+                    color: "#E8622A", fontSize: "0.58rem", fontWeight: 700,
                   }}>
                     ✓
                   </span>
@@ -1457,7 +1457,7 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
             </div>
             <button
               onClick={() => setShowCreditHistory(!showCreditHistory)}
-              style={{ background: "none", border: "none", color: "#db2777", fontSize: "0.7rem", cursor: "pointer", padding: 0 }}
+              style={{ background: "none", border: "none", color: "#E8622A", fontSize: "0.7rem", cursor: "pointer", padding: 0 }}
             >
               {showCreditHistory ? "Скрыть" : "Показать"}
             </button>
@@ -1474,7 +1474,7 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
                     transition={{ delay: i * 0.04, duration: 0.22 }}
                     style={{
                       background: tx.delta >= 0 ? "linear-gradient(135deg,#0d0b14,#0b0b0f)" : "#0b0b0f",
-                      border: `1px solid ${tx.delta >= 0 ? "#db277720" : "#ef444418"}`,
+                      border: `1px solid ${tx.delta >= 0 ? "#E8622A20" : "#ef444418"}`,
                       borderRadius: "8px",
                       padding: "0.35rem 0.65rem",
                       display: "flex", justifyContent: "space-between", alignItems: "center",
@@ -1482,13 +1482,13 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
                     }}
                   >
                     {tx.delta > 0 && (
-                      <div style={{ position: "absolute", left: 0, top: "20%", bottom: "20%", width: "2px", background: "#db2777", borderRadius: "0 2px 2px 0", boxShadow: "0 0 4px #db277766" }} />
+                      <div style={{ position: "absolute", left: 0, top: "20%", bottom: "20%", width: "2px", background: "#E8622A", borderRadius: "0 2px 2px 0", boxShadow: "0 0 4px #E8622A66" }} />
                     )}
                     <div style={{ paddingLeft: tx.delta > 0 ? "0.4rem" : 0 }}>
                       <p style={{ margin: 0, color: "rgba(255,255,255,0.82)", fontSize: "0.73rem" }}>{tx.reason}</p>
                       {t && <p style={{ margin: 0, color: "rgba(255,255,255,0.45)", fontSize: "0.6rem" }}>{t}</p>}
                     </div>
-                    <p style={{ margin: 0, fontFamily: "'JetBrains Mono',monospace", fontSize: "0.82rem", fontWeight: 700, color: tx.delta >= 0 ? "#db2777" : "#ef4444", flexShrink: 0 }}>
+                    <p style={{ margin: 0, fontFamily: "'JetBrains Mono',monospace", fontSize: "0.82rem", fontWeight: 700, color: tx.delta >= 0 ? "#E8622A" : "#ef4444", flexShrink: 0 }}>
                       {tx.delta >= 0 ? "+" : ""}{tx.delta} NC
                     </p>
                   </motion.div>
@@ -1504,10 +1504,10 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
           <div style={{
             width: "72px", height: "72px", borderRadius: "20px",
             background: "linear-gradient(135deg,#14141c,#1a1428)",
-            border: "1px solid #a855f722",
+            border: "1px solid #E8622A22",
             display: "flex", alignItems: "center", justifyContent: "center",
             fontSize: "2rem",
-            boxShadow: "0 0 32px #a855f710",
+            boxShadow: "0 0 32px #E8622A10",
           }}>
             🗄️
           </div>
@@ -1520,18 +1520,18 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
           <button
             onClick={() => onNavigate?.("catalog")}
             style={{
-              background: "linear-gradient(135deg,#a855f7,#db2777)",
+              background: "linear-gradient(135deg,#E8622A,#E8622A)",
               border: "none", borderRadius: "12px", color: "#fff",
               fontSize: "0.8rem", fontWeight: 700,
               padding: "0.6rem 1.4rem", cursor: "pointer",
-              boxShadow: "0 0 16px #a855f740",
+              boxShadow: "0 0 16px #E8622A40",
               marginTop: "0.25rem",
             }}
           >
             🎫 Открыть Каталог
           </button>
           <div style={{
-            background: "#0d0d18", border: "1px solid #a855f722", borderRadius: "10px",
+            background: "#0d0d18", border: "1px solid #E8622A22", borderRadius: "10px",
             padding: "0.5rem 1rem", fontSize: "0.68rem",
             fontFamily: "'JetBrains Mono',monospace", color: "rgba(255,255,255,0.55)", letterSpacing: "0.06em",
           }}>

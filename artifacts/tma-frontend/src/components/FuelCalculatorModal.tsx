@@ -63,7 +63,7 @@ export function FuelCalculatorModal({ onClose }: Props) {
         style={{
           width: "100%", maxWidth: "480px",
           background: "linear-gradient(160deg,#0d0d18,#0a0a14)",
-          border: "1px solid #a855f733",
+          border: "1px solid #E8622A33",
           borderBottom: "none",
           borderRadius: "22px 22px 0 0",
           padding: "1rem 1.25rem 2rem",
@@ -73,7 +73,7 @@ export function FuelCalculatorModal({ onClose }: Props) {
           touchAction: "none",
         }}
       >
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: "linear-gradient(90deg,transparent,#a855f7,#db2777,transparent)" }} />
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: "linear-gradient(90deg,transparent,#E8622A,#E8622A,transparent)" }} />
 
         {/* Handle */}
         <div style={{ width: "36px", height: "4px", borderRadius: "2px", background: "rgba(255,255,255,0.1)", margin: "0 auto 1rem" }} />
@@ -98,9 +98,9 @@ export function FuelCalculatorModal({ onClose }: Props) {
               onClick={() => { impact("light"); setConsumption(String(val)); }}
               style={{
                 flexShrink: 0,
-                background: parseFloat(consumption) === val ? "rgba(168,85,247,0.2)" : "rgba(255,255,255,0.03)",
-                border: `1px solid ${parseFloat(consumption) === val ? "#a855f7" : "#1e1e2a"}`,
-                borderRadius: "8px", color: parseFloat(consumption) === val ? "#a855f7" : "#6b7280",
+                background: parseFloat(consumption) === val ? "rgba(232,98,42,0.2)" : "rgba(255,255,255,0.03)",
+                border: `1px solid ${parseFloat(consumption) === val ? "#E8622A" : "#1e1e2a"}`,
+                borderRadius: "8px", color: parseFloat(consumption) === val ? "#E8622A" : "#6b7280",
                 fontSize: "0.65rem", padding: "0.3rem 0.65rem", cursor: "pointer", whiteSpace: "nowrap",
               }}
             >{label}</button>
@@ -136,9 +136,9 @@ export function FuelCalculatorModal({ onClose }: Props) {
                 key={ft}
                 onClick={() => { impact("light"); setFuelType(ft); }}
                 style={{
-                  background: fuelType === ft ? "rgba(168,85,247,0.2)" : "rgba(255,255,255,0.03)",
-                  border: `1px solid ${fuelType === ft ? "#a855f7" : "#1e1e2a"}`,
-                  borderRadius: "8px", color: fuelType === ft ? "#a855f7" : "#6b7280",
+                  background: fuelType === ft ? "rgba(232,98,42,0.2)" : "rgba(255,255,255,0.03)",
+                  border: `1px solid ${fuelType === ft ? "#E8622A" : "#1e1e2a"}`,
+                  borderRadius: "8px", color: fuelType === ft ? "#E8622A" : "#6b7280",
                   fontSize: "0.68rem", padding: "0.3rem 0.6rem", cursor: "pointer",
                   display: "flex", flexDirection: "column", alignItems: "center", gap: "1px",
                 }}
@@ -154,16 +154,16 @@ export function FuelCalculatorModal({ onClose }: Props) {
         <label style={{ display: "flex", flexDirection: "column", gap: "0.3rem", marginBottom: "1rem" }}>
           <div style={{ display: "flex", justifyContent: "space-between" }}>
             <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.52rem", color: "#6b7280", letterSpacing: "0.1em" }}>ЗАПАС (%)</span>
-            <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.52rem", color: "#a855f7" }}>{margin}%</span>
+            <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.52rem", color: "#E8622A" }}>{margin}%</span>
           </div>
           <input
             type="range" min="0" max="50" step="5" value={margin}
             onChange={(e) => setMargin(e.target.value)}
-            style={{ accentColor: "#a855f7", width: "100%" }}
+            style={{ accentColor: "#E8622A", width: "100%" }}
           />
           <div style={{ display: "flex", justifyContent: "space-between" }}>
             {[0, 10, 20, 30, 40, 50].map(v => (
-              <span key={v} style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.46rem", color: parseFloat(margin) === v ? "#a855f7" : "#374151" }}>{v}%</span>
+              <span key={v} style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.46rem", color: parseFloat(margin) === v ? "#E8622A" : "#374151" }}>{v}%</span>
             ))}
           </div>
         </label>
@@ -177,14 +177,14 @@ export function FuelCalculatorModal({ onClose }: Props) {
             transition={{ duration: 0.18 }}
             style={{
               background: "linear-gradient(135deg,#0f0a1a,#0a0f1a)",
-              border: "1px solid #a855f733",
+              border: "1px solid #E8622A33",
               borderRadius: "16px",
               padding: "1rem 1.1rem",
               position: "relative",
               overflow: "hidden",
             }}
           >
-            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: "linear-gradient(90deg,transparent,#a855f7,transparent)" }} />
+            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: "linear-gradient(90deg,transparent,#E8622A,transparent)" }} />
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem", marginBottom: "0.75rem" }}>
               <div>
@@ -220,7 +220,7 @@ export function FuelCalculatorModal({ onClose }: Props) {
               </div>
               <div style={{ background: "rgba(255,255,255,0.02)", borderRadius: "8px", padding: "0.5rem 0.6rem", textAlign: "center" }}>
                 <div style={{ fontSize: "0.55rem", color: "#4b5563", marginBottom: "0.15rem" }}>1 литр</div>
-                <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.85rem", color: "#a855f7", fontWeight: 700 }}>{result.price} ₽</div>
+                <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.85rem", color: "#E8622A", fontWeight: 700 }}>{result.price} ₽</div>
               </div>
             </div>
 
@@ -237,7 +237,7 @@ export function FuelCalculatorModal({ onClose }: Props) {
                     const pct = Math.min(1, filled / 20);
                     return (
                       <div key={i} style={{ flex: 1, height: "6px", background: "#1e1e2a", borderRadius: "3px", overflow: "hidden" }}>
-                        <div style={{ width: `${pct * 100}%`, height: "100%", background: "linear-gradient(90deg,#3b82f6,#a855f7)", borderRadius: "3px" }} />
+                        <div style={{ width: `${pct * 100}%`, height: "100%", background: "linear-gradient(90deg,#3b82f6,#E8622A)", borderRadius: "3px" }} />
                       </div>
                     );
                   })}
