@@ -40,5 +40,6 @@ export const modules: ModuleMap = {
   "./components/mockups/tma-variants/OperatorHUD.tsx": () => import("../components/mockups/tma-variants/OperatorHUD.tsx"),
   "./components/mockups/tma-variants/PanicButton.tsx": () => import("../components/mockups/tma-variants/PanicButton.tsx"),
   "./components/mockups/tma-variants/ProximityList.tsx": () => import("../components/mockups/tma-variants/ProximityList.tsx"),
-  "./components/mockups/tma-variants/RefinedSignal.tsx": () => import("../components/mockups/tma-variants/RefinedSignal.tsx")
+  "./components/mockups/tma-variants/RefinedSignal.tsx": () => import("../components/mockups/tma-variants/RefinedSignal.tsx"),
+  "./components/mockups/vpn/VpnPage.tsx": () => import("../components/mockups/vpn/VpnPage.tsx")
 };
