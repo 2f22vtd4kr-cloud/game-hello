@@ -9,10 +9,10 @@ A premium Telegram bot + Telegram Mini App (TMA) fuel availability dashboard for
 **Last updated: 2026-06-28**
 
 ### Current deployment
-- **Live app**: `https://game-hello--asalokama.replit.app`
+- **Live app**: `https://game-hello--olpasicater.replit.app`
 - **Deploy type**: Replit autoscale (free tier — only autoscale available)
 - **Entry point**: `start.sh` → runs bot + FastAPI; FastAPI serves static React build from `artifacts/tma-frontend/dist/`
-- **CryptoBot webhook**: `https://game-hello--asalokama.replit.app/api/cryptobot-webhook`
+- **CryptoBot webhook**: `https://game-hello--olpasicater.replit.app/api/cryptobot-webhook`
 - **PAYMENT_SIGNING_SECRET**: already set as a Replit secret — do not regenerate
 
 ### What was just completed (2026-06-28)
