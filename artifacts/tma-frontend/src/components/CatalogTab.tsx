@@ -153,13 +153,13 @@ function CatalogStrip({ color, style = {} }: { color: string; style?: React.CSSP
   }} />;
 }
 
-const NETWORK_LOGOS: Record<string, { src: string; bg: string; fit?: string }> = {
-  "Лукойл":       { src: "/logo-lukoil.png",   bg: "#C8102E", fit: "cover" },
-  "Роснефть":     { src: "/logo-rosneft.png",  bg: "#ffffff", fit: "contain" },
-  "Газпромнефть": { src: "/logo-gazprom.png",  bg: "#ffffff", fit: "contain" },
-  "Башнефть":     { src: "/logo-bashneft.png", bg: "#ffffff", fit: "contain" },
-  "Татнефть":     { src: "/logo-tatneft.png",  bg: "#ffffff", fit: "contain" },
-  "ННК":          { src: "/logo-nnk.png",       bg: "#ffffff", fit: "contain" },
+const NETWORK_LOGOS: Record<string, { src: string; bg: string; padding: number }> = {
+  "Лукойл":       { src: "/logo-lukoil-clean.png",   bg: "#C8102E",              padding: 4  },
+  "Роснефть":     { src: "/logo-rosneft-clean.png",  bg: "#ffffff",              padding: 5  },
+  "Газпромнефть": { src: "/logo-gazprom-clean.png",  bg: "#ffffff",              padding: 5  },
+  "Башнефть":     { src: "/logo-bashneft-clean.png", bg: "#ffffff",              padding: 4  },
+  "Татнефть":     { src: "/logo-tatneft-clean.png",  bg: "#ffffff",              padding: 6  },
+  "ННК":          { src: "/logo-nnk-clean.png",      bg: "#ffffff",              padding: 5  },
 };
 
 function NetworkLogo({ net }: { net: Net }) {
@@ -175,7 +175,8 @@ function NetworkLogo({ net }: { net: Net }) {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          padding: logo.fit === "contain" ? 3 : 0,
+          padding: logo.padding,
+          flexShrink: 0,
         }}
       >
         <img
@@ -184,7 +185,7 @@ function NetworkLogo({ net }: { net: Net }) {
           style={{
             width: "100%",
             height: "100%",
-            objectFit: logo.fit === "cover" ? "cover" : "contain",
+            objectFit: "contain",
             objectPosition: "center",
             display: "block",
           }}
