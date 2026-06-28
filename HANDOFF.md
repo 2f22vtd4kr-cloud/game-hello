@@ -297,6 +297,53 @@ Removed all `СЛОВО_СЛОВО` underscore gray micro-labels across:
 
 ---
 
+## Session: 2026-06-28 — VaultTab Cobalt Starfield Graduation + Top Ticker Removal
+
+### What we were building
+Removed the global top market-ticker bar (redundant with Analytics tab's own ticker), then graduated the VaultTab mockup into production with the cobalt starfield design system.
+
+### What was done this session
+
+#### 1. Top ticker bar removed
+`artifacts/tma-frontend/src/App.tsx` — removed `<MarketTicker>` fixed strip + its import. The Analytics tab already has a live ticker; the global bar was duplicate.
+
+#### 2. VaultTab cobalt starfield graduation
+`artifacts/tma-frontend/src/components/VaultTab.tsx`:
+- Added `useMemo` import
+- 70 procedural star particles (SVG, `useMemo`, stable positions)
+- Outer wrapper: `background: linear-gradient(160deg, #0B0C4A, #07083A, #060730)` — matches MapTab
+- Ambient glow blobs (violet top-left, navy bottom-right) via `position: fixed`
+- New header: large "Хранилище" `2rem` bold title with violet glow, XP badge (`XP_TIER_THRESHOLDS` wired), animated XP progress bar (framer-motion), SECURE badge
+- Tier color: `#f59e0b` (≥5), `#E8622A` orange (≥3), `#A855F7` violet (default)
+- All real data wiring preserved: `useVaultStore`, `useUserStore`, `fetchReferral`, `fetchAchievements`, `fetchUserSubscriptions`, `fetchCreditsBalance`, `fetchUserNotes`, QRModal, PurchaseCard, achievements, subscriptions, notes, favorites, credit history, CSV export
+
+#### 3. Canvas updated
+- `ds-vault` canvas frame → live production app
+- `.agents/canvas-restore.js` updated: `ds-vault` marked `live: true`
+- `ds-games` is now `🔵 NEXT`
+
+### Canvas state at session end
+| Shape ID | Component | Status |
+|----------|-----------|--------|
+| `ds-map` | `MapTab.tsx` | ✅ LIVE |
+| `ds-loading` | `IntroSplash.tsx` | ✅ LIVE |
+| `ds-vault` | `VaultTab.tsx` | ✅ LIVE — graduated this session |
+| `ds-analytics` | `AnalyticsTab.tsx` | ✅ LIVE |
+| `ds-catalog` | `CatalogTab.tsx` | ✅ LIVE |
+| `ds-games` | `GamesTab.tsx` | 🔵 NEXT |
+| `ds-vpn` | `VPNTab.tsx` | 🔵 dormant |
+| `ds-ai` | `AiNewsTab.tsx` | 🔵 dormant |
+
+### Next steps
+1. Graduate `GamesTab` mockup — preserve `EmpireGame`, flip-card lottery, tap game, XP tier display
+2. Remaining: VPNTab, AiNewsTab
+
+### Gotchas discovered this session
+- React hooks (`useMemo`) must be declared BEFORE any conditional early return (`if (!user) return`) — placing them after causes "hooks called conditionally" error
+- Bot 409 Conflict errors in logs are transient (old polling session expiry) — expected behavior, not a bug
+
+---
+
 ## Handoff Convention
 
 Every session must append a new `## Session: YYYY-MM-DD — Title` block above this line before ending. Include:

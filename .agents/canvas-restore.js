@@ -25,8 +25,8 @@ const ORIGIN_X = 500, ORIGIN_Y = 118;
 //   ds-loading   ✅ LIVE — IntroSplash.tsx  (graduated)
 //   ds-analytics ✅ LIVE — AnalyticsTab.tsx (cobalt starfield in production)
 //   ds-catalog   ✅ LIVE — CatalogTab.tsx   (cobalt starfield in production)
-//   ds-vault     🔵 NEXT — VaultTab.tsx
-//   ds-games     🔵 dormant — GamesTab.tsx
+//   ds-vault     ✅ LIVE — VaultTab.tsx     (cobalt starfield, stars, orange XP)
+//   ds-games     🔵 NEXT — GamesTab.tsx
 //   ds-vpn       🔵 dormant
 //   ds-ai        🔵 dormant
 //
@@ -37,7 +37,7 @@ const FRAMES = [
   // row 0
   { id: "ds-map",       col: 0, row: 0, live: true,  file: "MapTab",        name: "Карта ✅ LIVE — cobalt starfield",           path: "artifacts/tma-frontend/src/components/MapTab.tsx" },
   { id: "ds-loading",   col: 1, row: 0, live: false, file: "LoadingScreen", name: "Загрузка ✅ Graduated — Loading Screen",      path: "artifacts/tma-frontend/src/components/IntroSplash.tsx" },
-  { id: "ds-vault",     col: 2, row: 0, live: false, file: "VaultTab",      name: "Хранилище 🔵 NEXT — Vault Tab",              path: "artifacts/mockup-sandbox/src/components/mockups/redesign/VaultTab.tsx" },
+  { id: "ds-vault",     col: 2, row: 0, live: true,  file: "VaultTab",      name: "Хранилище ✅ LIVE — cobalt starfield",        path: "artifacts/tma-frontend/src/components/VaultTab.tsx" },
   { id: "ds-games",     col: 3, row: 0, live: false, file: "GamesTab",      name: "Резерв 🔵 — Games Tab",                      path: "artifacts/mockup-sandbox/src/components/mockups/redesign/GamesTab.tsx" },
   // row 1
   { id: "ds-analytics", col: 0, row: 1, live: true,  file: "AnalyticsTab",  name: "Аналитика ✅ LIVE — cobalt starfield",        path: "artifacts/tma-frontend/src/components/AnalyticsTab.tsx" },

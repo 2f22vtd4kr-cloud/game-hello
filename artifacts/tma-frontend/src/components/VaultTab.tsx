@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useVaultStore } from "@/stores/useVaultStore";
 import { useUserStore } from "@/stores/useUserStore";
@@ -472,66 +472,84 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
   const avgVolume = purchases.length > 0 ? Math.round(totalLiters / purchases.length) : 0;
   const totalSpent = purchases.reduce((sum, p) => sum + (p.price ?? 0), 0);
 
+  // Procedural stars — stable across renders (hooks must be before any early return)
+  const stars = useMemo(() => Array.from({ length: 70 }, (_, i) => ({
+    id: i,
+    x: ((i * 137.508 + 23) % 390),
+    y: ((i * 97.3 + 11) % 844),
+    r: i % 5 === 0 ? 1.4 : i % 3 === 0 ? 1.1 : 0.7,
+    op: 0.25 + (i % 7) * 0.09,
+  })), []);
+
+  // XP progress for header
+  const currentTierHdr = XP_TIER_THRESHOLDS.find(t => user && user.xp >= t.min && (t.max === null || user.xp <= t.max));
+  const nextTierHdr = currentTierHdr?.max !== null ? XP_TIER_THRESHOLDS.find(t => t.min === (currentTierHdr!.max! + 1)) : null;
+  const xpPctHdr = currentTierHdr && currentTierHdr.max !== null && user
+    ? Math.min(100, ((user.xp - currentTierHdr.min) / (currentTierHdr.max - currentTierHdr.min)) * 100)
+    : 100;
+  const tierIdxHdr = XP_TIER_THRESHOLDS.findIndex(t => t === currentTierHdr);
+  const tierColorHdr = tierIdxHdr >= 5 ? "#f59e0b" : tierIdxHdr >= 3 ? "#E8622A" : "#A855F7";
+
   if (!user) return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "#6b7280" }}>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", background: "linear-gradient(160deg,#0B0C4A,#060730)", color: "#6b7280" }}>
       Загрузка…
     </div>
   );
 
   return (
-    <div style={{ height: "100%", overflowY: "auto", paddingBottom: "5rem" }}>
+    <div style={{ height: "100%", overflowY: "auto", paddingBottom: "5rem", background: "linear-gradient(160deg, #0B0C4A 0%, #07083A 50%, #060730 100%)", position: "relative" }}>
+
+      {/* Star field */}
+      <svg style={{ position: "fixed", inset: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 0 }} aria-hidden>
+        {stars.map(s => <circle key={s.id} cx={s.x} cy={s.y} r={s.r} fill="white" opacity={s.op} />)}
+      </svg>
+
+      {/* Ambient glows */}
+      <div style={{ position: "fixed", top: "-15%", left: "-20%", width: "60%", height: "50%", background: "#A855F7", borderRadius: "50%", filter: "blur(110px)", opacity: 0.07, pointerEvents: "none", zIndex: 0 }} />
+      <div style={{ position: "fixed", bottom: "10%", right: "-15%", width: "55%", height: "55%", background: "#1e3a8a", borderRadius: "50%", filter: "blur(120px)", opacity: 0.13, pointerEvents: "none", zIndex: 0 }} />
+
       {/* Header */}
-      <div style={{ padding: "12px 12px 8px" }}>
-        <div className="glass-panel" style={{ padding: "14px", position: "relative", overflow: "hidden" }}>
-          <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: "linear-gradient(90deg,transparent,var(--accent-secondary),var(--accent-primary),transparent)" }} />
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-            <div>
-              <p style={{ margin: "0 0 2px", fontSize: "0.52rem", color: "var(--text-tertiary)", letterSpacing: "0.14em", textTransform: "uppercase", fontFamily: "var(--font-mono)" }}>
-                Мой кошелёк
-              </p>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "4px" }}>
-                <span style={{ fontSize: "1.15rem" }}>💼</span>
-                <h2 style={{ margin: 0, color: "var(--text-primary)", fontSize: "1.1rem", fontWeight: 800, lineHeight: 1 }}>
-                  Кошелёк
-                </h2>
-              </div>
-              <p style={{ margin: 0, color: "var(--text-secondary)", fontSize: "0.65rem" }}>
-                {active.length} активных · {history.length} исп.
-                {totalLiters > 0 && (
-                  <span style={{ color: "var(--accent-fuel)", marginLeft: "6px", fontFamily: "var(--font-mono)", fontWeight: 700 }}>
-                    · ⛽{totalLiters.toLocaleString("ru")}л
-                  </span>
-                )}
-                {purchases.length > 0 && (() => {
-                  const firstDate = new Date(purchases.reduce((oldest, p) => p.created_at < oldest ? p.created_at : oldest, purchases[0].created_at));
-                  const days = Math.floor((Date.now() - firstDate.getTime()) / 86400000);
-                  return days > 0 ? <span style={{ color: "#4b5563", marginLeft: "6px" }}>· {days}д в системе</span> : null;
-                })()}
-              </p>
+      <div style={{ padding: "16px 16px 10px", position: "relative", zIndex: 1 }}>
+        {/* Title row */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "12px" }}>
+          <div>
+            <h2 style={{ margin: 0, color: "#fff", fontSize: "2rem", fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1, textShadow: "0 0 30px rgba(168,85,247,0.4)" }}>
+              Хранилище
+            </h2>
+            <p style={{ margin: "4px 0 0", color: "rgba(255,255,255,0.4)", fontSize: "0.65rem" }}>
+              {active.length} активных · {totalLiters > 0 ? `⛽ ${totalLiters.toLocaleString("ru")}л` : "пусто"}
+            </p>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "6px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "5px", background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.3)", borderRadius: "999px", padding: "3px 10px" }}>
+              <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: "#22c55e", boxShadow: "0 0 6px #22c55e", display: "inline-block" }} />
+              <span style={{ color: "#22c55e", fontSize: "0.52rem", fontWeight: 700, fontFamily: "'JetBrains Mono',monospace", letterSpacing: "0.08em" }}>SECURE</span>
             </div>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "6px" }}>
-              <div style={{
-                display: "flex", alignItems: "center", gap: "4px",
-                background: "rgba(52,211,153,0.1)", border: "1px solid rgba(52,211,153,0.25)",
-                borderRadius: "999px", padding: "3px 8px",
-              }}>
-                <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: "var(--accent-success)", boxShadow: "0 0 5px var(--accent-success)", display: "inline-block" }} />
-                <span style={{ color: "var(--accent-success)", fontSize: "0.55rem", fontWeight: 700, fontFamily: "var(--font-mono)", letterSpacing: "0.06em" }}>SECURE</span>
+            {user && (
+              <div style={{ background: `${tierColorHdr}20`, border: `1px solid ${tierColorHdr}44`, borderRadius: "8px", padding: "2px 10px", fontSize: "0.62rem", fontWeight: 700, color: tierColorHdr, fontFamily: "'JetBrains Mono',monospace" }}>
+                {user.xp.toLocaleString("ru")} XP
               </div>
-              {active.length > 0 && (
-                <div style={{
-                  background: "linear-gradient(135deg, rgba(244,114,182,0.15), rgba(167,139,250,0.15))",
-                  border: "1px solid rgba(244,114,182,0.3)",
-                  borderRadius: "8px", padding: "2px 8px",
-                  fontSize: "0.6rem", fontWeight: 700,
-                  color: "var(--accent-secondary)", fontFamily: "var(--font-mono)",
-                }}>
-                  {active.length} активных
-                </div>
-              )}
-            </div>
+            )}
           </div>
         </div>
+
+        {/* XP progress bar */}
+        {user && (
+          <div style={{ marginBottom: "4px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+              <span style={{ color: "rgba(255,255,255,0.35)", fontSize: "0.58rem", fontFamily: "'JetBrains Mono',monospace" }}>{currentTierHdr?.level ?? "—"}</span>
+              <span style={{ color: "rgba(255,255,255,0.35)", fontSize: "0.58rem", fontFamily: "'JetBrains Mono',monospace" }}>{nextTierHdr ? nextTierHdr.level : "MAX"}</span>
+            </div>
+            <div style={{ height: "5px", borderRadius: "3px", background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${xpPctHdr}%` }}
+                transition={{ duration: 1, ease: "easeOut" }}
+                style={{ height: "100%", borderRadius: "3px", background: `linear-gradient(90deg, ${tierColorHdr}88, ${tierColorHdr})`, boxShadow: `0 0 8px ${tierColorHdr}88` }}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Quick stats grid (2×2) */}
