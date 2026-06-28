@@ -1,17 +1,12 @@
 #!/bin/bash
 # Do NOT use 'set -e' — bot failure must not kill FastAPI in production
 
-echo "=== TMA Production Start (Autoscale) ==="
+echo "=== TMA Production Start (VM) ==="
 
 # Clean old processes if any stale ones exist
 pkill -f "python bot.py" 2>/dev/null || true
 pkill -f "tma_backend.main" 2>/dev/null || true
 sleep 1
-
-# Always rebuild the React frontend so source-code fixes reach production
-echo "Building React frontend..."
-pnpm --filter @workspace/tma-frontend run build
-echo "Frontend build complete."
 
 # Bot in background.
 # In production (REPLIT_DEPLOYMENT is set) the bot uses webhook mode on
