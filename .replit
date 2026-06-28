@@ -43,7 +43,7 @@ outputType = "console"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "python bot.py"
+args = "python3 bot.py"
 
 [[workflows.workflow]]
 name = "TMA Backend"
