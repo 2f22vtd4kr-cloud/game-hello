@@ -530,6 +530,9 @@ export default function App() {
         <MarketTicker stationCount={stations.length} />
       </div>
 
+      {/* Phone-width clamp — ensures proper mobile rendering in canvas/iframe previews */}
+      <style>{`body{max-width:430px;margin:0 auto;overflow-x:hidden}`}</style>
+
       {/* Ambient dot-grid */}
       <div aria-hidden style={{
         position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none",

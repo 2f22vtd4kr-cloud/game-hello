@@ -247,6 +247,55 @@ Continued the premium redesign series. Focus: (1) migrate project back to Replit
 
 ---
 
+## Session: 2026-06-28 — Progressive Disclosure + Canvas Phone Preview
+
+### What we were building
+Applied Progressive Disclosure UX pattern to CatalogTab (collapsing 7 filter rows into a single filter bar + bottom sheet), fixed all underscore micro-labels across all tab components, fixed phone-width rendering in canvas iframe.
+
+### What was done this session
+
+#### 1. Underscore label cleanup (all components)
+Removed all `СЛОВО_СЛОВО` underscore gray micro-labels across:
+- `CatalogTab.tsx` — 10 labels fixed (СЕТЕВОЙ ТАЛОН, ЛУЧШИЕ ПРЕДЛОЖЕНИЯ, НЕДАВНИЕ ЗАПРОСЫ, etc.)
+- `MapTab.tsx`, `FuelCalculatorModal.tsx`, `VpnModal.tsx`, `VaultTab.tsx`, `AnalyticsTab.tsx`, `StationCard.tsx`, `ReserveTab.tsx` — 31 more labels fixed
+- Total: 41 underscore labels removed across 8 components
+
+#### 2. CatalogTab stat pill fix
+- `СРОК` stat pill: `"до мес."` → `"90 дней"` (was missed in previous session)
+
+#### 3. CatalogTab Progressive Disclosure
+`artifacts/tma-frontend/src/components/CatalogTab.tsx`:
+- Replaced 7 rows of filter chips (Zone / Status / City / Network / Crisis heat / Clear-all / Fuel type) with a **single compact filter bar** (crisis dot + sort + ⚙ filter button)
+- New `showFiltersSheet` state: tapping ⚙ opens a **bottom-sheet modal** (AnimatePresence spring slide-up) with all filter options inside; "Применить" button closes it and shows filtered station count
+- Filter badge on the ⚙ button shows count of active filters
+- New `showDeals` state: "ЛУЧШИЕ ПРЕДЛОЖЕНИЯ" section is now **collapsible** (tap header to expand/collapse with chevron animation)
+- Added `activeFilterCount` computed variable (placed after `matchedFuelType` to avoid TDZ issue)
+- New state vars: `showFiltersSheet`, `showDeals`
+
+#### 4. Phone-width constraint (canvas/iframe fix)
+`artifacts/tma-frontend/src/App.tsx`:
+- Added `<style>{`body{max-width:430px;margin:0 auto;overflow-x:hidden}`}</style>` to root render
+- Fixes desktop rendering when app is embedded in canvas phone-sized iframe
+
+#### 5. Canvas phone preview
+- Added `catalog-phone-preview` iframe shape (390×844) on canvas to the right of the full-size artifact
+- Canvas focused on this shape for phone-size preview
+
+### Where we stopped / what's next
+1. **Graduate MapTab cobalt-starfield design** — still pending from previous session (ds-map canvas shape)
+2. Remaining dormant screens: VaultTab, VPNTab, GamesTab, AiNewsTab
+
+### Architecture decisions
+- `activeFilterCount` must be declared AFTER `matchedFuelType` (line ~1009 in CatalogTab) — `matchedFuelType` is not a useState hook, it's computed from `debouncedQuery`, so ordering matters to avoid TDZ
+- Phone-width clamp via `body` style tag in App.tsx root render (not index.html) so it reloads cleanly with HMR
+
+### Gotchas discovered this session
+- Canvas iframe renders desktop layout unless `body{max-width:430px}` is enforced — pure CSS fix, no proxy/wrapping needed
+- Python sed replacement is safest for large block replacements (>50 lines) — use markers + `str.index()` not regex
+- `activeFilterCount` using `cityFilter` etc. must come AFTER all useState declarations AND after `matchedFuelType` computed value
+
+---
+
 ## Handoff Convention
 
 Every session must append a new `## Session: YYYY-MM-DD — Title` block above this line before ending. Include:

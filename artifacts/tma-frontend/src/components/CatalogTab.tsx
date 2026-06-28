@@ -803,6 +803,8 @@ export function CatalogTab({ initialStationId, onCalcOpenChange }: CatalogTabPro
   const [nvLoading, setNvLoading] = useState(false);
   const [nvSortByPrice, setNvSortByPrice] = useState(false);
   const [showHowItWorks, setShowHowItWorks] = useState(false);
+  const [showFiltersSheet, setShowFiltersSheet] = useState(false);
+  const [showDeals, setShowDeals] = useState(false);
   const [cityFilter, setCityFilter] = useState<string | null>(null);
   const [networkFilter, setNetworkFilter] = useState<string | null>(null);
 
@@ -1004,6 +1006,7 @@ export function CatalogTab({ initialStationId, onCalcOpenChange }: CatalogTabPro
 
   // ── Fuel-alias detection ─────────────────────────────────────────────────
   const matchedFuelType = matchFuelAlias(debouncedQuery);
+  const activeFilterCount = [cityFilter, networkFilter, zoneFilter, availFilter, matchedFuelType].filter(Boolean).length;
 
   const haversineKm = (lat1: number, lng1: number, lat2: number, lng2: number) => {
     const R = 6371;
@@ -2021,299 +2024,238 @@ export function CatalogTab({ initialStationId, onCalcOpenChange }: CatalogTabPro
         )}
       </AnimatePresence>
 
-      {/* ── Zone filter chips ── */}
+      {/* ── Compact filter bar ── */}
       {!selectedStation && (
-        <div style={{ padding: "0 1rem 0.4rem", display: "flex", gap: "0.3rem", alignItems: "center" }}>
-          <span style={{ color: "#374151", fontSize: "0.58rem", flexShrink: 0 }}>Зона:</span>
-          {([
-            { key: null,         label: "Все",       color: "#6b7280", bg: "none",                    border: "#22222f" },
-            { key: "critical",   label: "🔴 Крит.",  color: "#ef4444", bg: "rgba(239,68,68,0.1)",    border: "#ef444430" },
-            { key: "standard",   label: "🟣 Станд.", color: "#a855f7", bg: "rgba(168,85,247,0.1)",   border: "#a855f730" },
-            { key: "eastern",    label: "🟡 Восток", color: "#f59e0b", bg: "rgba(245,158,11,0.1)",   border: "#f59e0b30" },
-          ] as const).map(({ key, label, color, bg, border }) => {
-            const isActive = zoneFilter === key;
+        <div style={{ padding: "0 1rem 0.45rem", display: "flex", gap: "0.35rem", alignItems: "center" }}>
+          {/* Crisis dot + count */}
+          {(() => {
+            const crisis2 = stations.filter(s => (s.fuel_statuses.reduce((a, b) => a + b.availability_pct, 0) / Math.max(s.fuel_statuses.length, 1)) < 25).length;
+            const heat = crisis2 >= Math.ceil(stations.length * 0.3) ? "#ef4444" : crisis2 >= Math.ceil(stations.length * 0.15) ? "#eab308" : "#22c55e";
             return (
-              <button key={String(key)} onClick={() => { impact("light"); setZoneFilter(key); }}
-                style={{
-                  flexShrink: 0, padding: "0.18rem 0.5rem",
-                  background: isActive ? bg : "none",
-                  border: `1px solid ${isActive ? border : "#1a1a24"}`,
-                  borderRadius: "6px", color: isActive ? color : "#374151",
-                  fontSize: "0.6rem", cursor: "pointer", fontWeight: isActive ? 700 : 400,
-                }}
-              >{label}</button>
-            );
-          })}
-          {zoneFilter && (
-            <span style={{ marginLeft: "auto", color: "#374151", fontSize: "0.57rem", flexShrink: 0 }}>
-              {filteredStations.length} АЗС
-            </span>
-          )}
-        </div>
-      )}
-
-      {/* ── Availability status filter chips ── */}
-      {!selectedStation && (
-        <div style={{ padding: "0 1rem 0.4rem", display: "flex", gap: "0.3rem", alignItems: "center" }}>
-          <span style={{ color: "#374151", fontSize: "0.58rem", flexShrink: 0 }}>Статус:</span>
-          {([
-            { key: null,     label: "Все",      color: "#6b7280", dot: "#6b7280" },
-            { key: "green",  label: "🟢 Норма", color: "#22c55e", dot: "#22c55e" },
-            { key: "yellow", label: "🟡 Мало",  color: "#eab308", dot: "#eab308" },
-            { key: "red",    label: "🔴 Нет",   color: "#ef4444", dot: "#ef4444" },
-          ] as const).map(({ key, label, color }) => {
-            const isActive = availFilter === key;
-            return (
-              <button key={String(key)} onClick={() => { impact("light"); setAvailFilter(key); }}
-                style={{
-                  flexShrink: 0, padding: "0.18rem 0.5rem",
-                  background: isActive ? `${color}18` : "none",
-                  border: `1px solid ${isActive ? color : "#1a1a24"}`,
-                  borderRadius: "6px", color: isActive ? color : "#374151",
-                  fontSize: "0.6rem", cursor: "pointer", fontWeight: isActive ? 700 : 400,
-                  transition: "all 0.15s",
-                }}
-              >{label}</button>
-            );
-          })}
-          {availFilter && (
-            <span style={{ marginLeft: "auto", color: "#374151", fontSize: "0.57rem", flexShrink: 0 }}>
-              {filteredStations.length} АЗС
-            </span>
-          )}
-        </div>
-      )}
-
-      {/* ── City quick filter chips ── */}
-      {!selectedStation && (() => {
-          const mskCount = stations.filter(s => s.region === "г. Москва и Новая Москва").length;
-          const crimeaCount = stations.filter(s => s.zone_type === "critical").length;
-          const spbCount = stations.filter(s => s.region === "г. Санкт-Петербург").length;
-          const tatCount = stations.filter(s => s.region === "Республика Татарстан").length;
-          const chips = [
-            { key: null,                          label: "🌐 Все",       count: stations.length, color: "#6b7280", bg: "none",                    border: "#22222f" },
-            { key: "г. Москва и Новая Москва",    label: "🏙 Москва",    count: mskCount,        color: "#3b82f6", bg: "rgba(59,130,246,0.1)",   border: "#3b82f630" },
-            { key: "__CRIMEA__",                  label: "🌊 Крым",      count: crimeaCount,     color: "#a855f7", bg: "rgba(168,85,247,0.1)",   border: "#a855f730" },
-            { key: "г. Санкт-Петербург",          label: "⚓ Питер",     count: spbCount,        color: "#06b6d4", bg: "rgba(6,182,212,0.1)",   border: "#06b6d430" },
-            { key: "Республика Татарстан",        label: "🟢 Татарстан", count: tatCount,        color: "#22c55e", bg: "rgba(34,197,94,0.1)",   border: "#22c55e30" },
-          ] as { key: string | null; label: string; count: number; color: string; bg: string; border: string }[];
-          return (
-            <div style={{ padding: "0 1rem 0.4rem", display: "flex", gap: "0.3rem", alignItems: "center", overflowX: "auto" }}>
-              <span style={{ color: "#374151", fontSize: "0.58rem", flexShrink: 0 }}>Город:</span>
-              {chips.map(({ key, label, count, color, bg, border }) => {
-                const isActive = cityFilter === key;
-                return (
-                  <button key={String(key)} onClick={() => { impact("light"); setCityFilter(key); }}
-                    style={{
-                      flexShrink: 0, padding: "0.18rem 0.5rem",
-                      background: isActive ? bg : "none",
-                      border: `1px solid ${isActive ? border : "#1a1a24"}`,
-                      borderRadius: "6px", color: isActive ? color : "#374151",
-                      fontSize: "0.6rem", cursor: "pointer", fontWeight: isActive ? 700 : 400,
-                      whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: "0.25rem",
-                    }}
-                  >
-                    {label}
-                    {count > 0 && key !== null && (
-                      <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.5rem", opacity: 0.7 }}>{count}</span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          );
-        })()}
-
-      {/* ── Network summary bar ── */}
-      {!selectedStation && !debouncedQuery && stations.length > 0 && (() => {
-        const nets: Record<string, { cnt: number; sum: number }> = {};
-        stations.forEach(s => {
-          const n = s.network || "Другие";
-          const avg = s.fuel_statuses.length ? s.fuel_statuses.reduce((a, b) => a + b.availability_pct, 0) / s.fuel_statuses.length : 0;
-          if (!nets[n]) nets[n] = { cnt: 0, sum: 0 };
-          nets[n].cnt++;
-          nets[n].sum += avg;
-        });
-        const top = Object.entries(nets).sort((a, b) => b[1].cnt - a[1].cnt).slice(0, 5);
-        const green = stations.filter(s => (s.fuel_statuses.reduce((a, b) => a + b.availability_pct, 0) / Math.max(s.fuel_statuses.length, 1)) >= 60).length;
-        return (
-          <div style={{ padding: "0 1rem 0.5rem", display: "flex", gap: "0.3rem", alignItems: "center", overflowX: "auto" }}>
-            <span style={{ fontFamily: "'JetBrains Mono',monospace", color: networkFilter ? "#a855f7" : "#22222f", fontSize: "0.55rem", flexShrink: 0 }}>СЕТИ:</span>
-            {top.map(([net, { cnt, sum }]) => {
-              const avgAvail = Math.round(sum / cnt);
-              const dotColor = avgAvail >= 60 ? "#22c55e" : avgAvail >= 25 ? "#eab308" : "#ef4444";
-              const isActive = networkFilter === net;
-              return (
-                <button key={net} onClick={() => { impact("light"); setNetworkFilter(isActive ? null : net); }}
-                  style={{
-                    flexShrink: 0, padding: "2px 8px",
-                    background: isActive ? `${dotColor}18` : "rgba(255,255,255,0.03)",
-                    border: `1px solid ${isActive ? dotColor : "#1a1a24"}`,
-                    borderRadius: "6px", color: isActive ? dotColor : "#4b5563",
-                    fontSize: "0.58rem", cursor: "pointer", fontWeight: isActive ? 700 : 400,
-                    fontFamily: "'JetBrains Mono',monospace",
-                    display: "flex", alignItems: "center", gap: "4px",
-                    transition: "all 0.18s",
-                  }}
-                >
-                  <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: dotColor, flexShrink: 0 }} />
-                  {net} <span style={{ color: isActive ? dotColor : "#374151", opacity: 0.8 }}>{cnt}</span>
-                </button>
-              );
-            })}
-            {networkFilter && (
-              <button onClick={() => { impact("light"); setNetworkFilter(null); }} style={{ flexShrink: 0, background: "rgba(239,68,68,0.08)", border: "1px solid #ef444430", borderRadius: "6px", color: "#ef4444", fontSize: "0.6rem", padding: "2px 6px", cursor: "pointer" }}>✕</button>
-            )}
-            <div style={{ marginLeft: "auto", flexShrink: 0, display: "flex", alignItems: "center", gap: "4px" }}>
-              <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: "#22c55e", boxShadow: "0 0 4px #22c55e" }} />
-              <span style={{ fontFamily: "'JetBrains Mono',monospace", color: "#22c55e", fontSize: "0.58rem", fontWeight: 700 }}>{green}</span>
-            </div>
-          </div>
-        );
-      })()}
-
-      {/* ── Crisis heat bar ── */}
-      {!selectedStation && stations.length > 0 && (() => {
-        const crisisCount = stations.filter(s => (s.fuel_statuses.reduce((a, b) => a + b.availability_pct, 0) / Math.max(s.fuel_statuses.length, 1)) < 25).length;
-        const lowCount    = stations.filter(s => { const a = s.fuel_statuses.reduce((acc, b) => acc + b.availability_pct, 0) / Math.max(s.fuel_statuses.length, 1); return a >= 25 && a < 60; }).length;
-        const goodCount   = stations.length - crisisCount - lowCount;
-        const crisisP = (crisisCount / stations.length) * 100;
-        const lowP    = (lowCount    / stations.length) * 100;
-        const goodP   = (goodCount   / stations.length) * 100;
-        const heatLevel = crisisP >= 30 ? "КРИТИЧНО" : crisisP >= 15 ? "НАПРЯЖЁННО" : "НОРМА";
-        const heatColor = crisisP >= 30 ? "#ef4444" : crisisP >= 15 ? "#eab308" : "#22c55e";
-        return (
-          <div style={{ padding: "0 1rem 0.4rem" }}>
-            <div style={{ background: "#0b0b10", border: "1px solid #1a1a24", borderRadius: "9px", padding: "0.4rem 0.6rem" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.25rem" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
-                  <div style={{ width: "5px", height: "5px", borderRadius: "50%", background: heatColor, boxShadow: `0 0 5px ${heatColor}` }} />
-                  <span style={{ fontFamily: "'JetBrains Mono',monospace", color: heatColor, fontSize: "0.52rem", fontWeight: 700, letterSpacing: "0.06em" }}>{heatLevel}</span>
-                </div>
-                <div style={{ display: "flex", gap: "0.55rem" }}>
-                  <span style={{ color: "#22c55e88", fontSize: "0.52rem" }}>🟢 {goodCount}</span>
-                  <span style={{ color: "#eab30888", fontSize: "0.52rem" }}>🟡 {lowCount}</span>
-                  <span style={{ color: "#ef444488", fontSize: "0.52rem" }}>🔴 {crisisCount}</span>
-                </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.22rem", flexShrink: 0 }}>
+                <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: heat, boxShadow: `0 0 5px ${heat}` }} />
+                <span style={{ fontFamily: "'JetBrains Mono',monospace", color: heat, fontSize: "0.52rem", fontWeight: 700 }}>{filteredStations.length}</span>
               </div>
-              <div style={{ height: "4px", borderRadius: "2px", overflow: "hidden", background: "#050507", display: "flex", gap: "1px" }}>
-                {goodP   > 0 && <div style={{ width: `${goodP}%`,   background: "#22c55e", transition: "width 0.8s" }} />}
-                {lowP    > 0 && <div style={{ width: `${lowP}%`,    background: "#eab308", transition: "width 0.8s" }} />}
-                {crisisP > 0 && <div style={{ width: `${crisisP}%`, background: "#ef4444", transition: "width 0.8s", animation: crisisP >= 30 ? "tmaPulse 2s infinite" : "none" }} />}
-              </div>
-            </div>
-          </div>
-        );
-      })()}
-
-      {/* ── Active filters clear-all bar ── */}
-      {!selectedStation && (cityFilter || networkFilter || zoneFilter || availFilter) && (
-        <div style={{ padding: "0 1rem 0.4rem", display: "flex", gap: "0.3rem", alignItems: "center", flexWrap: "wrap" }}>
-          <span style={{ fontFamily: "'JetBrains Mono',monospace", color: "#a855f7", fontSize: "0.52rem", letterSpacing: "0.06em" }}>ФИЛЬТРЫ:</span>
-          {cityFilter && (
-            <span style={{
-              background: "rgba(59,130,246,0.12)", border: "1px solid #3b82f630",
-              borderRadius: "6px", padding: "1px 7px",
-              color: "#3b82f6", fontSize: "0.58rem",
-              display: "flex", alignItems: "center", gap: "4px",
-            }}>
-              🏙 {cityFilter === "__CRIMEA__" ? "Крым" : cityFilter.split(" ").slice(-1)[0]}
-              <button onClick={() => { impact("light"); setCityFilter(null); }} style={{ background: "none", border: "none", color: "#3b82f6", cursor: "pointer", fontSize: "0.6rem", padding: "0", lineHeight: 1 }}>✕</button>
-            </span>
-          )}
-          {networkFilter && (
-            <span style={{
-              background: "rgba(168,85,247,0.12)", border: "1px solid #a855f730",
-              borderRadius: "6px", padding: "1px 7px",
-              color: "#a855f7", fontSize: "0.58rem",
-              display: "flex", alignItems: "center", gap: "4px",
-            }}>
-              🏭 {networkFilter}
-              <button onClick={() => { impact("light"); setNetworkFilter(null); }} style={{ background: "none", border: "none", color: "#a855f7", cursor: "pointer", fontSize: "0.6rem", padding: "0", lineHeight: 1 }}>✕</button>
-            </span>
-          )}
-          {zoneFilter && (
-            <span style={{
-              background: "rgba(245,158,11,0.12)", border: "1px solid #f59e0b30",
-              borderRadius: "6px", padding: "1px 7px",
-              color: "#f59e0b", fontSize: "0.58rem",
-              display: "flex", alignItems: "center", gap: "4px",
-            }}>
-              🗺 {zoneFilter}
-              <button onClick={() => { impact("light"); setZoneFilter(null); }} style={{ background: "none", border: "none", color: "#f59e0b", cursor: "pointer", fontSize: "0.6rem", padding: "0", lineHeight: 1 }}>✕</button>
-            </span>
-          )}
-          {availFilter && (
-            <span style={{
-              background: availFilter === "green" ? "rgba(34,197,94,0.12)" : availFilter === "yellow" ? "rgba(234,179,8,0.12)" : "rgba(239,68,68,0.12)",
-              border: `1px solid ${availFilter === "green" ? "#22c55e30" : availFilter === "yellow" ? "#eab30830" : "#ef444430"}`,
-              borderRadius: "6px", padding: "1px 7px",
-              color: availFilter === "green" ? "#22c55e" : availFilter === "yellow" ? "#eab308" : "#ef4444",
-              fontSize: "0.58rem",
-              display: "flex", alignItems: "center", gap: "4px",
-            }}>
-              {availFilter === "green" ? "🟢 Норма" : availFilter === "yellow" ? "🟡 Мало" : "🔴 Нет"}
-              <button onClick={() => { impact("light"); setAvailFilter(null); }} style={{ background: "none", border: "none", color: "inherit", cursor: "pointer", fontSize: "0.6rem", padding: "0", lineHeight: 1 }}>✕</button>
-            </span>
-          )}
-          <button
-            onClick={() => { impact("medium"); setCityFilter(null); setNetworkFilter(null); setZoneFilter(null); setAvailFilter(null); }}
-            style={{ marginLeft: "auto", background: "rgba(239,68,68,0.1)", border: "1px solid #ef444430", borderRadius: "6px", color: "#ef4444", fontSize: "0.58rem", padding: "1px 8px", cursor: "pointer", flexShrink: 0 }}
-          >✕ Сбросить всё</button>
-        </div>
-      )}
-
-      {/* ── Quick fuel-type chips ── */}
-      {!selectedStation && !matchedFuelType && (
-        <div style={{ padding: "0 1rem 0.5rem", display: "flex", gap: "0.35rem", overflowX: "auto", paddingBottom: "0.5rem" }}>
-          {([
-            { ft: "АИ-92",  icon: "⛽", color: "#22c55e", q: "92" },
-            { ft: "АИ-95",  icon: "⛽", color: "#3b82f6", q: "95" },
-            { ft: "АИ-95+", icon: "✨", color: "#a855f7", q: "95+" },
-            { ft: "АИ-100", icon: "🏎", color: "#f59e0b", q: "100" },
-            { ft: "ДТ",     icon: "🚛", color: "#f97316", q: "дт" },
-            { ft: "ДТ+",    icon: "🚛", color: "#d97706", q: "дт+" },
-            { ft: "Газ",    icon: "💧", color: "#14b8a6", q: "газ" },
-          ] as const).map(({ ft, icon, color, q }) => (
-            <button
-              key={ft}
-              onClick={() => { impact("light"); setSearchQuery(q); }}
-              style={{
+            );
+          })()}
+          {/* Sort quick-select */}
+          <div style={{ display: "flex", gap: "0.25rem", flex: 1, overflowX: "auto", scrollbarWidth: "none" }}>
+            {(["availability", "name", "price"] as const).map((mode) => (
+              <button key={mode} onClick={() => { impact("light"); setSortMode(mode); }} style={{
                 flexShrink: 0,
-                padding: "0.25rem 0.65rem",
-                background: `${color}10`,
-                border: `1px solid ${color}35`,
-                borderRadius: "8px",
-                color: color,
-                fontSize: "0.65rem",
-                cursor: "pointer",
-                fontFamily: "'JetBrains Mono',monospace",
-                fontWeight: 600,
-                display: "flex", alignItems: "center", gap: "0.28rem",
-                boxShadow: `0 0 8px ${color}12`,
-                transition: "background 0.15s, border-color 0.15s, box-shadow 0.15s",
-              }}
-              onMouseEnter={(e) => {
-                const el = e.currentTarget;
-                el.style.background = `${color}22`;
-                el.style.borderColor = `${color}66`;
-                el.style.boxShadow = `0 0 12px ${color}28`;
-              }}
-              onMouseLeave={(e) => {
-                const el = e.currentTarget;
-                el.style.background = `${color}10`;
-                el.style.borderColor = `${color}35`;
-                el.style.boxShadow = `0 0 8px ${color}12`;
+                background: sortMode === mode ? "rgba(168,85,247,0.2)" : "none",
+                border: `1px solid ${sortMode === mode ? "#a855f7" : "#22222f"}`,
+                borderRadius: "6px", color: sortMode === mode ? "#a855f7" : "#6b7280",
+                fontSize: "0.6rem", padding: "0.18rem 0.38rem", cursor: "pointer",
+              }}>
+                {mode === "availability" ? "Наличие" : mode === "name" ? "А-Я" : "Цена"}
+              </button>
+            ))}
+            <button onClick={() => {
+              if (sortMode === "nearest" && userCoords) { setSortMode("availability"); return; }
+              navigator.geolocation?.getCurrentPosition(
+                (pos) => { setUserCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude }); setSortMode("nearest"); toast("📍 Ближайшие АЗС", "success"); },
+                () => toast("Геолокация недоступна", "error"),
+                { timeout: 6000, maximumAge: 60000 }
+              );
+            }} style={{
+              flexShrink: 0,
+              background: sortMode === "nearest" ? "rgba(34,197,94,0.15)" : "none",
+              border: `1px solid ${sortMode === "nearest" ? "#22c55e" : "#22222f"}`,
+              borderRadius: "6px", color: sortMode === "nearest" ? "#22c55e" : "#6b7280",
+              fontSize: "0.6rem", padding: "0.18rem 0.38rem", cursor: "pointer",
+            }}>📍</button>
+          </div>
+          {/* Filter sheet trigger */}
+          <motion.button
+            whileTap={{ scale: 0.93 }}
+            onClick={() => { impact("light"); setShowFiltersSheet(true); }}
+            style={{
+              flexShrink: 0, display: "flex", alignItems: "center", gap: "0.28rem",
+              background: activeFilterCount > 0 ? "rgba(168,85,247,0.18)" : "rgba(255,255,255,0.04)",
+              border: `1px solid ${activeFilterCount > 0 ? "#a855f766" : "#22222f"}`,
+              borderRadius: "8px", padding: "0.25rem 0.55rem",
+              color: activeFilterCount > 0 ? "#a855f7" : "#6b7280",
+              fontSize: "0.62rem", fontWeight: activeFilterCount > 0 ? 700 : 400, cursor: "pointer",
+            }}
+          >
+            <span>⚙</span>
+            {activeFilterCount > 0 && (
+              <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.52rem", background: "#a855f7", color: "#fff", borderRadius: "50%", width: "15px", height: "15px", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800 }}>{activeFilterCount}</span>
+            )}
+          </motion.button>
+        </div>
+      )}
+
+      {/* ── Filter bottom sheet ── */}
+      <AnimatePresence>
+        {showFiltersSheet && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setShowFiltersSheet(false)}
+              style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)", zIndex: 200 }}
+            />
+            <motion.div
+              initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 30, stiffness: 380 }}
+              style={{
+                position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 201,
+                background: "linear-gradient(180deg,#09093e,#050525)",
+                borderRadius: "20px 20px 0 0",
+                border: "1px solid rgba(168,85,247,0.22)",
+                padding: "0 1.1rem 6.5rem",
+                maxHeight: "82vh", overflowY: "auto",
               }}
             >
-              <span style={{ fontSize: "0.68rem" }}>{icon}</span>
-              {ft}
-            </button>
-          ))}
-        </div>
-      )}
+              {/* Handle bar */}
+              <div style={{ width: "40px", height: "3px", borderRadius: "2px", background: "#a855f740", margin: "10px auto 14px" }} />
+              {/* Sheet header */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+                <span style={{ fontFamily: "'JetBrains Mono',monospace", color: "#a855f7", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.12em" }}>ФИЛЬТРЫ</span>
+                {activeFilterCount > 0 && (
+                  <button onClick={() => { impact("medium"); setCityFilter(null); setNetworkFilter(null); setZoneFilter(null); setAvailFilter(null); setShowFiltersSheet(false); }}
+                    style={{ background: "rgba(239,68,68,0.1)", border: "1px solid #ef444430", borderRadius: "7px", color: "#ef4444", fontSize: "0.62rem", padding: "3px 10px", cursor: "pointer" }}>
+                    ✕ Сбросить всё
+                  </button>
+                )}
+              </div>
 
-      {/* ── Best deals widget ── top-3 cheapest+available stations */}
+              {/* Zone */}
+              <div style={{ marginBottom: "1.1rem" }}>
+                <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#4b5563", fontSize: "0.46rem", letterSpacing: "0.12em", marginBottom: "0.5rem" }}>ЗОНА</div>
+                <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
+                  {([
+                    { key: null,       label: "Все",       color: "#6b7280", bg: "none",                    border: "#22222f" },
+                    { key: "critical", label: "🔴 Крит.",  color: "#ef4444", bg: "rgba(239,68,68,0.1)",    border: "#ef444430" },
+                    { key: "standard", label: "🟣 Станд.", color: "#a855f7", bg: "rgba(168,85,247,0.1)",   border: "#a855f730" },
+                    { key: "eastern",  label: "🟡 Восток", color: "#f59e0b", bg: "rgba(245,158,11,0.1)",   border: "#f59e0b30" },
+                  ] as const).map(({ key, label, color, bg, border }) => {
+                    const isA = zoneFilter === key;
+                    return (
+                      <button key={String(key)} onClick={() => { impact("light"); setZoneFilter(key); }}
+                        style={{ padding: "0.28rem 0.75rem", background: isA ? bg : "none", border: `1px solid ${isA ? border : "#1a1a24"}`, borderRadius: "9px", color: isA ? color : "#374151", fontSize: "0.7rem", cursor: "pointer", fontWeight: isA ? 700 : 400 }}>
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Availability status */}
+              <div style={{ marginBottom: "1.1rem" }}>
+                <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#4b5563", fontSize: "0.46rem", letterSpacing: "0.12em", marginBottom: "0.5rem" }}>НАЛИЧИЕ</div>
+                <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
+                  {([
+                    { key: null,     label: "Все",      color: "#6b7280" },
+                    { key: "green",  label: "🟢 Норма", color: "#22c55e" },
+                    { key: "yellow", label: "🟡 Мало",  color: "#eab308" },
+                    { key: "red",    label: "🔴 Нет",   color: "#ef4444" },
+                  ] as const).map(({ key, label, color }) => {
+                    const isA = availFilter === key;
+                    return (
+                      <button key={String(key)} onClick={() => { impact("light"); setAvailFilter(key); }}
+                        style={{ padding: "0.28rem 0.75rem", background: isA ? `${color}18` : "none", border: `1px solid ${isA ? color : "#1a1a24"}`, borderRadius: "9px", color: isA ? color : "#374151", fontSize: "0.7rem", cursor: "pointer", fontWeight: isA ? 700 : 400, transition: "all 0.15s" }}>
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* City */}
+              <div style={{ marginBottom: "1.1rem" }}>
+                <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#4b5563", fontSize: "0.46rem", letterSpacing: "0.12em", marginBottom: "0.5rem" }}>ГОРОД</div>
+                <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
+                  {([
+                    { key: null,                       label: "🌐 Все",       color: "#6b7280", bg: "none",                   border: "#22222f" },
+                    { key: "г. Москва и Новая Москва", label: "🏙 Москва",    color: "#3b82f6", bg: "rgba(59,130,246,0.1)",  border: "#3b82f630" },
+                    { key: "__CRIMEA__",               label: "🌊 Крым",      color: "#a855f7", bg: "rgba(168,85,247,0.1)",  border: "#a855f730" },
+                    { key: "г. Санкт-Петербург",       label: "⚓ Питер",     color: "#06b6d4", bg: "rgba(6,182,212,0.1)",  border: "#06b6d430" },
+                    { key: "Республика Татарстан",     label: "🟢 Татарстан", color: "#22c55e", bg: "rgba(34,197,94,0.1)",  border: "#22c55e30" },
+                  ] as { key: string | null; label: string; color: string; bg: string; border: string }[]).map(({ key, label, color, bg, border }) => {
+                    const isA = cityFilter === key;
+                    return (
+                      <button key={String(key)} onClick={() => { impact("light"); setCityFilter(key); }}
+                        style={{ padding: "0.28rem 0.75rem", background: isA ? bg : "none", border: `1px solid ${isA ? border : "#1a1a24"}`, borderRadius: "9px", color: isA ? color : "#374151", fontSize: "0.7rem", cursor: "pointer", fontWeight: isA ? 700 : 400, whiteSpace: "nowrap" }}>
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Network */}
+              {stations.length > 0 && (() => {
+                const nets2: Record<string, { cnt: number; sum: number }> = {};
+                stations.forEach(s => {
+                  const n = s.network || "Другие";
+                  const avg = s.fuel_statuses.length ? s.fuel_statuses.reduce((a, b) => a + b.availability_pct, 0) / s.fuel_statuses.length : 0;
+                  if (!nets2[n]) nets2[n] = { cnt: 0, sum: 0 };
+                  nets2[n].cnt++;
+                  nets2[n].sum += avg;
+                });
+                const top2 = Object.entries(nets2).sort((a, b) => b[1].cnt - a[1].cnt).slice(0, 8);
+                return (
+                  <div style={{ marginBottom: "1.1rem" }}>
+                    <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#4b5563", fontSize: "0.46rem", letterSpacing: "0.12em", marginBottom: "0.5rem" }}>СЕТЬ</div>
+                    <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
+                      <button onClick={() => { impact("light"); setNetworkFilter(null); }}
+                        style={{ padding: "0.28rem 0.75rem", background: !networkFilter ? "rgba(255,255,255,0.08)" : "none", border: `1px solid ${!networkFilter ? "#a855f766" : "#1a1a24"}`, borderRadius: "9px", color: !networkFilter ? "#e2e8f0" : "#374151", fontSize: "0.7rem", cursor: "pointer", fontWeight: !networkFilter ? 700 : 400 }}>
+                        Все
+                      </button>
+                      {top2.map(([net, { cnt, sum }]) => {
+                        const avgA = Math.round(sum / cnt);
+                        const dot = avgA >= 60 ? "#22c55e" : avgA >= 25 ? "#eab308" : "#ef4444";
+                        const isA = networkFilter === net;
+                        return (
+                          <button key={net} onClick={() => { impact("light"); setNetworkFilter(isA ? null : net); }}
+                            style={{ padding: "0.28rem 0.75rem", display: "flex", alignItems: "center", gap: "0.28rem", background: isA ? `${dot}18` : "none", border: `1px solid ${isA ? dot : "#1a1a24"}`, borderRadius: "9px", color: isA ? dot : "#374151", fontSize: "0.7rem", cursor: "pointer", fontWeight: isA ? 700 : 400, transition: "all 0.18s" }}>
+                            <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: dot, flexShrink: 0 }} />
+                            {net}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Fuel type quick-filter */}
+              <div style={{ marginBottom: "1.1rem" }}>
+                <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#4b5563", fontSize: "0.46rem", letterSpacing: "0.12em", marginBottom: "0.5rem" }}>ТИП ТОПЛИВА</div>
+                <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
+                  {([
+                    { ft: "АИ-92",  color: "#22c55e", q: "92"  },
+                    { ft: "АИ-95",  color: "#3b82f6", q: "95"  },
+                    { ft: "АИ-95+", color: "#a855f7", q: "95+" },
+                    { ft: "АИ-100", color: "#f59e0b", q: "100" },
+                    { ft: "ДТ",     color: "#f97316", q: "дт"  },
+                    { ft: "ДТ+",    color: "#d97706", q: "дт+" },
+                    { ft: "Газ",    color: "#14b8a6", q: "газ" },
+                  ] as const).map(({ ft, color, q }) => (
+                    <button key={ft} onClick={() => { impact("light"); setSearchQuery(q); setShowFiltersSheet(false); }}
+                      style={{ padding: "0.28rem 0.75rem", background: `${color}10`, border: `1px solid ${color}35`, borderRadius: "9px", color, fontSize: "0.7rem", cursor: "pointer", fontFamily: "'JetBrains Mono',monospace", fontWeight: 600 }}>
+                      {ft}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Apply button */}
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                onClick={() => { impact("medium"); setShowFiltersSheet(false); }}
+                style={{ width: "100%", padding: "0.8rem", background: "linear-gradient(135deg,rgba(168,85,247,0.22),rgba(219,39,119,0.15))", border: "1px solid #a855f750", borderRadius: "13px", color: "#a855f7", fontSize: "0.85rem", fontWeight: 700, cursor: "pointer", marginTop: "0.5rem", fontFamily: "'JetBrains Mono',monospace" }}
+              >
+                Применить · {filteredStations.length} АЗС
+              </motion.button>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* ── Best deals (collapsible) ── */}
       {!selectedStation && !searchQuery && stations.length > 0 && (() => {
         const DEAL_FUELS = ["АИ-92", "АИ-95", "ДТ"] as const;
         type DealFuel = typeof DEAL_FUELS[number];
@@ -2337,94 +2279,83 @@ export function CatalogTab({ initialStationId, onCalcOpenChange }: CatalogTabPro
         const color = DEAL_COLORS[dealFuel];
         return (
           <div style={{ padding: "0 1rem 0.5rem" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginBottom: "0.4rem" }}>
-              <span style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.42rem", letterSpacing: "0.14em" }}>ЛУЧШИЕ ПРЕДЛОЖЕНИЯ · СЕЙЧАС</span>
+            {/* Collapsible header */}
+            <button
+              onClick={() => { impact("light"); setShowDeals(v => !v); }}
+              style={{ width: "100%", display: "flex", alignItems: "center", gap: "0.4rem", background: "none", border: "none", cursor: "pointer", padding: "0.2rem 0", marginBottom: showDeals ? "0.45rem" : 0 }}
+            >
+              <span style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.42rem", letterSpacing: "0.14em", flexShrink: 0 }}>ЛУЧШИЕ ПРЕДЛОЖЕНИЯ · СЕЙЧАС</span>
               <div style={{ flex: 1, height: "1px", background: `linear-gradient(90deg,${color}33,transparent)` }} />
-            </div>
-            <div style={{ display: "flex", gap: "0.3rem", marginBottom: "0.55rem" }}>
-              {DEAL_FUELS.map((f) => (
-                <button key={f} onClick={() => setDealFuel(f)} style={{ padding: "0.15rem 0.45rem", background: dealFuel === f ? `${DEAL_COLORS[f]}20` : "#0b0b10", border: `1px solid ${dealFuel === f ? DEAL_COLORS[f] : "#1e1e2a"}`, borderRadius: "6px", color: dealFuel === f ? DEAL_COLORS[f] : "#374151", fontSize: "0.62rem", fontWeight: dealFuel === f ? 700 : 400, cursor: "pointer" }}>{f}</button>
-              ))}
-            </div>
-            {deals.length >= 3 ? (() => {
-              const avgPrice = deals.reduce((s, d) => s + d.price, 0) / deals.length;
-              const podiumOrder = [deals[1], deals[0], deals[2]];
-              const podiumRanks = [2, 1, 3];
-              const rankColors = ["#94a3b8", "#f59e0b", "#cd7f32"];
-              const rankMedals = ["", "🥇", "🥈", "🥉"];
-              const rankBg = [
-                "linear-gradient(160deg,#0c0d14,#10101e)",
-                "linear-gradient(160deg,#120f04,#0e0b10)",
-                "linear-gradient(160deg,#0c0d14,#100e0c)",
-              ];
-              return (
-                <div style={{ display: "flex", gap: "0.4rem", alignItems: "flex-end" }}>
-                  {podiumOrder.map(({ s, price, avail }, colIdx) => {
-                    const rank = podiumRanks[colIdx];
-                    const rc = rankColors[colIdx];
-                    const isFirst = rank === 1;
-                    const savings = Math.max(0, avgPrice - price);
-                    const availColor = avail >= 60 ? "#22c55e" : avail >= 25 ? "#eab308" : "#ef4444";
+              <div style={{ display: "flex", gap: "0.2rem", flexShrink: 0 }}>
+                {DEAL_FUELS.map((f) => (
+                  <button key={f} onClick={(e) => { e.stopPropagation(); setDealFuel(f); }} style={{ padding: "0.08rem 0.28rem", background: dealFuel === f ? `${DEAL_COLORS[f]}20` : "#0b0b10", border: `1px solid ${dealFuel === f ? DEAL_COLORS[f] : "#1e1e2a"}`, borderRadius: "4px", color: dealFuel === f ? DEAL_COLORS[f] : "#374151", fontSize: "0.5rem", cursor: "pointer" }}>{f}</button>
+                ))}
+              </div>
+              <motion.span animate={{ rotate: showDeals ? 180 : 0 }} transition={{ duration: 0.2 }} style={{ color: "#4b5563", fontSize: "0.6rem", display: "inline-block", flexShrink: 0 }}>▾</motion.span>
+            </button>
+            <AnimatePresence>
+              {showDeals && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.22 }} style={{ overflow: "hidden" }}
+                >
+                  {deals.length >= 3 ? (() => {
+                    const avgPrice = deals.reduce((s, d) => s + d.price, 0) / deals.length;
+                    const podiumOrder = [deals[1], deals[0], deals[2]];
+                    const podiumRanks = [2, 1, 3];
+                    const rankColors = ["#94a3b8", "#f59e0b", "#cd7f32"];
+                    const rankMedals = ["", "🥇", "🥈", "🥉"];
+                    const rankBg = ["linear-gradient(160deg,#0c0d14,#10101e)","linear-gradient(160deg,#120f04,#0e0b10)","linear-gradient(160deg,#0c0d14,#100e0c)"];
                     return (
-                      <motion.div
-                        key={s.id}
-                        whileTap={{ scale: 0.96 }}
-                        onClick={() => { setSelectedStation(s); impact("light"); }}
-                        style={{
-                          flex: 1, background: rankBg[colIdx],
-                          border: `1.5px solid ${rc}${isFirst ? "66" : "33"}`,
-                          borderRadius: isFirst ? "14px" : "12px",
-                          padding: isFirst ? "0.7rem 0.4rem 0.55rem" : "0.5rem 0.35rem 0.45rem",
-                          cursor: "pointer", position: "relative", overflow: "hidden",
-                          boxShadow: isFirst ? `0 0 22px ${rc}22, 0 4px 16px #00000066` : "none",
-                          textAlign: "center",
-                          marginBottom: isFirst ? 0 : "4px",
-                        }}
-                      >
-                        {isFirst && <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1.5px", background: `linear-gradient(90deg,transparent,${rc},transparent)` }} />}
-                        <div style={{ fontSize: isFirst ? "1.15rem" : "0.85rem", lineHeight: 1, marginBottom: "0.18rem" }}>{rankMedals[rank]}</div>
-                        <div style={{ fontFamily: "'JetBrains Mono',monospace", color: rc, fontSize: isFirst ? "0.58rem" : "0.5rem", fontWeight: 800, letterSpacing: "0.05em", marginBottom: "0.18rem" }}>#{rank}</div>
-                        <div style={{ color: isFirst ? "#e2e8f0" : "#9ca3af", fontSize: isFirst ? "0.63rem" : "0.56rem", fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: "0.22rem" }}>{s.network || s.name}</div>
-                        <div style={{ fontFamily: "'JetBrains Mono',monospace", color: rc, fontSize: isFirst ? "0.95rem" : "0.78rem", fontWeight: 900, lineHeight: 1, marginBottom: "0.28rem" }}>{price.toFixed(1)}₽</div>
-                        <div style={{ height: "3px", background: "#1a1a24", borderRadius: "2px", overflow: "hidden", marginBottom: "0.18rem" }}>
-                          <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${avail}%` }}
-                            transition={{ duration: 0.8, ease: "easeOut" }}
-                            style={{ height: "100%", background: availColor, borderRadius: "2px" }}
-                          />
-                        </div>
-                        <div style={{ fontFamily: "'JetBrains Mono',monospace", color: availColor, fontSize: "0.48rem", marginBottom: savings > 0.1 ? "0.2rem" : 0 }}>{avail}%</div>
-                        {savings > 0.1 && (
-                          <div style={{ background: `${rc}18`, border: `1px solid ${rc}33`, borderRadius: "4px", padding: "0.06rem 0.28rem", color: rc, fontSize: "0.44rem", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>
-                            −{savings.toFixed(1)}₽
-                          </div>
-                        )}
-                      </motion.div>
-                    );
-                  })}
-                </div>
-              );
-            })() : (
-              <div style={{ background: "linear-gradient(135deg,#0d0d18,#0f0c1a)", border: `1px solid ${color}22`, borderRadius: "12px", padding: "0.65rem 0.75rem", position: "relative", overflow: "hidden" }}>
-                <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: `linear-gradient(90deg,transparent,${color},transparent)` }} />
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.28rem" }}>
-                  {deals.map(({ s, price, avail }, i) => (
-                    <div key={s.id} onClick={() => { setSelectedStation(s); impact("light"); }} style={{ display: "flex", alignItems: "center", gap: "0.4rem", cursor: "pointer", padding: "0.22rem 0.35rem", borderRadius: "7px", background: i === 0 ? `${color}08` : "transparent" }}>
-                      <span style={{ fontSize: "0.75rem", flexShrink: 0 }}>{["🥇","🥈","🥉"][i] ?? "·"}</span>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ color: "#e2e8f0", fontSize: "0.65rem", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.name}</div>
-                        <div style={{ color: "#374151", fontSize: "0.55rem" }}>{s.network || "АЗС"}</div>
+                      <div style={{ display: "flex", gap: "0.4rem", alignItems: "flex-end" }}>
+                        {podiumOrder.map(({ s, price, avail }, colIdx) => {
+                          const rank = podiumRanks[colIdx];
+                          const rc = rankColors[colIdx];
+                          const isFirst = rank === 1;
+                          const savings = Math.max(0, avgPrice - price);
+                          const availColor = avail >= 60 ? "#22c55e" : avail >= 25 ? "#eab308" : "#ef4444";
+                          return (
+                            <motion.div key={s.id} whileTap={{ scale: 0.96 }} onClick={() => { setSelectedStation(s); impact("light"); }}
+                              style={{ flex: 1, background: rankBg[colIdx], border: `1.5px solid ${rc}${isFirst ? "66" : "33"}`, borderRadius: isFirst ? "14px" : "12px", padding: isFirst ? "0.7rem 0.4rem 0.55rem" : "0.5rem 0.35rem 0.45rem", cursor: "pointer", position: "relative", overflow: "hidden", boxShadow: isFirst ? `0 0 22px ${rc}22, 0 4px 16px #00000066` : "none", textAlign: "center", marginBottom: isFirst ? 0 : "4px" }}
+                            >
+                              {isFirst && <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1.5px", background: `linear-gradient(90deg,transparent,${rc},transparent)` }} />}
+                              <div style={{ fontSize: isFirst ? "1.15rem" : "0.85rem", lineHeight: 1, marginBottom: "0.18rem" }}>{rankMedals[rank]}</div>
+                              <div style={{ fontFamily: "'JetBrains Mono',monospace", color: rc, fontSize: isFirst ? "0.58rem" : "0.5rem", fontWeight: 800, marginBottom: "0.18rem" }}>#{rank}</div>
+                              <div style={{ color: isFirst ? "#e2e8f0" : "#9ca3af", fontSize: isFirst ? "0.63rem" : "0.56rem", fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: "0.22rem" }}>{s.network || s.name}</div>
+                              <div style={{ fontFamily: "'JetBrains Mono',monospace", color: rc, fontSize: isFirst ? "0.95rem" : "0.78rem", fontWeight: 900, lineHeight: 1, marginBottom: "0.28rem" }}>{price.toFixed(1)}₽</div>
+                              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.2rem" }}>
+                                <div style={{ width: "4px", height: "4px", borderRadius: "50%", background: availColor }} />
+                                <span style={{ fontSize: "0.5rem", color: availColor }}>{avail}%</span>
+                              </div>
+                              {savings > 0.5 && <div style={{ background: `${rc}18`, border: `1px solid ${rc}33`, borderRadius: "4px", padding: "0.06rem 0.28rem", color: rc, fontSize: "0.44rem", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, marginTop: "0.2rem" }}>−{savings.toFixed(1)}₽</div>}
+                            </motion.div>
+                          );
+                        })}
                       </div>
-                      <div style={{ textAlign: "right", flexShrink: 0 }}>
-                        <div style={{ fontFamily: "'JetBrains Mono',monospace", color, fontSize: "0.72rem", fontWeight: 700 }}>{price.toFixed(1)}₽</div>
-                        <div style={{ color: avail >= 60 ? "#22c55e" : "#eab308", fontSize: "0.55rem" }}>{avail}%</div>
+                    );
+                  })() : (
+                    <div style={{ background: "linear-gradient(135deg,#0d0d18,#0f0c1a)", border: `1px solid ${color}22`, borderRadius: "12px", padding: "0.65rem 0.75rem", position: "relative", overflow: "hidden" }}>
+                      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: `linear-gradient(90deg,transparent,${color},transparent)` }} />
+                      <div style={{ display: "flex", flexDirection: "column", gap: "0.28rem" }}>
+                        {deals.map(({ s, price, avail }, i) => (
+                          <div key={s.id} onClick={() => { setSelectedStation(s); impact("light"); }} style={{ display: "flex", alignItems: "center", gap: "0.4rem", cursor: "pointer", padding: "0.22rem 0.35rem", borderRadius: "7px", background: i === 0 ? `${color}08` : "transparent" }}>
+                            <span style={{ fontSize: "0.75rem", flexShrink: 0 }}>{["🥇","🥈","🥉"][i] ?? "·"}</span>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ color: "#e2e8f0", fontSize: "0.65rem", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.name}</div>
+                              <div style={{ color: "#374151", fontSize: "0.55rem" }}>{s.network || "АЗС"}</div>
+                            </div>
+                            <div style={{ textAlign: "right", flexShrink: 0 }}>
+                              <div style={{ fontFamily: "'JetBrains Mono',monospace", color, fontSize: "0.72rem", fontWeight: 700 }}>{price.toFixed(1)}₽</div>
+                              <div style={{ color: avail >= 60 ? "#22c55e" : "#eab308", fontSize: "0.55rem" }}>{avail}%</div>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         );
       })()}
