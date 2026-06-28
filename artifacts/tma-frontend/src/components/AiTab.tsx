@@ -13,6 +13,7 @@ import {
   X,
   ShoppingCart,
   Fuel,
+  Trash2,
 } from "lucide-react";
 
 interface Props {
@@ -326,6 +327,18 @@ export function AiTab({ onNavigate }: Props) {
   const [showVpn, setShowVpn]   = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
+  const clearChat = useCallback(async () => {
+    try {
+      await fetch("/api/ai/clear", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: uid }),
+      });
+    } catch { /* ignore — backend clear is best-effort */ }
+    if (uid) localStorage.removeItem(`ai-history-${uid}`);
+    setMessages([makeWelcome()]);
+  }, [uid]);
+
   // ── Computed context ─────────────────────────────────────────────────────────
   const crisisCount = stations.filter((s) => {
     const avg = s.fuel_statuses.length
@@ -458,6 +471,18 @@ export function AiTab({ onNavigate }: Props) {
             </p>
           </div>
         </div>
+
+        <button
+          onClick={clearChat}
+          title="Очистить чат"
+          className="flex items-center justify-center w-9 h-9 rounded-full transition-opacity active:opacity-60"
+          style={{
+            background: "rgba(255,255,255,0.08)",
+            border: "1px solid rgba(255,255,255,0.15)",
+          }}
+        >
+          <Trash2 size={16} color="rgba(255,255,255,0.6)" />
+        </button>
 
       </header>
 

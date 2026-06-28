@@ -4901,6 +4901,15 @@ async def _call_groq(api_key: str, messages: list, system_prompt: str) -> str:
         return resp.json()["choices"][0]["message"]["content"]
 
 
+@app.post("/api/ai/clear")
+async def ai_clear(body: dict):
+    """Clear conversation history for a user."""
+    user_id = int(body.get("user_id", 0))
+    if user_id:
+        with _conv_lock:
+            _conv_history.pop(user_id, None)
+    return {"ok": True}
+
 @app.post("/api/ai/chat")
 async def ai_chat(body: AiChatRequest, db: Session = Depends(get_db)):
     """
