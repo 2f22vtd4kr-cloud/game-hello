@@ -1316,48 +1316,6 @@ export function AnalyticsTab({ onNavigate }: Props) {
         );
       })()}
 
-      {/* Live system stats — command center */}
-      {sysStats && (
-        <div style={{ padding: "0 1rem 0.75rem" }}>
-          <p style={{ color: "#E8622A", fontSize: "0.58rem", textTransform: "uppercase", letterSpacing: "0.2em", margin: "0 0 0.5rem", display: "flex", alignItems: "center", gap: "0.4rem" }}>
-            <span style={{ display: "inline-block", width: "5px", height: "5px", borderRadius: "50%", background: "#00E676", boxShadow: "0 0 6px #22c55e", animation: "tmaPulse 2s infinite" }} />
-            Состояние системы · live
-          </p>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
-            {[
-              { icon: "👥", value: sysStats.total_users.toLocaleString("ru"), label: "Операторов", color: "#E8622A", sub: "активных пользователей" },
-              { icon: "📋", value: sysStats.total_reports.toLocaleString("ru"), label: "Репортов", color: "#3b82f6", sub: "гражданских данных" },
-              { icon: "🛢", value: `${sysStats.avg_availability_pct}%`, label: "Ср. наличие", color: sysStats.avg_availability_pct >= 60 ? "#00E676" : sysStats.avg_availability_pct >= 25 ? "#FFD600" : "#FF1744", sub: "по сети АЗС" },
-              { icon: "🧾", value: sysStats.active_purchases.toLocaleString("ru"), label: "Талонов", color: "#E8622A", sub: "активных ордеров" },
-            ].map(({ icon, value, label, color, sub }) => (
-              <motion.div
-                key={label}
-                whileTap={{ scale: 0.96 }}
-                style={{
-                  background: "rgba(255,255,255,0.04)",
-                  border: `1px solid ${color}30`,
-                  borderRadius: "14px",
-                  padding: "0.7rem 0.8rem",
-                  position: "relative",
-                  overflow: "hidden",
-                  boxShadow: `0 0 16px ${color}0a`,
-                }}
-              >
-                <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: `linear-gradient(90deg, transparent, ${color}, transparent)` }} />
-                <div style={{ position: "absolute", bottom: 0, right: 0, width: "40px", height: "40px", background: `radial-gradient(circle, ${color}10 0%, transparent 70%)`, borderRadius: "50%" }} />
-                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "0.3rem" }}>
-                  <p style={{ margin: 0, fontSize: "1rem", lineHeight: 1 }}>{icon}</p>
-                  <div style={{ width: "5px", height: "5px", borderRadius: "50%", background: color, boxShadow: `0 0 6px ${color}`, animation: "tmaPulse 2s infinite" }} />
-                </div>
-                <p style={{ margin: "0 0 0.05rem", color, fontWeight: 900, fontSize: "1.2rem", fontFamily: "'JetBrains Mono', monospace", lineHeight: 1, textShadow: `0 0 12px ${color}44` }}>{value}</p>
-                <p style={{ margin: 0, color: "#e2e8f0", fontSize: "0.65rem", fontWeight: 700 }}>{label}</p>
-                <p style={{ margin: 0, color: "rgba(255,255,255,0.45)", fontSize: "0.52rem" }}>{sub}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Live price matrix */}
       <PriceMatrix regions={regions} />
 
