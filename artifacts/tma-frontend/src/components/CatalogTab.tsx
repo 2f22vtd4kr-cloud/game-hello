@@ -350,7 +350,7 @@ export function CatalogTab(_props?: { initialStationId?: number; onCalcOpenChang
               <div className="ct-nets">
                 {NETWORKS.map(net => {
                   const isSelected = sel.network?.name === net.name;
-                  const minPrice = Math.min(...Object.values(net.prices));
+                  const price95 = net.prices["АИ-95"];
                   return (
                     <motion.button
                       key={net.name}
@@ -374,9 +374,9 @@ export function CatalogTab(_props?: { initialStationId?: number; onCalcOpenChang
                       </div>
                       <div className="ct-net-right">
                         <span className="ct-net-price" style={{ color: isSelected ? net.color : "rgba(255,255,255,0.72)" }}>
-                          от {minPrice.toFixed(0)}₽
+                          {price95.toFixed(1)}₽
                         </span>
-                        <span className="ct-net-stations">{net.fuels.length} видов</span>
+                        <span className="ct-net-stations">АИ-95 · {net.fuels.length} вида</span>
                       </div>
                       {isSelected && <div className="ct-net-check" style={{ background: net.color }}>✓</div>}
                     </motion.button>
