@@ -548,7 +548,7 @@ export default function App() {
         flex: 1,
         position: "relative",
         overflow: "hidden",
-        paddingTop: `${TICKER_H + 8}px`,
+        paddingTop: 0,
         paddingBottom: "96px",
         zIndex: 1,
       }}>
@@ -567,7 +567,7 @@ export default function App() {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: slideDir * -16 }}
               transition={{ duration: 0.22, ease: [0.25, 0.46, 0.45, 0.94] }}
-              style={{ position: "absolute", top: `${TICKER_H + 8}px`, left: 0, right: 0, bottom: 0, overflowY: "auto", overflowX: "hidden" }}
+              style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, overflowY: "auto", overflowX: "hidden" }}
             >
               {activeTab === "analytics" && <AnalyticsTab />}
               {activeTab === "catalog"   && <CatalogTab initialStationId={initialStationId} onCalcOpenChange={setCalcOpen} />}
