@@ -215,20 +215,15 @@ export function VpnModal({ onClose, isTroubleshooter = false, onSessionChange }:
         animate={{ y: 0 }}
         exit={{ y: "100%" }}
         transition={{ type: "spring", damping: 28, stiffness: 280 }}
-        drag="y"
-        dragConstraints={{ top: 0, bottom: 0 }}
-        dragElastic={{ top: 0, bottom: 0.3 }}
-        onDragEnd={(_e, info) => { if (info.offset.y > 80 || info.velocity.y > 400) onClose(); }}
         onClick={(e) => e.stopPropagation()}
         style={{
           background: "linear-gradient(180deg,#1A1ECC,#1517BB)",
           borderRadius: "20px 20px 0 0",
-          padding: "0 0 2rem",
           width: "100%",
           maxHeight: "88vh",
-          overflowY: "auto",
           position: "relative",
-          touchAction: "pan-y",
+          display: "flex",
+          flexDirection: "column",
         }}
       >
         {/* Starfield */}
@@ -238,14 +233,22 @@ export function VpnModal({ onClose, isTroubleshooter = false, onSessionChange }:
         <div style={{ position: "absolute", inset: 0, pointerEvents: "none", background: "radial-gradient(ellipse 50% 55% at 90% 10%, rgba(232,98,42,0.12) 0%, transparent 65%)" }} />
 
         {/* top border shimmer */}
-        <div style={{ position: "sticky", top: 0, left: 0, right: 0, height: 1, background: "linear-gradient(90deg,transparent,rgba(255,255,255,0.35),transparent)", zIndex: 10 }} />
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, background: "linear-gradient(90deg,transparent,rgba(255,255,255,0.35),transparent)", zIndex: 10 }} />
 
-        {/* drag handle */}
-        <div style={{ display: "flex", justifyContent: "center", paddingTop: 10, paddingBottom: 2 }}>
+        {/* drag handle — ONLY this part is draggable */}
+        <motion.div
+          drag="y"
+          dragConstraints={{ top: 0, bottom: 0 }}
+          dragElastic={{ top: 0, bottom: 0.3 }}
+          onDragEnd={(_e, info) => { if (info.offset.y > 80 || info.velocity.y > 400) onClose(); }}
+          style={{ display: "flex", justifyContent: "center", paddingTop: 12, paddingBottom: 6, cursor: "grab", flexShrink: 0, position: "relative", zIndex: 3, touchAction: "none" }}
+        >
           <div style={{ width: 40, height: 4, borderRadius: 99, background: "rgba(255,255,255,0.18)" }} />
-        </div>
+        </motion.div>
 
-        <div style={{ padding: "1.25rem 1rem 0", position: "relative", zIndex: 2 }}>
+        {/* Scrollable content */}
+        <div style={{ overflowY: "auto", overflowX: "hidden", flex: 1, touchAction: "pan-y", WebkitOverflowScrolling: "touch" } as React.CSSProperties}>
+        <div style={{ padding: "0 1rem 2rem", position: "relative", zIndex: 2 }}>
 
           {/* header */}
           <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "0.85rem" }}>
@@ -436,6 +439,7 @@ export function VpnModal({ onClose, isTroubleshooter = false, onSessionChange }:
             </>
           )}
         </div>
+        </div>{/* end scrollable content */}
       </motion.div>
     </motion.div>
   );
