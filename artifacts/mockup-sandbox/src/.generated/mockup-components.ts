@@ -17,6 +17,7 @@ export const modules: ModuleMap = {
   "./components/mockups/post-payment/SuccessScreen.tsx": () => import("../components/mockups/post-payment/SuccessScreen.tsx"),
   "./components/mockups/post-payment/VaultEntry.tsx": () => import("../components/mockups/post-payment/VaultEntry.tsx"),
   "./components/mockups/redesign/AiNewsTab.tsx": () => import("../components/mockups/redesign/AiNewsTab.tsx"),
+  "./components/mockups/redesign/AnalyticsTab.tsx": () => import("../components/mockups/redesign/AnalyticsTab.tsx"),
   "./components/mockups/redesign/CatalogTab.tsx": () => import("../components/mockups/redesign/CatalogTab.tsx"),
   "./components/mockups/redesign/GamesTab.tsx": () => import("../components/mockups/redesign/GamesTab.tsx"),
   "./components/mockups/redesign/LoadingScreen.tsx": () => import("../components/mockups/redesign/LoadingScreen.tsx"),
