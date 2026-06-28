@@ -488,47 +488,51 @@ export function AiTab({ onNavigate }: Props) {
         <div ref={bottomRef} />
       </main>
 
-      {/* Quick Suggestions */}
-      <div className="px-3 pb-3 pt-1 overflow-x-auto whitespace-nowrap hide-scrollbar flex gap-2 z-10">
-        {dynamicChips.map((chip, i) => (
-          <button
-            key={i}
-            onClick={() => void send(chip.query)}
-            className="px-4 py-2 rounded-full text-[13px] font-medium transition-all active:scale-95"
-            style={{
-              backgroundColor: C.activeBg,
-              border: `1px solid ${C.borderActive}`,
-              color: "#fff",
-              flexShrink: 0,
-            }}
-          >
-            {chip.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Input Area */}
+      {/* Bottom bar: chips + input, unified */}
       <div
-        className="p-3 z-10"
+        className="z-10 flex-shrink-0"
         style={{
           backgroundColor: C.glassDark,
-          backdropFilter: "blur(20px)",
-          WebkitBackdropFilter: "blur(20px)",
+          backdropFilter: "blur(24px)",
+          WebkitBackdropFilter: "blur(24px)",
           borderTop: `1px solid ${C.border}`,
+          paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 72px)",
         }}
       >
-        <form onSubmit={handleSubmit} className="flex items-end gap-2">
+        {/* Chips row */}
+        <div
+          className="overflow-x-auto whitespace-nowrap hide-scrollbar flex gap-2 px-3 pt-3 pb-2"
+        >
+          {dynamicChips.map((chip, i) => (
+            <button
+              key={i}
+              onClick={() => void send(chip.query)}
+              className="px-3.5 py-1.5 rounded-full text-[12px] font-medium transition-all active:scale-95"
+              style={{
+                backgroundColor: "rgba(255,255,255,0.08)",
+                border: `1px solid rgba(255,255,255,0.18)`,
+                color: "rgba(255,255,255,0.85)",
+                flexShrink: 0,
+              }}
+            >
+              {chip.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Input row */}
+        <form onSubmit={handleSubmit} className="flex items-center gap-2 px-3 pb-3">
           <div
-            className="flex-1 rounded-2xl flex items-center px-4 py-3 min-h-[48px]"
+            className="flex-1 rounded-2xl flex items-center px-4 min-h-[46px]"
             style={{
-              backgroundColor: "rgba(255,255,255,0.1)",
+              backgroundColor: "rgba(255,255,255,0.09)",
               border: `1px solid ${C.border}`,
             }}
           >
             <input
               type="text"
               placeholder="Задать вопрос..."
-              className="bg-transparent border-none outline-none w-full text-[15px]"
+              className="bg-transparent border-none outline-none w-full text-[15px] py-3"
               style={{ color: C.textMain }}
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -538,10 +542,10 @@ export function AiTab({ onNavigate }: Props) {
           <button
             type="submit"
             disabled={!input.trim() || thinking}
-            className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg active:scale-95 transition-all disabled:opacity-40"
-            style={{ background: C.coral }}
+            className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg active:scale-95 transition-all disabled:opacity-35"
+            style={{ background: input.trim() && !thinking ? C.coral : "rgba(255,255,255,0.15)" }}
           >
-            <Send size={18} color="#fff" className="ml-1" />
+            <Send size={17} color="#fff" style={{ marginLeft: 2 }} />
           </button>
         </form>
       </div>
