@@ -156,7 +156,23 @@ def main() -> None:
     app.add_handler(PreCheckoutQueryHandler(pre_checkout_query))
     app.add_handler(MessageHandler(filters.SUCCESSFUL_PAYMENT, successful_payment))
     logger.info("Бот запущен.")
-    app.run_polling()
+
+    if os.getenv("REPLIT_DEPLOYMENT"):
+        # Production (autoscale): webhook mode — Telegram pushes updates to our
+        # public URL, FastAPI at /tg/webhook proxies here on port 8443.
+        # This avoids 409 conflicts from multiple polling instances.
+        domain = os.getenv("REPLIT_DOMAINS", "").split(",")[0].strip()
+        webhook_url = f"https://{domain}/tg/webhook"
+        logger.info("Production webhook mode: %s → localhost:8443", webhook_url)
+        app.run_webhook(
+            listen="127.0.0.1",
+            port=8443,
+            url_path="/tg/webhook",
+            webhook_url=webhook_url,
+        )
+    else:
+        # Development: polling (simpler, no public URL needed)
+        app.run_polling()
 
 
 if __name__ == "__main__":
