@@ -226,8 +226,9 @@ Continued the premium redesign series. Focus: (1) migrate project back to Replit
 ### Restoring canvas next session (ONE step)
 ```
 // At session start: read + paste .agents/canvas-restore.js into code_execution
-// It uses REPLIT_DOMAINS env var automatically — no manual domain substitution needed.
-// Make sure "Mockup Sandbox" workflow is running first.
+// Domain is AUTO-DETECTED via child_process — no manual substitution needed.
+// Prerequisites: "TMA Frontend" (port 5000) + "Mockup Sandbox" (port 8099) workflows running.
+// Result: 8 mockup iframes + 1 live catalog-phone-preview, focused on catalog preview.
 ```
 
 ### Next steps
