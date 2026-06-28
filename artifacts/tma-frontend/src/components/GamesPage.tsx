@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Gamepad2, Gift, Zap } from "lucide-react";
-import { EmpireGame } from "./games/EmpireGame";
+import { GamesPage as EmpireGame } from "./games/EmpireGame";
 import { FlipCardGame } from "./games/FlipCardGame";
 import { TapGame } from "./games/TapGame";
 import { XPTiers } from "./games/XPTiers";

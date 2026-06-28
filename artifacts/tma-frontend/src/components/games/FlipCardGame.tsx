@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useGameStore as useMinigameStore } from "@/stores/useGameStore";
 import { useGameStore } from "@/game/store";
-import { select as hapticSelect, notification as hapticNotify } from "@/lib/haptic";
+import { select as hapticSelect, notify as hapticNotify } from "@/lib/haptic";
 
 export function FlipCardGame() {
   const { flipsRemaining, lastFlipResult, setFlipResult } = useMinigameStore();

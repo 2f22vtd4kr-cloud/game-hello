@@ -2981,7 +2981,8 @@ export function CatalogTab({ initialStationId, onCalcOpenChange }: CatalogTabPro
             ))
           )}
         </div>
-      </div>
+      )}
     </div>
+  </div>
   );
 }
