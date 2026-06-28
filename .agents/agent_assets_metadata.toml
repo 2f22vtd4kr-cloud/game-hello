@@ -12,3 +12,9 @@ id = "HQfBVeNBJQP_wJ9ObG1qc"
 uri = "file://stations_export.csv"
 type = "table"
 title = "Все АЗС — 570 станций с данными"
+
+[[outputs]]
+id = "G0mt8UhgWIkthQyJGTiZM"
+uri = "file://screenshots/app_banner.jpg"
+type = "image"
+title = "Топливо — App Banner"
