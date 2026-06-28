@@ -233,7 +233,7 @@ export function CatalogTab(_props?: { initialStationId?: number; onCalcOpenChang
 
   if (!user) {
     return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "#6b7280" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "rgba(255,255,255,0.65)" }}>
         Загрузка…
       </div>
     );
@@ -373,7 +373,7 @@ export function CatalogTab(_props?: { initialStationId?: number; onCalcOpenChang
                         <span className="ct-net-badge" style={{ color: net.color }}>{net.badge}</span>
                       </div>
                       <div className="ct-net-right">
-                        <span className="ct-net-price" style={{ color: isSelected ? net.color : "#9ca3af" }}>
+                        <span className="ct-net-price" style={{ color: isSelected ? net.color : "rgba(255,255,255,0.72)" }}>
                           от {minPrice.toFixed(0)}₽
                         </span>
                         <span className="ct-net-stations">{net.fuels.length} видов</span>
@@ -412,12 +412,12 @@ export function CatalogTab(_props?: { initialStationId?: number; onCalcOpenChang
                           style={{
                             borderColor: isActive ? sel.network!.color : "rgba(255,255,255,0.08)",
                             background: isActive ? `${sel.network!.color}18` : "rgba(255,255,255,0.03)",
-                            color: isActive ? sel.network!.color : "#9ca3af",
+                            color: isActive ? sel.network!.color : "rgba(255,255,255,0.72)",
                             boxShadow: isActive ? `0 0 16px ${sel.network!.glow}30` : "none",
                           }}
                         >
                           <span className="ct-fuel-name">{fuel.label}</span>
-                          <span className="ct-fuel-price" style={{ color: isActive ? sel.network!.color : "#6b7280" }}>
+                          <span className="ct-fuel-price" style={{ color: isActive ? sel.network!.color : "rgba(255,255,255,0.65)" }}>
                             {fuelPrice?.toFixed(1) ?? "—"}₽
                           </span>
                         </motion.button>
@@ -459,7 +459,7 @@ export function CatalogTab(_props?: { initialStationId?: number; onCalcOpenChang
                           }}
                         >
                           <span className="ct-vol-l" style={{ color: isActive ? sel.network!.color : "#e2e8f0" }}>{v} л</span>
-                          <span className="ct-vol-p" style={{ color: isActive ? `${sel.network!.color}bb` : "#6b7280" }}>{tot} ₽</span>
+                          <span className="ct-vol-p" style={{ color: isActive ? `${sel.network!.color}bb` : "rgba(255,255,255,0.65)" }}>{tot} ₽</span>
                         </motion.button>
                       );
                     })}

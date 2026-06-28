@@ -74,7 +74,7 @@ function CrisisBanner({ count, onNavigate }: { count: number; onNavigate?: (t: T
           <p style={{ margin: "0 0 0.1rem", color: "#FF1744", fontWeight: 800, fontSize: "0.82rem", lineHeight: 1 }}>
             🚨 Критический дефицит
           </p>
-          <span style={{ color: "#9ca3af", fontSize: "0.68rem" }}>
+          <span style={{ color: "rgba(255,255,255,0.72)", fontSize: "0.68rem" }}>
             {count} {count === 1 ? "регион" : count < 5 ? "региона" : "регионов"} · {pct}% зон ниже 25%
           </span>
         </div>
@@ -111,7 +111,7 @@ function PriceMatrix({ regions }: { regions: Record<string, RegionalSupply> }) {
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.6rem" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
           <div>
-            <p style={{ color: "#9ca3af", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.06em", margin: 0 }}>
+            <p style={{ color: "rgba(255,255,255,0.72)", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.06em", margin: 0 }}>
               Матрица цен
             </p>
           </div>
@@ -119,13 +119,13 @@ function PriceMatrix({ regions }: { regions: Record<string, RegionalSupply> }) {
             ТОП-6 крит.
           </span>
         </div>
-        <span style={{ color: "#374151", fontSize: "0.58rem", fontFamily: "'JetBrains Mono',monospace" }}>₽/литр</span>
+        <span style={{ color: "rgba(255,255,255,0.45)", fontSize: "0.58rem", fontFamily: "'JetBrains Mono',monospace" }}>₽/литр</span>
       </div>
 
       <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid #1e1e2a", borderRadius: "14px", overflow: "hidden", boxShadow: "0 4px 24px #00000040" }}>
         {/* Header row */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr repeat(3, 68px)", background: "rgba(0,0,0,0.3)", borderBottom: "1px solid rgba(168,85,247,0.1)" }}>
-          <div style={{ padding: "0.45rem 0.7rem", color: "#374151", fontSize: "0.58rem", textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono',monospace" }}>
+          <div style={{ padding: "0.45rem 0.7rem", color: "rgba(255,255,255,0.45)", fontSize: "0.58rem", textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono',monospace" }}>
             регион
           </div>
           {FUELS.map((f, i) => (
@@ -150,12 +150,12 @@ function PriceMatrix({ regions }: { regions: Record<string, RegionalSupply> }) {
               }}
             >
               <div style={{ padding: "0.5rem 0.7rem", overflow: "hidden" }}>
-                <div style={{ color: isCritical ? "#fca5a5" : "#d1d5db", fontSize: "0.67rem", fontWeight: isCritical ? 700 : 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                <div style={{ color: isCritical ? "#fca5a5" : "rgba(255,255,255,0.82)", fontSize: "0.67rem", fontWeight: isCritical ? 700 : 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {region.split(" ").slice(-1)[0].slice(0, 14)}
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.3rem", marginTop: "2px" }}>
                   <div style={{ width: "5px", height: "5px", borderRadius: "50%", background: isCritical ? "#FF1744" : isLow ? "#FFD600" : "#00E676", flexShrink: 0 }} />
-                  <span style={{ color: "#4b5563", fontSize: "0.58rem", fontFamily: "'JetBrains Mono',monospace" }}>
+                  <span style={{ color: "rgba(255,255,255,0.55)", fontSize: "0.58rem", fontFamily: "'JetBrains Mono',monospace" }}>
                     {supply?.avg_pct ?? "—"}%
                   </span>
                 </div>
@@ -177,13 +177,13 @@ function PriceMatrix({ regions }: { regions: Record<string, RegionalSupply> }) {
                           {p.effective.toFixed(0)}
                         </span>
                         {p.multiplier !== 1 && (
-                          <span style={{ fontSize: "0.52rem", color: isCrisisPrice ? "#ef444499" : "#4b5563", fontFamily: "'JetBrains Mono',monospace" }}>
+                          <span style={{ fontSize: "0.52rem", color: isCrisisPrice ? "#ef444499" : "rgba(255,255,255,0.55)", fontFamily: "'JetBrains Mono',monospace" }}>
                             {up ? "▲" : "▼"}{Math.abs((p.multiplier - 1) * 100).toFixed(0)}%
                           </span>
                         )}
                       </>
                     ) : (
-                      <span style={{ color: "#374151", fontSize: "0.7rem" }}>—</span>
+                      <span style={{ color: "rgba(255,255,255,0.45)", fontSize: "0.7rem" }}>—</span>
                     )}
                   </div>
                 );
@@ -225,7 +225,7 @@ function FuelMixDonut({ regions }: { regions: Record<string, RegionalSupply> }) 
         <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.9rem", fontWeight: 700, color: "#e2e8f0" }}>
           {Math.round((green / total) * 100)}%
         </span>
-        <div style={{ fontSize: "0.5rem", color: "#4b5563", textTransform: "uppercase" }}>норма</div>
+        <div style={{ fontSize: "0.5rem", color: "rgba(255,255,255,0.55)", textTransform: "uppercase" }}>норма</div>
       </div>
     </div>
   );
@@ -254,14 +254,14 @@ function RegionMonitor({ regions }: { regions: Record<string, RegionalSupply> })
       <div style={{ width: "8px", height: "8px", borderRadius: "50%", flexShrink: 0, background: "#a855f7", boxShadow: "0 0 8px #a855f7", animation: "tmaPulse 1.5s infinite" }} />
       <div style={{ flex: 1, minWidth: 0, transition: "opacity 0.28s", opacity: vis ? 1 : 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <span style={{ color: "#4b5563", fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.06em", flexShrink: 0 }}>СКАН</span>
+          <span style={{ color: "rgba(255,255,255,0.55)", fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.06em", flexShrink: 0 }}>СКАН</span>
           <span style={{ color: "#e2e8f0", fontSize: "0.82rem", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{region}</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "0.2rem" }}>
           <span style={{ fontSize: "0.78rem" }}>{dot}</span>
           <span style={{ color, fontFamily: "'JetBrains Mono',monospace", fontSize: "1rem", fontWeight: 700 }}>{data.avg_pct}%</span>
-          <span style={{ color: "#4b5563", fontSize: "0.65rem", background: "#14141c", borderRadius: "4px", padding: "0.1rem 0.35rem" }}>{zoneLabel[data.zone_type] ?? data.zone_type}</span>
-          <span style={{ color: "#4b5563", fontSize: "0.65rem" }}>{data.count} АЗС</span>
+          <span style={{ color: "rgba(255,255,255,0.55)", fontSize: "0.65rem", background: "#14141c", borderRadius: "4px", padding: "0.1rem 0.35rem" }}>{zoneLabel[data.zone_type] ?? data.zone_type}</span>
+          <span style={{ color: "rgba(255,255,255,0.55)", fontSize: "0.65rem" }}>{data.count} АЗС</span>
         </div>
       </div>
       <div style={{ display: "flex", gap: "3px", flexShrink: 0 }}>
@@ -298,7 +298,7 @@ function RegionCard({ region, data, isFav, onToggleFav }: { region: string; data
     >
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: isCritical ? "linear-gradient(90deg,#ef4444,#dc2626)" : isFav ? "linear-gradient(90deg,#a855f7,#db2777)" : `linear-gradient(90deg,${color}88,${color})` }} />
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.3rem" }}>
-        <p style={{ color: isCritical ? "#fca5a5" : "#9ca3af", fontSize: "0.63rem", margin: 0, flex: 1, lineHeight: 1.3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: isCritical ? 600 : 400 }}>
+        <p style={{ color: isCritical ? "#fca5a5" : "rgba(255,255,255,0.72)", fontSize: "0.63rem", margin: 0, flex: 1, lineHeight: 1.3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: isCritical ? 600 : 400 }}>
           {region.length > 20 ? region.slice(0, 20) + "…" : region}
         </p>
         <button onClick={onToggleFav} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.85rem", padding: "0", marginLeft: "0.25rem", opacity: isFav ? 1 : 0.3, transition: "opacity 0.2s", lineHeight: 1, flexShrink: 0 }}>
@@ -321,7 +321,7 @@ function RegionCard({ region, data, isFav, onToggleFav }: { region: string; data
         {[["🟢", data.green, "#00E676"], ["🟡", data.yellow, "#FFD600"], ["🔴", data.red, "#FF1744"]].map(([emoji, v, c]) => (
           <span key={String(emoji)} style={{ color: String(c) + "88", fontSize: "0.56rem", fontFamily: "'JetBrains Mono',monospace" }}>{emoji}{v}</span>
         ))}
-        <span style={{ marginLeft: "auto", color: "#374151", fontSize: "0.56rem" }}>{data.count} АЗС</span>
+        <span style={{ marginLeft: "auto", color: "rgba(255,255,255,0.45)", fontSize: "0.56rem" }}>{data.count} АЗС</span>
       </div>
     </motion.div>
   );
@@ -330,7 +330,7 @@ function RegionCard({ region, data, isFav, onToggleFav }: { region: string; data
 // ── Period button ─────────────────────────────────────────────────
 function PBtn({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
   return (
-    <button onClick={onClick} style={{ background: active ? "linear-gradient(135deg,#a855f7,#db2777)" : "#14141c", border: active ? "none" : "1px solid #22222f", color: active ? "#fff" : "#6b7280", borderRadius: "8px", padding: "0.3rem 0.7rem", fontSize: "0.72rem", fontWeight: active ? 700 : 400, cursor: "pointer", transition: "all 0.2s" }}>
+    <button onClick={onClick} style={{ background: active ? "linear-gradient(135deg,#a855f7,#db2777)" : "#14141c", border: active ? "none" : "1px solid #22222f", color: active ? "#fff" : "rgba(255,255,255,0.65)", borderRadius: "8px", padding: "0.3rem 0.7rem", fontSize: "0.72rem", fontWeight: active ? 700 : 400, cursor: "pointer", transition: "all 0.2s" }}>
       {label}
     </button>
   );
@@ -365,16 +365,16 @@ function AvailabilityBar({ region, data, rank }: { region: string; data: Regiona
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.35rem" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flex: 1, minWidth: 0 }}>
           {rank != null && (
-            <span style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.55rem", flexShrink: 0 }}>
+            <span style={{ fontFamily: "'JetBrains Mono',monospace", color: "rgba(255,255,255,0.45)", fontSize: "0.55rem", flexShrink: 0 }}>
               #{String(rank + 1).padStart(2, "0")}
             </span>
           )}
-          <span style={{ color: isCritical ? "#fca5a5" : "#9ca3af", fontSize: "0.68rem", fontWeight: isCritical ? 600 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <span style={{ color: isCritical ? "#fca5a5" : "rgba(255,255,255,0.72)", fontSize: "0.68rem", fontWeight: isCritical ? 600 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {region.length > 28 ? region.slice(0, 28) + "…" : region}
           </span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flexShrink: 0 }}>
-          <span style={{ color: "#374151", fontSize: "0.58rem" }}>{data.count} АЗС</span>
+          <span style={{ color: "rgba(255,255,255,0.45)", fontSize: "0.58rem" }}>{data.count} АЗС</span>
           <span style={{
             fontFamily: "'JetBrains Mono',monospace", fontSize: "0.72rem", fontWeight: 700,
             color: avgColor, background: `${avgColor}18`, padding: "0.1rem 0.4rem",
@@ -527,7 +527,7 @@ function MarketAnalysis({ regions, data }: { regions: Record<string, RegionalSup
             <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#FF1744", fontSize: "0.4rem", letterSpacing: "0.1em", marginBottom: "0.3rem" }}>🔴 ДЕФИЦИТ</div>
             {worst3.map(([r, d]) => (
               <div key={r} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.2rem" }}>
-                <span style={{ color: "#d1d5db", fontSize: "0.62rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
+                <span style={{ color: "rgba(255,255,255,0.82)", fontSize: "0.62rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
                   {r.split(" ").slice(-1)[0].slice(0, 13)}
                 </span>
                 <span style={{ fontFamily: "'JetBrains Mono',monospace", color: "#FF1744", fontSize: "0.62rem", fontWeight: 700, flexShrink: 0, marginLeft: "0.3rem" }}>{d.avg_pct}%</span>
@@ -538,7 +538,7 @@ function MarketAnalysis({ regions, data }: { regions: Record<string, RegionalSup
             <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#00E676", fontSize: "0.4rem", letterSpacing: "0.1em", marginBottom: "0.3rem" }}>🟢 ПРОФИЦИТ</div>
             {best3.map(([r, d]) => (
               <div key={r} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.2rem" }}>
-                <span style={{ color: "#d1d5db", fontSize: "0.62rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
+                <span style={{ color: "rgba(255,255,255,0.82)", fontSize: "0.62rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
                   {r.split(" ").slice(-1)[0].slice(0, 13)}
                 </span>
                 <span style={{ fontFamily: "'JetBrains Mono',monospace", color: "#00E676", fontSize: "0.62rem", fontWeight: 700, flexShrink: 0, marginLeft: "0.3rem" }}>{d.avg_pct}%</span>
@@ -556,7 +556,7 @@ function MarketAnalysis({ regions, data }: { regions: Record<string, RegionalSup
               </span>
             </div>
             <div style={{ textAlign: "right" }}>
-              <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.4rem", letterSpacing: "0.1em", marginBottom: "0.1rem" }}>ВЕРДИКТ</div>
+              <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "rgba(255,255,255,0.45)", fontSize: "0.4rem", letterSpacing: "0.1em", marginBottom: "0.1rem" }}>ВЕРДИКТ</div>
               <span style={{
                 background: `${healthColor}15`, border: `1px solid ${healthColor}33`,
                 borderRadius: "6px", padding: "0.2rem 0.55rem",
@@ -594,7 +594,7 @@ function RegionRanking({ regions }: { regions: Record<string, RegionalSupply> })
             <button key={k} onClick={() => setSortKey(k)} style={{
               background: sortKey === k ? "rgba(168,85,247,0.15)" : "none",
               border: `1px solid ${sortKey === k ? "#a855f7" : "#22222f"}`,
-              borderRadius: "5px", color: sortKey === k ? "#a855f7" : "#4b5563",
+              borderRadius: "5px", color: sortKey === k ? "#a855f7" : "rgba(255,255,255,0.55)",
               fontSize: "0.58rem", padding: "0.1rem 0.35rem", cursor: "pointer",
             }}>{k === "pct" ? "Наличие" : "А→Я"}</button>
           ))}
@@ -620,7 +620,7 @@ function RegionRanking({ regions }: { regions: Record<string, RegionalSupply> })
                 borderLeft: isTop ? `2px solid ${color}66` : "2px solid transparent",
               }}
             >
-              <span style={{ fontFamily: "'JetBrains Mono',monospace", color: isTop ? color : "#374151", fontSize: "0.5rem", width: "14px", textAlign: "right", flexShrink: 0, fontWeight: isTop ? 700 : 400 }}>{i + 1}</span>
+              <span style={{ fontFamily: "'JetBrains Mono',monospace", color: isTop ? color : "rgba(255,255,255,0.45)", fontSize: "0.5rem", width: "14px", textAlign: "right", flexShrink: 0, fontWeight: isTop ? 700 : 400 }}>{i + 1}</span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: "0.68rem", color: isTop ? "#f1f5f9" : "#e2e8f0", fontWeight: isTop ? 700 : 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</div>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.3rem", marginTop: "2px" }}>
@@ -647,7 +647,7 @@ function RegionRanking({ regions }: { regions: Record<string, RegionalSupply> })
         <button onClick={() => setOpen((v) => !v)} style={{
           width: "100%", marginTop: "0.4rem",
           background: "none", border: "1px solid #1e1e2a", borderRadius: "8px",
-          color: "#4b5563", fontSize: "0.65rem", padding: "0.3rem", cursor: "pointer",
+          color: "rgba(255,255,255,0.55)", fontSize: "0.65rem", padding: "0.3rem", cursor: "pointer",
         }}>
           {open ? "▲ Свернуть" : `▼ Все ${sorted.length} регионов`}
         </button>
@@ -694,7 +694,7 @@ function SupplyForecast({ regions }: { regions: Record<string, RegionalSupply> }
           ].map(({ label, count, color }) => (
             <div key={label} style={{ flex: 1, background: `${color}0a`, border: `1px solid ${color}22`, borderRadius: "8px", padding: "0.4rem 0.5rem", textAlign: "center" }}>
               <div style={{ fontFamily: "'JetBrains Mono',monospace", color, fontSize: "1.1rem", fontWeight: 800, lineHeight: 1 }}>{count}</div>
-              <div style={{ color: "#4b5563", fontSize: "0.55rem", marginTop: "2px" }}>{label}</div>
+              <div style={{ color: "rgba(255,255,255,0.55)", fontSize: "0.55rem", marginTop: "2px" }}>{label}</div>
             </div>
           ))}
         </div>
@@ -702,20 +702,20 @@ function SupplyForecast({ regions }: { regions: Record<string, RegionalSupply> }
         {/* Forecast timeline */}
         <div style={{ display: "flex", gap: "0.5rem" }}>
           <div style={{ display: "flex", flexDirection: "column", justifyContent: "flex-end", gap: "2px", marginRight: "0.25rem" }}>
-            {["100%", "50%", "0%"].map((l) => <span key={l} style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.42rem", color: "#374151", lineHeight: 1 }}>{l}</span>)}
+            {["100%", "50%", "0%"].map((l) => <span key={l} style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.42rem", color: "rgba(255,255,255,0.45)", lineHeight: 1 }}>{l}</span>)}
           </div>
           <div style={{ flex: 1, display: "flex", alignItems: "flex-end", gap: "0.5rem", height: "60px" }}>
             {/* Current */}
             <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "2px" }}>
               <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.5rem", color: overall >= 60 ? "#00E676" : overall >= 25 ? "#FFD600" : "#FF1744", fontWeight: 700 }}>{Math.round(overall)}%</span>
               <div style={{ width: "100%", height: `${Math.round(overall) * 0.6}px`, background: overall >= 60 ? "#00E676" : overall >= 25 ? "#FFD600" : "#FF1744", borderRadius: "3px 3px 0 0", opacity: 0.85 }} />
-              <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.42rem", color: "#6b7280" }}>сейчас</span>
+              <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.42rem", color: "rgba(255,255,255,0.65)" }}>сейчас</span>
             </div>
             {forecasts.map(({ h, pct, color }) => (
               <div key={h} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "2px" }}>
                 <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.5rem", color, fontWeight: 700 }}>{pct}%</span>
                 <div style={{ width: "100%", height: `${pct * 0.6}px`, background: color, borderRadius: "3px 3px 0 0", opacity: 0.65 }} />
-                <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.42rem", color: "#6b7280" }}>+{h}ч</span>
+                <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.42rem", color: "rgba(255,255,255,0.65)" }}>+{h}ч</span>
               </div>
             ))}
           </div>
@@ -765,7 +765,7 @@ function PriceHistoryChart() {
 
   return (
     <div style={{ padding: "0 1rem 0.75rem" }}>
-      <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.43rem", letterSpacing: "0.14em", marginBottom: "0.35rem" }}>
+      <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "rgba(255,255,255,0.45)", fontSize: "0.43rem", letterSpacing: "0.14em", marginBottom: "0.35rem" }}>
         История цен
       </div>
 
@@ -779,7 +779,7 @@ function PriceHistoryChart() {
               background: activeFuel === f ? `${FUEL_COLORS[f]}20` : "#0b0b10",
               border: `1px solid ${activeFuel === f ? FUEL_COLORS[f] : "#1e1e2a"}`,
               borderRadius: "8px",
-              color: activeFuel === f ? FUEL_COLORS[f] : "#4b5563",
+              color: activeFuel === f ? FUEL_COLORS[f] : "rgba(255,255,255,0.55)",
               padding: "0.22rem 0.6rem",
               fontSize: "0.68rem",
               fontWeight: activeFuel === f ? 700 : 400,
@@ -790,7 +790,7 @@ function PriceHistoryChart() {
         ))}
         <div style={{ marginLeft: "auto", display: "flex", gap: "0.25rem" }}>
           {([12, 24, 48] as const).map((h) => (
-            <button key={h} onClick={() => setHours(h)} style={{ background: hours === h ? "#a855f720" : "#0b0b10", border: `1px solid ${hours === h ? "#a855f7" : "#1e1e2a"}`, borderRadius: "6px", color: hours === h ? "#a855f7" : "#4b5563", padding: "0.22rem 0.45rem", fontSize: "0.62rem", cursor: "pointer" }}>{h}ч</button>
+            <button key={h} onClick={() => setHours(h)} style={{ background: hours === h ? "#a855f720" : "#0b0b10", border: `1px solid ${hours === h ? "#a855f7" : "#1e1e2a"}`, borderRadius: "6px", color: hours === h ? "#a855f7" : "rgba(255,255,255,0.55)", padding: "0.22rem 0.45rem", fontSize: "0.62rem", cursor: "pointer" }}>{h}ч</button>
           ))}
         </div>
       </div>
@@ -799,12 +799,12 @@ function PriceHistoryChart() {
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: `linear-gradient(90deg,transparent,${color},transparent)` }} />
         {loading ? (
           <div style={{ height: 120, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <span style={{ color: "#374151", fontFamily: "'JetBrains Mono',monospace", fontSize: "0.65rem" }}>ЗАГРУЗКА…</span>
+            <span style={{ color: "rgba(255,255,255,0.45)", fontFamily: "'JetBrains Mono',monospace", fontSize: "0.65rem" }}>ЗАГРУЗКА…</span>
           </div>
         ) : (empty || data.length < 2) ? (
           <div style={{ height: 120, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "0.3rem" }}>
             <span style={{ fontSize: "1.5rem" }}>⏳</span>
-            <p style={{ margin: 0, color: "#374151", fontSize: "0.68rem", textAlign: "center" }}>История цен накапливается<br /><span style={{ fontSize: "0.58rem" }}>Первые точки появятся через ~1 час</span></p>
+            <p style={{ margin: 0, color: "rgba(255,255,255,0.45)", fontSize: "0.68rem", textAlign: "center" }}>История цен накапливается<br /><span style={{ fontSize: "0.58rem" }}>Первые точки появятся через ~1 час</span></p>
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={130}>
@@ -814,7 +814,7 @@ function PriceHistoryChart() {
               <YAxis tick={{ fill: "#374151", fontSize: 9 }} stroke="#22222f" domain={["auto", "auto"]} />
               <Tooltip
                 contentStyle={{ background: "#0d0d18", border: `1px solid ${color}33`, borderRadius: "8px", fontSize: "0.72rem" }}
-                labelStyle={{ color: "#9ca3af" }}
+                labelStyle={{ color: "rgba(255,255,255,0.72)" }}
                 formatter={(v: number, name: string) => [`${v} ₽/л`, name === "avg" ? "Среднее" : name === "min" ? "Мин" : "Макс"]}
               />
               <Line type="monotone" dataKey="min" stroke={`${color}55`} strokeWidth={1} dot={false} strokeDasharray="4 2" />
@@ -874,7 +874,7 @@ function FuelPriceBreakdown() {
                   <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: color, boxShadow: `0 0 6px ${color}` }} />
                   <span style={{ fontFamily: "'JetBrains Mono',monospace", color, fontSize: "0.78rem", fontWeight: 700 }}>{fuel}</span>
                 </div>
-                <span style={{ fontFamily: "'JetBrains Mono',monospace", color: "#4b5563", fontSize: "0.55rem" }}>{count} регионов</span>
+                <span style={{ fontFamily: "'JetBrains Mono',monospace", color: "rgba(255,255,255,0.55)", fontSize: "0.55rem" }}>{count} регионов</span>
               </div>
               {/* Range bar */}
               <div style={{ position: "relative", height: "8px", background: "#050507", borderRadius: "4px", overflow: "hidden", marginBottom: "0.35rem" }}>
@@ -885,15 +885,15 @@ function FuelPriceBreakdown() {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div style={{ textAlign: "center" }}>
                   <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#00E676", fontSize: "0.7rem", fontWeight: 700 }}>{min}</div>
-                  <div style={{ color: "#374151", fontSize: "0.48rem" }}>мин</div>
+                  <div style={{ color: "rgba(255,255,255,0.45)", fontSize: "0.48rem" }}>мин</div>
                 </div>
                 <div style={{ textAlign: "center" }}>
                   <div style={{ fontFamily: "'JetBrains Mono',monospace", color, fontSize: "0.88rem", fontWeight: 800 }}>{avg}</div>
-                  <div style={{ color: "#6b7280", fontSize: "0.5rem" }}>среднее · ₽/л</div>
+                  <div style={{ color: "rgba(255,255,255,0.65)", fontSize: "0.5rem" }}>среднее · ₽/л</div>
                 </div>
                 <div style={{ textAlign: "center" }}>
                   <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#FF1744", fontSize: "0.7rem", fontWeight: 700 }}>{max}</div>
-                  <div style={{ color: "#374151", fontSize: "0.48rem" }}>макс</div>
+                  <div style={{ color: "rgba(255,255,255,0.45)", fontSize: "0.48rem" }}>макс</div>
                 </div>
               </div>
             </motion.div>
@@ -901,7 +901,7 @@ function FuelPriceBreakdown() {
         })}
       </div>
       {lastUpdated && (
-        <p style={{ margin: "0.3rem 0 0", color: "#374151", fontSize: "0.52rem", fontFamily: "'JetBrains Mono',monospace" }}>
+        <p style={{ margin: "0.3rem 0 0", color: "rgba(255,255,255,0.45)", fontSize: "0.52rem", fontFamily: "'JetBrains Mono',monospace" }}>
           ⏱ Данные: {lastUpdated.toLocaleTimeString("ru", { hour: "2-digit", minute: "2-digit" })}
         </p>
       )}
@@ -972,13 +972,13 @@ function AIPricePredictions() {
           <button
             onClick={generate}
             disabled={running}
-            style={{ background: running ? "#14141c" : "#3b82f615", border: `1px solid ${running ? "#22222f" : "#3b82f633"}`, borderRadius: "8px", color: running ? "#4b5563" : "#3b82f6", fontSize: "0.65rem", fontWeight: 600, padding: "0.25rem 0.6rem", cursor: running ? "default" : "pointer" }}
+            style={{ background: running ? "#14141c" : "#3b82f615", border: `1px solid ${running ? "#22222f" : "#3b82f633"}`, borderRadius: "8px", color: running ? "rgba(255,255,255,0.55)" : "#3b82f6", fontSize: "0.65rem", fontWeight: 600, padding: "0.25rem 0.6rem", cursor: running ? "default" : "pointer" }}
           >
             {running ? "⟳ …" : "🔄 Обновить"}
           </button>
         </div>
         {Object.keys(preds).length === 0 ? (
-          <div style={{ textAlign: "center", padding: "1rem 0", color: "#374151", fontSize: "0.75rem" }}>
+          <div style={{ textAlign: "center", padding: "1rem 0", color: "rgba(255,255,255,0.45)", fontSize: "0.75rem" }}>
             {running ? "⟳ Вычисление прогноза…" : "Нет данных о ценах"}
           </div>
         ) : (
@@ -1013,7 +1013,7 @@ function AIPricePredictions() {
                   <div style={{ height: "3px", background: "#050507", borderRadius: "2px", overflow: "hidden" }}>
                     <div style={{ height: "100%", width: `${p.conf}%`, background: `linear-gradient(90deg,${color}44,${color})`, borderRadius: "2px", transition: "width 0.6s ease" }} />
                   </div>
-                  <p style={{ margin: "2px 0 0", color: "#374151", fontSize: "0.44rem", fontFamily: "'JetBrains Mono',monospace" }}>
+                  <p style={{ margin: "2px 0 0", color: "rgba(255,255,255,0.45)", fontSize: "0.44rem", fontFamily: "'JetBrains Mono',monospace" }}>
                     {Math.abs(Number(delta24))}% · {p.conf}%↑ · 3д:{Math.abs(Number(delta3d))}%
                   </p>
                 </motion.div>
@@ -1022,12 +1022,12 @@ function AIPricePredictions() {
           </div>
         )}
         {lastUpdated && (
-          <p style={{ margin: "0 0 0.55rem", color: "#374151", fontSize: "0.53rem", fontFamily: "'JetBrains Mono',monospace" }}>
+          <p style={{ margin: "0 0 0.55rem", color: "rgba(255,255,255,0.45)", fontSize: "0.53rem", fontFamily: "'JetBrains Mono',monospace" }}>
             Обновлено: {lastUpdated.toLocaleTimeString("ru", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
           </p>
         )}
         <div style={{ background: "rgba(245,158,11,0.05)", border: "1px solid rgba(245,158,11,0.14)", borderRadius: "8px", padding: "0.45rem 0.6rem" }}>
-          <p style={{ margin: 0, color: "#6b7280", fontSize: "0.57rem", lineHeight: 1.55 }}>
+          <p style={{ margin: 0, color: "rgba(255,255,255,0.65)", fontSize: "0.57rem", lineHeight: 1.55 }}>
             ⚠️ Прогнозы основаны на исторических данных и алгоритмах машинного обучения. Реальные цены могут отличаться от прогнозных. Не является финансовой рекомендацией.
           </p>
         </div>
@@ -1161,7 +1161,7 @@ export function AnalyticsTab({ onNavigate }: Props) {
               <span style={{ fontSize: "0.6rem", color: "#00E676", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>LIVE</span>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{ fontSize: "0.52rem", color: "#374151", fontFamily: "'JetBrains Mono',monospace" }}>
+              <span style={{ fontSize: "0.52rem", color: "rgba(255,255,255,0.45)", fontFamily: "'JetBrains Mono',monospace" }}>
                 {lastRefreshed
                   ? `${lastRefreshed.toLocaleTimeString("ru", { hour: "2-digit", minute: "2-digit" })} · ${stations.length > 0 ? stations.length.toLocaleString("ru") : "1000+"} АЗС`
                   : `${stations.length > 0 ? stations.length.toLocaleString("ru") : "1000+"} АЗС`}
@@ -1169,7 +1169,7 @@ export function AnalyticsTab({ onNavigate }: Props) {
               <button
                 onClick={async () => { setRefreshing(true); await Promise.all([loadAnalytics(), loadTrend()]).catch(() => {}); setRefreshing(false); }}
                 disabled={refreshing}
-                style={{ background: refreshing ? "rgba(14,14,40,0.4)" : "rgba(168,85,247,0.12)", border: `1px solid ${refreshing ? "rgba(34,34,60,0.6)" : "#a855f733"}`, borderRadius: "7px", color: refreshing ? "#4b5563" : "#a855f7", fontSize: "0.6rem", padding: "0.2rem 0.5rem", cursor: refreshing ? "default" : "pointer", transition: "all 0.2s", fontWeight: 600 }}
+                style={{ background: refreshing ? "rgba(14,14,40,0.4)" : "rgba(168,85,247,0.12)", border: `1px solid ${refreshing ? "rgba(34,34,60,0.6)" : "#a855f733"}`, borderRadius: "7px", color: refreshing ? "rgba(255,255,255,0.55)" : "#a855f7", fontSize: "0.6rem", padding: "0.2rem 0.5rem", cursor: refreshing ? "default" : "pointer", transition: "all 0.2s", fontWeight: 600 }}
               >
                 {refreshing ? "↻ …" : "↻"}
               </button>
@@ -1205,7 +1205,7 @@ export function AnalyticsTab({ onNavigate }: Props) {
                 {[...tickerItems, ...tickerItems].map((item, i) => (
                   <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "0 12px 0 8px" }}>
                     <span style={{ fontFamily: "'JetBrains Mono',monospace", color: item.color, fontSize: "0.52rem", fontWeight: 700 }}>{item.pct}%</span>
-                    <span style={{ color: "#4b5563", fontSize: "0.48rem" }}>{item.label}</span>
+                    <span style={{ color: "rgba(255,255,255,0.55)", fontSize: "0.48rem" }}>{item.label}</span>
                     <span style={{ color: "#161620", fontSize: "0.52rem" }}>│</span>
                   </span>
                 ))}
@@ -1259,7 +1259,7 @@ export function AnalyticsTab({ onNavigate }: Props) {
                 <motion.div key={label} initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.12 + idx * 0.06, duration: 0.25 }} style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                   <div style={{ width: "7px", height: "7px", borderRadius: "50%", background: color, boxShadow: `0 0 5px ${color}`, flexShrink: 0 }} />
                   <span style={{ fontFamily: "'JetBrains Mono',monospace", color, fontSize: "1.35rem", fontWeight: 700, lineHeight: 1, textShadow: `0 0 10px ${color}44` }}>{count}</span>
-                  <span style={{ color: "#4b5563", fontSize: "0.58rem" }}>{label}</span>
+                  <span style={{ color: "rgba(255,255,255,0.55)", fontSize: "0.58rem" }}>{label}</span>
                 </motion.div>
               ))}
             </div>
@@ -1317,9 +1317,9 @@ export function AnalyticsTab({ onNavigate }: Props) {
                       style={{ height: "100%", background: dotColor, borderRadius: "2px" }}
                     />
                   </div>
-                  <div style={{ color: "#4b5563", fontSize: "0.42rem", fontFamily: "'JetBrains Mono',monospace", letterSpacing: "0.04em" }}>{label.toUpperCase()}</div>
+                  <div style={{ color: "rgba(255,255,255,0.55)", fontSize: "0.42rem", fontFamily: "'JetBrains Mono',monospace", letterSpacing: "0.04em" }}>{label.toUpperCase()}</div>
                   {stationCount > 0 && (
-                    <div style={{ color: "#374151", fontSize: "0.4rem", fontFamily: "'JetBrains Mono',monospace", marginTop: "1px" }}>{stationCount} АЗС</div>
+                    <div style={{ color: "rgba(255,255,255,0.45)", fontSize: "0.4rem", fontFamily: "'JetBrains Mono',monospace", marginTop: "1px" }}>{stationCount} АЗС</div>
                   )}
                 </motion.div>
               ))}
@@ -1363,7 +1363,7 @@ export function AnalyticsTab({ onNavigate }: Props) {
                 </div>
                 <p style={{ margin: "0 0 0.05rem", color, fontWeight: 900, fontSize: "1.2rem", fontFamily: "'JetBrains Mono', monospace", lineHeight: 1, textShadow: `0 0 12px ${color}44` }}>{value}</p>
                 <p style={{ margin: 0, color: "#e2e8f0", fontSize: "0.65rem", fontWeight: 700 }}>{label}</p>
-                <p style={{ margin: 0, color: "#374151", fontSize: "0.52rem" }}>{sub}</p>
+                <p style={{ margin: 0, color: "rgba(255,255,255,0.45)", fontSize: "0.52rem" }}>{sub}</p>
               </motion.div>
             ))}
           </div>
@@ -1440,7 +1440,7 @@ export function AnalyticsTab({ onNavigate }: Props) {
                     }}
                   >
                     <span style={{ fontSize: "0.6rem" }}>{emoji}</span>
-                    <span style={{ color: active ? "#fff" : "#6b7280", fontSize: "0.6rem", fontWeight: active ? 700 : 400 }}>{label}</span>
+                    <span style={{ color: active ? "#fff" : "rgba(255,255,255,0.65)", fontSize: "0.6rem", fontWeight: active ? 700 : 400 }}>{label}</span>
                     {avgPct != null && (
                       <span style={{
                         background: active ? "rgba(255,255,255,0.25)" : "rgba(168,85,247,0.1)",
@@ -1498,7 +1498,7 @@ export function AnalyticsTab({ onNavigate }: Props) {
 
         {trendData.length < 2 ? (
           <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(168,85,247,0.15)", borderRadius: "14px", padding: "2rem 1rem", textAlign: "center" }}>
-            <p style={{ color: "#4b5563", fontSize: "0.8rem", margin: 0 }}>
+            <p style={{ color: "rgba(255,255,255,0.55)", fontSize: "0.8rem", margin: 0 }}>
               ⏳ Данные накапливаются…<br />
               <span style={{ fontSize: "0.68rem" }}>График появится после первых замеров</span>
             </p>
@@ -1527,7 +1527,7 @@ export function AnalyticsTab({ onNavigate }: Props) {
                 <YAxis domain={[0, 100]} tick={{ fill: "#4b5563", fontSize: 9 }} stroke="#22222f" />
                 <Tooltip
                   contentStyle={{ background: "rgba(12,14,100,0.95)", border: "1px solid rgba(168,85,247,0.2)", borderRadius: "8px", fontSize: "0.75rem" }}
-                  labelStyle={{ color: "#9ca3af" }}
+                  labelStyle={{ color: "rgba(255,255,255,0.72)" }}
                   formatter={(v: number) => [`${v.toFixed(1)}%`, "Доступность"]}
                   labelFormatter={(t: string) => {
                     const d = new Date(t.replace(" ", "T") + ":00");
@@ -1632,7 +1632,7 @@ function NewsFeed() {
           <span style={{ fontSize: "1.1rem" }}>{criticalCount > 0 ? "🚨" : "📡"}</span>
           <div style={{ textAlign: "left" }}>
             <p style={{ margin: 0, color: "#e2e8f0", fontSize: "0.82rem", fontWeight: 800, lineHeight: 1 }}>Лента событий</p>
-            <p style={{ margin: "0.1rem 0 0", color: "#4b5563", fontSize: "0.58rem" }}>
+            <p style={{ margin: "0.1rem 0 0", color: "rgba(255,255,255,0.55)", fontSize: "0.58rem" }}>
               {news.length > 0 ? `${news.length} событий` : "нажмите для загрузки"}
               {lastNewsRefresh && ` · ${lastNewsRefresh.toLocaleTimeString("ru", { hour: "2-digit", minute: "2-digit" })}`}
             </p>
@@ -1643,7 +1643,7 @@ function NewsFeed() {
             </span>
           )}
         </div>
-        <span style={{ color: loading ? "#a855f7" : "#374151", fontSize: "0.75rem" }}>
+        <span style={{ color: loading ? "#a855f7" : "rgba(255,255,255,0.45)", fontSize: "0.75rem" }}>
           {loading ? "⟳" : open ? "▲" : "▼"}
         </span>
       </button>
@@ -1653,7 +1653,7 @@ function NewsFeed() {
           {/* Search + severity filter */}
           <div style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}>
             <div style={{ position: "relative", flex: 1 }}>
-              <span style={{ position: "absolute", left: "0.55rem", top: "50%", transform: "translateY(-50%)", color: "#374151", fontSize: "0.7rem", pointerEvents: "none" }}>🔍</span>
+              <span style={{ position: "absolute", left: "0.55rem", top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,0.45)", fontSize: "0.7rem", pointerEvents: "none" }}>🔍</span>
               <input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -1679,7 +1679,7 @@ function NewsFeed() {
                   background: filterSeverity === sev ? (sev === "critical" ? "#ef444418" : sev === "warning" ? "#f59e0b18" : sev === "info" ? "#3b82f618" : "#a855f718") : "#0b0b10",
                   border: `1px solid ${filterSeverity === sev ? (SEVERITY_COLOR[sev] ?? "#a855f7") : "#1e1e2a"}`,
                   borderRadius: "7px",
-                  color: filterSeverity === sev ? (SEVERITY_COLOR[sev] ?? "#a855f7") : "#4b5563",
+                  color: filterSeverity === sev ? (SEVERITY_COLOR[sev] ?? "#a855f7") : "rgba(255,255,255,0.55)",
                   fontSize: "0.62rem",
                   padding: "0.28rem 0.45rem",
                   cursor: "pointer",
@@ -1694,13 +1694,13 @@ function NewsFeed() {
           </div>
 
           {lastNewsRefresh && (
-            <p style={{ color: "#374151", fontSize: "0.6rem", margin: "0 0 0.1rem", textAlign: "right" }}>
+            <p style={{ color: "rgba(255,255,255,0.45)", fontSize: "0.6rem", margin: "0 0 0.1rem", textAlign: "right" }}>
               Обновлено: {lastNewsRefresh.toLocaleTimeString("ru", { hour: "2-digit", minute: "2-digit" })}
               {(searchQuery || filterSeverity) && <span style={{ color: "#a855f7" }}> · {displayedNews.length} из {news.length}</span>}
             </p>
           )}
           {displayedNews.length === 0 && (
-            <div style={{ textAlign: "center", padding: "1.5rem", color: "#374151", fontSize: "0.72rem" }}>
+            <div style={{ textAlign: "center", padding: "1.5rem", color: "rgba(255,255,255,0.45)", fontSize: "0.72rem" }}>
               Нет событий по фильтру
             </div>
           )}
@@ -1722,31 +1722,31 @@ function NewsFeed() {
                 <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: "linear-gradient(90deg,transparent,#ef4444,transparent)" }} />
               )}
               <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "0.5rem", marginBottom: "0.25rem" }}>
-                <span style={{ background: `${SEVERITY_COLOR[item.severity] ?? "#22222f"}22`, color: SEVERITY_COLOR[item.severity] ?? "#9ca3af", fontSize: "0.58rem", fontWeight: 700, padding: "0.1rem 0.4rem", borderRadius: "4px", letterSpacing: "0.06em", flexShrink: 0 }}>
+                <span style={{ background: `${SEVERITY_COLOR[item.severity] ?? "#22222f"}22`, color: SEVERITY_COLOR[item.severity] ?? "rgba(255,255,255,0.72)", fontSize: "0.58rem", fontWeight: 700, padding: "0.1rem 0.4rem", borderRadius: "4px", letterSpacing: "0.06em", flexShrink: 0 }}>
                   {SEVERITY_LABEL[item.severity] ?? item.severity.toUpperCase()}
                 </span>
-                <span style={{ color: "#374151", fontSize: "0.6rem", flexShrink: 0 }}>
+                <span style={{ color: "rgba(255,255,255,0.45)", fontSize: "0.6rem", flexShrink: 0 }}>
                   {new Date(item.created_at).toLocaleString("ru", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
                 </span>
               </div>
               <p style={{ color: "#e2e8f0", fontSize: "0.8rem", margin: "0 0 0.25rem", fontWeight: 500, lineHeight: 1.35 }}>{item.headline}</p>
-              {item.body && <p style={{ color: "#6b7280", fontSize: "0.72rem", margin: 0, lineHeight: 1.4 }}>{item.body}</p>}
+              {item.body && <p style={{ color: "rgba(255,255,255,0.65)", fontSize: "0.72rem", margin: 0, lineHeight: 1.4 }}>{item.body}</p>}
               <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.35rem", flexWrap: "wrap" }}>
-                <span style={{ color: "#4b5563", fontSize: "0.62rem" }}>📍 {item.region}</span>
-                {item.fuel_type && <span style={{ color: "#4b5563", fontSize: "0.62rem" }}>⛽ {item.fuel_type}</span>}
+                <span style={{ color: "rgba(255,255,255,0.55)", fontSize: "0.62rem" }}>📍 {item.region}</span>
+                {item.fuel_type && <span style={{ color: "rgba(255,255,255,0.55)", fontSize: "0.62rem" }}>⛽ {item.fuel_type}</span>}
                 {item.price_delta_pct != null && (
                   <span style={{ color: item.price_delta_pct > 0 ? "#FF1744" : "#00E676", fontSize: "0.62rem", fontFamily: "'JetBrains Mono',monospace" }}>
                     {item.price_delta_pct > 0 ? "+" : ""}{item.price_delta_pct.toFixed(1)}%
                   </span>
                 )}
-                {item.source && <span style={{ color: "#374151", fontSize: "0.6rem" }}>· {item.source}</span>}
+                {item.source && <span style={{ color: "rgba(255,255,255,0.45)", fontSize: "0.6rem" }}>· {item.source}</span>}
               </div>
             </motion.div>
           ))}
           {!searchQuery && !filterSeverity && news.length >= newsLimit && (
             <button
               onClick={() => { const next = newsLimit + 15; setNewsLimit(next); loadNews(true, next); }}
-              style={{ background: "#14141c", border: "1px solid #22222f", borderRadius: "10px", color: "#9ca3af", fontSize: "0.75rem", padding: "0.6rem", cursor: "pointer", width: "100%" }}
+              style={{ background: "#14141c", border: "1px solid #22222f", borderRadius: "10px", color: "rgba(255,255,255,0.72)", fontSize: "0.75rem", padding: "0.6rem", cursor: "pointer", width: "100%" }}
             >
               Загрузить ещё
             </button>
@@ -1821,7 +1821,7 @@ function NetworkDistributionChart() {
                 transition={{ delay: ni * 0.04, duration: 0.22 }}
                 style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}
               >
-                <span style={{ color: "#9ca3af", fontSize: "0.62rem", width: "80px", flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</span>
+                <span style={{ color: "rgba(255,255,255,0.72)", fontSize: "0.62rem", width: "80px", flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</span>
                 <div style={{ flex: 1, height: "8px", background: "#0b0b10", borderRadius: "4px", overflow: "hidden" }}>
                   <motion.div
                     initial={{ width: 0 }}
@@ -1831,7 +1831,7 @@ function NetworkDistributionChart() {
                   />
                 </div>
                 <span style={{ fontFamily: "'JetBrains Mono',monospace", color, fontSize: "0.62rem", fontWeight: 700, width: "28px", textAlign: "right", flexShrink: 0 }}>{count}</span>
-                <span style={{ color: "#374151", fontSize: "0.55rem", width: "28px", flexShrink: 0 }}>{pct}%</span>
+                <span style={{ color: "rgba(255,255,255,0.45)", fontSize: "0.55rem", width: "28px", flexShrink: 0 }}>{pct}%</span>
               </motion.div>
             );
           })}
@@ -1871,7 +1871,7 @@ function RegionalPricesTable() {
 
   return (
     <div style={{ padding: "0 1rem 0.75rem" }}>
-      <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.43rem", letterSpacing: "0.14em", marginBottom: "0.45rem" }}>
+      <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "rgba(255,255,255,0.45)", fontSize: "0.43rem", letterSpacing: "0.14em", marginBottom: "0.45rem" }}>
         ЦЕНЫ РЕГИОНОВ · card-oil.ru · {new Date().toLocaleDateString("ru")}
       </div>
       <div style={{ background: "linear-gradient(135deg,#0d0d18,#0f0c1a)", border: `1px solid ${color}22`, borderRadius: "14px", padding: "0.75rem", position: "relative", overflow: "hidden" }}>
@@ -1882,19 +1882,19 @@ function RegionalPricesTable() {
             <button key={f} onClick={() => setFuel(f)} style={{
               background: fuel === f ? `${FUEL_COLORS[f]}20` : "#0b0b10",
               border: `1px solid ${fuel === f ? FUEL_COLORS[f] : "#1e1e2a"}`,
-              borderRadius: "7px", color: fuel === f ? FUEL_COLORS[f] : "#4b5563",
+              borderRadius: "7px", color: fuel === f ? FUEL_COLORS[f] : "rgba(255,255,255,0.55)",
               padding: "0.22rem 0.55rem", fontSize: "0.68rem", fontWeight: fuel === f ? 700 : 400,
               cursor: "pointer", transition: "all 0.15s",
             }}>{f}</button>
           ))}
           <button onClick={() => setSort(s => s === "asc" ? "desc" : "asc")} style={{
             marginLeft: "auto", background: "#0b0b10", border: "1px solid #1e1e2a",
-            borderRadius: "7px", color: "#6b7280", padding: "0.22rem 0.45rem",
+            borderRadius: "7px", color: "rgba(255,255,255,0.65)", padding: "0.22rem 0.45rem",
             fontSize: "0.68rem", cursor: "pointer",
           }}>{sort === "asc" ? "↑ Дешевле" : "↓ Дороже"}</button>
         </div>
         {loading && (
-          <div style={{ textAlign: "center", padding: "1.5rem", color: "#374151", fontFamily: "'JetBrains Mono',monospace", fontSize: "0.68rem" }}>ЗАГРУЗКА…</div>
+          <div style={{ textAlign: "center", padding: "1.5rem", color: "rgba(255,255,255,0.45)", fontFamily: "'JetBrains Mono',monospace", fontSize: "0.68rem" }}>ЗАГРУЗКА…</div>
         )}
         {error && (
           <div style={{ textAlign: "center", padding: "1rem", color: "#FF1744", fontSize: "0.72rem" }}>Нет данных</div>
@@ -1912,8 +1912,8 @@ function RegionalPricesTable() {
                   transition={{ delay: i * 0.025, duration: 0.2 }}
                   style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}
                 >
-                  <span style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.52rem", width: "1.2rem", flexShrink: 0, textAlign: "right" }}>{i + 1}</span>
-                  <span style={{ color: "#9ca3af", fontSize: "0.62rem", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{region.replace("Республика ", "Респ. ")}</span>
+                  <span style={{ fontFamily: "'JetBrains Mono',monospace", color: "rgba(255,255,255,0.45)", fontSize: "0.52rem", width: "1.2rem", flexShrink: 0, textAlign: "right" }}>{i + 1}</span>
+                  <span style={{ color: "rgba(255,255,255,0.72)", fontSize: "0.62rem", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{region.replace("Республика ", "Респ. ")}</span>
                   <div style={{ width: "40px", height: "4px", background: "#111", borderRadius: "2px", flexShrink: 0, overflow: "hidden" }}>
                     <motion.div
                       initial={{ width: 0 }}
@@ -1932,7 +1932,7 @@ function RegionalPricesTable() {
           <div style={{ display: "flex", justifyContent: "space-between", marginTop: "0.5rem", paddingTop: "0.4rem", borderTop: "1px solid #1e1e2a" }}>
             <span style={{ color: "#00E676", fontSize: "0.58rem", fontFamily: "'JetBrains Mono',monospace" }}>↓ мин {minP.toFixed(2)} ₽</span>
             <span style={{ color: "#FF1744", fontSize: "0.58rem", fontFamily: "'JetBrains Mono',monospace" }}>↑ макс {maxP.toFixed(2)} ₽</span>
-            <span style={{ color: "#374151", fontSize: "0.58rem" }}>разброс {(maxP - minP).toFixed(2)} ₽</span>
+            <span style={{ color: "rgba(255,255,255,0.45)", fontSize: "0.58rem" }}>разброс {(maxP - minP).toFixed(2)} ₽</span>
           </div>
         )}
       </div>
@@ -1971,7 +1971,7 @@ function NetworkReliabilityWidget() {
 
   return (
     <div style={{ padding: "0 1rem 1.5rem" }}>
-      <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.43rem", letterSpacing: "0.14em", marginBottom: "0.5rem" }}>
+      <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "rgba(255,255,255,0.45)", fontSize: "0.43rem", letterSpacing: "0.14em", marginBottom: "0.5rem" }}>
         НАДЁЖНОСТЬ СЕТИ · ИТОГО
       </div>
       <div style={{
@@ -1985,19 +1985,19 @@ function NetworkReliabilityWidget() {
           { label: "Всего АЗС", value: total, color: "#a855f7", suffix: "" },
           { label: "С топливом", value: withFuel, color: reliColor, suffix: "" },
           { label: "Надёжность", value: reliabilityPct, color: reliColor, suffix: "%" },
-          { label: "Ср. очередь", value: avgQueue, color: "#6b7280", suffix: "авт" },
+          { label: "Ср. очередь", value: avgQueue, color: "rgba(255,255,255,0.65)", suffix: "авт" },
         ].map(({ label, value, color, suffix }) => (
           <div key={label} style={{ flex: 1, textAlign: "center" }}>
             <div style={{ fontFamily: "'JetBrains Mono',monospace", color, fontSize: "1.1rem", fontWeight: 800, lineHeight: 1 }}>
               {value}{suffix}
             </div>
-            <div style={{ color: "#374151", fontSize: "0.52rem", marginTop: "3px" }}>{label}</div>
+            <div style={{ color: "rgba(255,255,255,0.45)", fontSize: "0.52rem", marginTop: "3px" }}>{label}</div>
           </div>
         ))}
       </div>
 
       {/* Zone breakdown */}
-      <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.4rem", letterSpacing: "0.14em", marginBottom: "0.4rem" }}>
+      <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "rgba(255,255,255,0.45)", fontSize: "0.4rem", letterSpacing: "0.14em", marginBottom: "0.4rem" }}>
         ЗОНЫ · СРЕДНЯЯ ДОСТУПНОСТЬ
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: "0.3rem" }}>
@@ -2010,7 +2010,7 @@ function NetworkReliabilityWidget() {
             style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
           >
             <span style={{ fontSize: "0.65rem", flexShrink: 0 }}>{emoji}</span>
-            <span style={{ color: "#9ca3af", fontSize: "0.65rem", width: "72px", flexShrink: 0 }}>{label}</span>
+            <span style={{ color: "rgba(255,255,255,0.72)", fontSize: "0.65rem", width: "72px", flexShrink: 0 }}>{label}</span>
             <div style={{ flex: 1, height: "6px", background: "#0b0b0f", borderRadius: "3px", overflow: "hidden" }}>
               <motion.div
                 initial={{ width: 0 }}
@@ -2020,7 +2020,7 @@ function NetworkReliabilityWidget() {
               />
             </div>
             <span style={{ fontFamily: "'JetBrains Mono',monospace", color, fontSize: "0.65rem", fontWeight: 700, width: "30px", textAlign: "right", flexShrink: 0 }}>{avg}%</span>
-            <span style={{ color: "#374151", fontSize: "0.55rem", flexShrink: 0 }}>{count}АЗС</span>
+            <span style={{ color: "rgba(255,255,255,0.45)", fontSize: "0.55rem", flexShrink: 0 }}>{count}АЗС</span>
           </motion.div>
         ))}
       </div>
@@ -2055,7 +2055,7 @@ function TopNetworksWidget() {
 
   return (
     <div style={{ padding: "0 1rem 1.5rem" }}>
-      <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.43rem", letterSpacing: "0.14em", marginBottom: "0.45rem" }}>
+      <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "rgba(255,255,255,0.45)", fontSize: "0.43rem", letterSpacing: "0.14em", marginBottom: "0.45rem" }}>
         РЕЙТИНГ СЕТЕЙ · ДОСТУПНОСТЬ · ТОП-8
       </div>
       <div style={{ background: "linear-gradient(135deg,#0d0d18,#0f0b18)", border: "1px solid #a855f722", borderRadius: "14px", padding: "0.75rem", position: "relative", overflow: "hidden" }}>
@@ -2076,7 +2076,7 @@ function TopNetworksWidget() {
                 <span style={{ fontSize: "0.65rem", flexShrink: 0, width: "1.2rem" }}>{medals[i] ?? `${i + 1}.`}</span>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "2px" }}>
-                    <span style={{ color: i < 3 ? "#e2e8f0" : "#9ca3af", fontSize: "0.62rem", fontWeight: i === 0 ? 700 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</span>
+                    <span style={{ color: i < 3 ? "#e2e8f0" : "rgba(255,255,255,0.72)", fontSize: "0.62rem", fontWeight: i === 0 ? 700 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</span>
                     <span style={{ fontFamily: "'JetBrains Mono',monospace", color, fontSize: "0.62rem", fontWeight: 700, flexShrink: 0, marginLeft: "0.3rem" }}>{avg}%</span>
                   </div>
                   <div style={{ height: "4px", background: "#0b0b0f", borderRadius: "2px", overflow: "hidden" }}>
@@ -2088,7 +2088,7 @@ function TopNetworksWidget() {
                     />
                   </div>
                 </div>
-                <span style={{ color: "#374151", fontSize: "0.52rem", flexShrink: 0, fontFamily: "'JetBrains Mono',monospace" }}>{count}</span>
+                <span style={{ color: "rgba(255,255,255,0.45)", fontSize: "0.52rem", flexShrink: 0, fontFamily: "'JetBrains Mono',monospace" }}>{count}</span>
               </motion.div>
             );
           })}
@@ -2130,7 +2130,7 @@ function TopCheapestStations() {
 
   return (
     <div style={{ padding: "0 1rem 0.75rem" }}>
-      <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.43rem", letterSpacing: "0.14em", marginBottom: "0.45rem" }}>
+      <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "rgba(255,255,255,0.45)", fontSize: "0.43rem", letterSpacing: "0.14em", marginBottom: "0.45rem" }}>
         Лучшие цены · ТОП-5
       </div>
       <div style={{ background: "linear-gradient(135deg,#0d0d18,#0f0c1a)", border: `1px solid ${color}22`, borderRadius: "14px", padding: "0.75rem", position: "relative", overflow: "hidden" }}>
@@ -2140,7 +2140,7 @@ function TopCheapestStations() {
             <button key={f} onClick={() => setFuel(f)} style={{
               padding: "0.18rem 0.45rem", background: fuel === f ? `${FUEL_COLORS[f]}20` : "#0b0b10",
               border: `1px solid ${fuel === f ? FUEL_COLORS[f] : "#1e1e2a"}`, borderRadius: "6px",
-              color: fuel === f ? FUEL_COLORS[f] : "#374151", fontSize: "0.62rem",
+              color: fuel === f ? FUEL_COLORS[f] : "rgba(255,255,255,0.45)", fontSize: "0.62rem",
               fontWeight: fuel === f ? 700 : 400, cursor: "pointer",
             }}>{f}</button>
           ))}
@@ -2166,13 +2166,13 @@ function TopCheapestStations() {
               >
                 <span style={{ fontSize: "0.7rem", flexShrink: 0, width: "1.4rem" }}>{medals[i]}</span>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ color: i === 0 ? "#f1f5f9" : "#9ca3af", fontSize: "0.62rem", fontWeight: i === 0 ? 700 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.name}</div>
-                  <div style={{ color: "#374151", fontSize: "0.52rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.network || "АЗС"} · {s.region.replace("Республика ", "Респ.").split(" ").slice(-1)[0]}</div>
+                  <div style={{ color: i === 0 ? "#f1f5f9" : "rgba(255,255,255,0.72)", fontSize: "0.62rem", fontWeight: i === 0 ? 700 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.name}</div>
+                  <div style={{ color: "rgba(255,255,255,0.45)", fontSize: "0.52rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.network || "АЗС"} · {s.region.replace("Республика ", "Респ.").split(" ").slice(-1)[0]}</div>
                 </div>
                 <div style={{ textAlign: "right", flexShrink: 0 }}>
                   <div style={{ fontFamily: "'JetBrains Mono',monospace", color: i === 0 ? "#00E676" : color, fontSize: "0.7rem", fontWeight: 700 }}>
                     {price.toFixed(1)}₽
-                    {saving > 0 && <span style={{ color: "#374151", fontSize: "0.52rem", marginLeft: "0.2rem" }}>+{saving.toFixed(1)}</span>}
+                    {saving > 0 && <span style={{ color: "rgba(255,255,255,0.45)", fontSize: "0.52rem", marginLeft: "0.2rem" }}>+{saving.toFixed(1)}</span>}
                   </div>
                   <div style={{ color: availColor, fontSize: "0.52rem" }}>{avail}%</div>
                 </div>
@@ -2213,7 +2213,7 @@ function FuelSavingsWidget() {
 
   return (
     <div style={{ padding: "0 1rem 1.5rem" }}>
-      <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.43rem", letterSpacing: "0.14em", marginBottom: "0.45rem" }}>
+      <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "rgba(255,255,255,0.45)", fontSize: "0.43rem", letterSpacing: "0.14em", marginBottom: "0.45rem" }}>
         Разброс цен · Экономия
       </div>
       <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid #22c55e18", borderRadius: "14px", padding: "0.75rem", position: "relative", overflow: "hidden" }}>
@@ -2236,7 +2236,7 @@ function FuelSavingsWidget() {
                   <span style={{ fontFamily: "'JetBrains Mono',monospace", color, fontSize: "0.62rem", fontWeight: 700 }}>{fuel}</span>
                   <div style={{ display: "flex", gap: "0.6rem" }}>
                     <span style={{ color: "#00E676", fontSize: "0.58rem" }}>↓{min.toFixed(1)}₽</span>
-                    <span style={{ color: "#6b7280", fontSize: "0.58rem" }}>ср.{avg.toFixed(1)}₽</span>
+                    <span style={{ color: "rgba(255,255,255,0.65)", fontSize: "0.58rem" }}>ср.{avg.toFixed(1)}₽</span>
                     <span style={{ color: "#FF1744", fontSize: "0.58rem" }}>↑{max.toFixed(1)}₽</span>
                   </div>
                 </div>
@@ -2258,7 +2258,7 @@ function FuelSavingsWidget() {
           })}
         </div>
         <div style={{ marginTop: "0.6rem", padding: "0.35rem 0.5rem", background: "rgba(34,197,94,0.05)", border: "1px solid rgba(34,197,94,0.12)", borderRadius: "7px" }}>
-          <span style={{ color: "#6b7280", fontSize: "0.58rem" }}>
+          <span style={{ color: "rgba(255,255,255,0.65)", fontSize: "0.58rem" }}>
             💡 Заправившись на самой дешёвой АЗС, вы экономите до <strong style={{ color: "#00E676" }}>{Math.max(...spreads.map(s => s.spread * 60)).toFixed(0)} ₽</strong> при заправке 60л
           </span>
         </div>
@@ -2313,12 +2313,12 @@ function NetworkPriceTableWidget() {
               flexShrink: 0, padding: "0.18rem 0.55rem",
               background: activeFuel === f ? `${FUEL_COLORS[f]}18` : "none",
               border: `1px solid ${activeFuel === f ? FUEL_COLORS[f] + "50" : "#22222f"}`,
-              borderRadius: "6px", color: activeFuel === f ? FUEL_COLORS[f] : "#4b5563",
+              borderRadius: "6px", color: activeFuel === f ? FUEL_COLORS[f] : "rgba(255,255,255,0.55)",
               fontSize: "0.6rem", fontWeight: activeFuel === f ? 700 : 400, cursor: "pointer",
               fontFamily: "'JetBrains Mono',monospace",
             }}>{f}</button>
           ))}
-          <span style={{ marginLeft: "auto", color: "#374151", fontSize: "0.55rem", alignSelf: "center" }}>
+          <span style={{ marginLeft: "auto", color: "rgba(255,255,255,0.45)", fontSize: "0.55rem", alignSelf: "center" }}>
             разброс: <strong style={{ color: "#00E676" }}>-{(maxPrice - minPrice).toFixed(1)}₽</strong>
           </span>
         </div>
@@ -2336,9 +2336,9 @@ function NetworkPriceTableWidget() {
                 transition={{ delay: rank * 0.05, duration: 0.22 }}
                 style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
               >
-                <span style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.52rem", width: "1rem", flexShrink: 0 }}>#{rank + 1}</span>
+                <span style={{ fontFamily: "'JetBrains Mono',monospace", color: "rgba(255,255,255,0.45)", fontSize: "0.52rem", width: "1rem", flexShrink: 0 }}>#{rank + 1}</span>
                 <span style={{ fontSize: "0.72rem", flexShrink: 0 }}>{icon}</span>
-                <span style={{ color: "#9ca3af", fontSize: "0.62rem", minWidth: "75px", flexShrink: 0 }}>{name}</span>
+                <span style={{ color: "rgba(255,255,255,0.72)", fontSize: "0.62rem", minWidth: "75px", flexShrink: 0 }}>{name}</span>
                 <div style={{ flex: 1, height: "4px", background: "#0b0b0f", borderRadius: "2px", overflow: "hidden" }}>
                   <motion.div
                     initial={{ width: 0 }}
@@ -2355,7 +2355,7 @@ function NetworkPriceTableWidget() {
           })}
         </div>
         <div style={{ marginTop: "0.55rem", padding: "0.3rem 0.5rem", background: "rgba(168,85,247,0.04)", border: "1px solid #a855f712", borderRadius: "6px" }}>
-          <span style={{ color: "#4b5563", fontSize: "0.55rem" }}>
+          <span style={{ color: "rgba(255,255,255,0.55)", fontSize: "0.55rem" }}>
             🏆 Выгоднее всего: <strong style={{ color: "#00E676" }}>{sorted[0]?.name}</strong> — {prices[sorted[0]?.name]?.[activeFuel]?.toFixed(1)}₽/л за {activeFuel}
           </span>
         </div>
@@ -2406,8 +2406,8 @@ function RegionLeaderboardWidget() {
               transition={{ delay: i * 0.05, duration: 0.2 }}
               style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}
             >
-              <span style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.5rem", width: "1rem", flexShrink: 0 }}>#{i + 1}</span>
-              <span style={{ color: "#9ca3af", fontSize: "0.6rem", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{short}</span>
+              <span style={{ fontFamily: "'JetBrains Mono',monospace", color: "rgba(255,255,255,0.45)", fontSize: "0.5rem", width: "1rem", flexShrink: 0 }}>#{i + 1}</span>
+              <span style={{ color: "rgba(255,255,255,0.72)", fontSize: "0.6rem", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{short}</span>
               <div style={{ width: "55px", height: "3px", background: "#0b0b0f", borderRadius: "2px", flexShrink: 0, overflow: "hidden" }}>
                 <motion.div
                   initial={{ width: 0 }}
@@ -2417,7 +2417,7 @@ function RegionLeaderboardWidget() {
                 />
               </div>
               <span style={{ fontFamily: "'JetBrains Mono',monospace", color: "#00E676", fontSize: "0.6rem", fontWeight: 700, minWidth: "34px", textAlign: "right", flexShrink: 0 }}>{avgPct.toFixed(0)}%</span>
-              <span style={{ color: "#374151", fontSize: "0.52rem", flexShrink: 0 }}>{total}АЗС</span>
+              <span style={{ color: "rgba(255,255,255,0.45)", fontSize: "0.52rem", flexShrink: 0 }}>{total}АЗС</span>
             </motion.div>
           ))}
         </div>
@@ -2434,8 +2434,8 @@ function RegionLeaderboardWidget() {
               transition={{ delay: i * 0.05 + 0.28, duration: 0.2 }}
               style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}
             >
-              <span style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.5rem", width: "1rem", flexShrink: 0 }}>#{ranked.length - 2 + i}</span>
-              <span style={{ color: "#9ca3af", fontSize: "0.6rem", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{short}</span>
+              <span style={{ fontFamily: "'JetBrains Mono',monospace", color: "rgba(255,255,255,0.45)", fontSize: "0.5rem", width: "1rem", flexShrink: 0 }}>#{ranked.length - 2 + i}</span>
+              <span style={{ color: "rgba(255,255,255,0.72)", fontSize: "0.6rem", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{short}</span>
               <div style={{ width: "55px", height: "3px", background: "#0b0b0f", borderRadius: "2px", flexShrink: 0, overflow: "hidden" }}>
                 <motion.div
                   initial={{ width: 0 }}
@@ -2445,12 +2445,12 @@ function RegionLeaderboardWidget() {
                 />
               </div>
               <span style={{ fontFamily: "'JetBrains Mono',monospace", color: "#FF1744", fontSize: "0.6rem", fontWeight: 700, minWidth: "34px", textAlign: "right", flexShrink: 0 }}>{avgPct.toFixed(0)}%</span>
-              <span style={{ color: "#374151", fontSize: "0.52rem", flexShrink: 0 }}>{total}АЗС</span>
+              <span style={{ color: "rgba(255,255,255,0.45)", fontSize: "0.52rem", flexShrink: 0 }}>{total}АЗС</span>
             </motion.div>
           ))}
         </div>
         <div style={{ marginTop: "0.5rem", padding: "0.3rem 0.5rem", background: "rgba(34,197,94,0.04)", border: "1px solid #22c55e12", borderRadius: "6px" }}>
-          <span style={{ color: "#374151", fontSize: "0.52rem" }}>
+          <span style={{ color: "rgba(255,255,255,0.45)", fontSize: "0.52rem" }}>
             📊 {ranked.length} регионов · {stations.length.toLocaleString("ru")} АЗС в базе
           </span>
         </div>
@@ -2502,7 +2502,7 @@ function CrisisForecastWidget() {
                 transition={{ delay: ci * 0.07, duration: 0.22 }}
                 style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}
               >
-                <span style={{ color: "#9ca3af", fontSize: "0.6rem", minWidth: "70px", flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{short}</span>
+                <span style={{ color: "rgba(255,255,255,0.72)", fontSize: "0.6rem", minWidth: "70px", flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{short}</span>
                 <div style={{ flex: 1, height: "4px", background: "#1a0505", borderRadius: "2px", overflow: "hidden" }}>
                   <motion.div
                     initial={{ width: 0 }}
@@ -2512,7 +2512,7 @@ function CrisisForecastWidget() {
                   />
                 </div>
                 <span style={{ color: trendColor(f.trend), fontFamily: "'JetBrains Mono',monospace", fontSize: "0.6rem", fontWeight: 700, flexShrink: 0, minWidth: "20px" }}>{trendIcon(f.trend)}</span>
-                <span style={{ color: "#6b7280", fontSize: "0.55rem", flexShrink: 0, whiteSpace: "nowrap" }}>
+                <span style={{ color: "rgba(255,255,255,0.65)", fontSize: "0.55rem", flexShrink: 0, whiteSpace: "nowrap" }}>
                   {f.days_until_critical <= 1 ? "сегодня" : `≤${f.days_until_critical}д`}
                 </span>
                 <span style={{ fontFamily: "'JetBrains Mono',monospace", color: "#f59e0b", fontSize: "0.55rem", flexShrink: 0 }}>
@@ -2523,7 +2523,7 @@ function CrisisForecastWidget() {
           })}
         </div>
         <div style={{ marginTop: "0.5rem", padding: "0.3rem 0.5rem", background: "rgba(239,68,68,0.04)", border: "1px solid #ef444412", borderRadius: "6px" }}>
-          <span style={{ color: "#4b5563", fontSize: "0.52rem" }}>
+          <span style={{ color: "rgba(255,255,255,0.55)", fontSize: "0.52rem" }}>
             💡 Рекомендуем заправиться заранее в выделенных регионах
           </span>
         </div>

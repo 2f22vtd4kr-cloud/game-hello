@@ -248,12 +248,12 @@ function PopupContent({ station }: { station: GasStation }) {
       {/* Top accent */}
       <div style={{ height: "1px", background: `linear-gradient(90deg,transparent,${color},transparent)`, marginBottom: "0.45rem" }} />
       <strong style={{ display: "block", marginBottom: "0.15rem", color: "#f1f5f9", fontSize: "0.82rem" }}>{station.name}</strong>
-      <span style={{ color: "#374151", fontSize: "0.65rem" }}>📍 {station.address.slice(0, 32)}</span>
+      <span style={{ color: "rgba(255,255,255,0.45)", fontSize: "0.65rem" }}>📍 {station.address.slice(0, 32)}</span>
       {/* Network badge + availability */}
       {station.network && (
         <div style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem", marginTop: "0.3rem", marginBottom: "0.25rem", background: `${getBrandAccent(station.network) ?? "#4b5563"}18`, border: `1px solid ${getBrandAccent(station.network) ?? "#4b5563"}44`, borderRadius: "6px", padding: "0.05rem 0.4rem" }}>
           <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: getBrandAccent(station.network) ?? "#4b5563", flexShrink: 0 }} />
-          <span style={{ color: getBrandAccent(station.network) ?? "#6b7280", fontSize: "0.62rem", fontWeight: 600 }}>{station.network}</span>
+          <span style={{ color: getBrandAccent(station.network) ?? "rgba(255,255,255,0.65)", fontSize: "0.62rem", fontWeight: 600 }}>{station.network}</span>
         </div>
       )}
       <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "0.25rem", marginBottom: "0.35rem" }}>
@@ -283,7 +283,7 @@ function PopupContent({ station }: { station: GasStation }) {
               padding: "0.08rem 0.35rem",
               fontSize: "0.68rem",
             }}>
-              <span style={{ color: "#4b5563" }}>{ft} </span>
+              <span style={{ color: "rgba(255,255,255,0.55)" }}>{ft} </span>
               <span style={{ color: crisis ? "#ef4444" : "#a855f7", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>
                 {p.effective}₽{crisis && "▲"}
               </span>
@@ -612,7 +612,7 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
                         display: "flex", alignItems: "center", gap: "0.25rem",
                       }}
                     >
-                      <span style={{ color: "#4b5563", fontSize: "0.55rem" }}>🕐</span>
+                      <span style={{ color: "rgba(255,255,255,0.55)", fontSize: "0.55rem" }}>🕐</span>
                       {q}
                     </button>
                   ))}
@@ -699,7 +699,7 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
               marginBottom: "0.65rem",
             }}>
               {loading ? (
-                <span style={{ color: "#374151", fontSize: "0.7rem", padding: "0.4rem 0.75rem", fontFamily: "'JetBrains Mono',monospace" }}>···</span>
+                <span style={{ color: "rgba(255,255,255,0.45)", fontSize: "0.7rem", padding: "0.4rem 0.75rem", fontFamily: "'JetBrains Mono',monospace" }}>···</span>
               ) : (
                 <>
                   {([
@@ -727,7 +727,7 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
                         <span style={{
                           fontFamily: "'JetBrains Mono',monospace",
                           fontSize: "0.68rem", fontWeight: isActive ? 800 : 500,
-                          color: isActive ? color : "#6b7280",
+                          color: isActive ? color : "rgba(255,255,255,0.65)",
                         }}>{cnt}</span>
                       </button>
                     );
@@ -735,7 +735,7 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
                   <span style={{
                     fontFamily: "'JetBrains Mono',monospace",
                     fontSize: "0.6rem",
-                    color: filtered.length < stations.length ? "rgba(255,255,255,0.8)" : "#4b5563",
+                    color: filtered.length < stations.length ? "rgba(255,255,255,0.8)" : "rgba(255,255,255,0.55)",
                     padding: "0 0.6rem",
                     marginLeft: "auto",
                   }}>
@@ -794,7 +794,7 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
                   background: showHeatmap ? "rgba(255,255,255,0.15)" : "rgba(16,20,165,0.82)",
                   border: `1px solid ${showHeatmap ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.08)"}`,
                   borderRadius: "8px",
-                  color: showHeatmap ? "#ffffff" : "#9ca3af",
+                  color: showHeatmap ? "#ffffff" : "rgba(255,255,255,0.72)",
                   padding: "0.3rem 0.55rem",
                   fontSize: "0.72rem", cursor: "pointer",
                   display: "flex", alignItems: "center", gap: "0.25rem",
@@ -816,7 +816,7 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
                       background: isActive ? "rgba(34,197,94,0.18)" : "rgba(16,20,165,0.82)",
                       border: `1px solid ${isActive ? "#22c55e55" : "rgba(255,255,255,0.08)"}`,
                       borderRadius: "8px",
-                      color: isActive ? "#4ade80" : "#6b7280",
+                      color: isActive ? "#4ade80" : "rgba(255,255,255,0.65)",
                       padding: "0.3rem 0.55rem",
                       fontSize: "0.72rem", fontWeight: isActive ? 700 : 400, cursor: "pointer",
                       display: "flex", alignItems: "center", gap: "0.25rem",
@@ -838,7 +838,7 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
                   background: showFavoritesOnly ? "rgba(234,179,8,0.18)" : "rgba(16,20,165,0.82)",
                   border: `1px solid ${showFavoritesOnly ? "#eab30855" : "rgba(255,255,255,0.08)"}`,
                   borderRadius: "8px",
-                  color: showFavoritesOnly ? "#fde047" : "#9ca3af",
+                  color: showFavoritesOnly ? "#fde047" : "rgba(255,255,255,0.72)",
                   padding: "0.3rem 0.55rem",
                   fontSize: "0.72rem", cursor: "pointer",
                   display: "flex", alignItems: "center", gap: "0.25rem",
@@ -891,7 +891,7 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
                     background: filterZone === z ? "rgba(255,255,255,0.15)" : "rgba(14,18,158,0.75)",
                     border: `1px solid ${filterZone === z ? "rgba(255,255,255,0.32)" : "rgba(255,255,255,0.07)"}`,
                     borderRadius: "8px",
-                    color: filterZone === z ? "#ffffff" : "#4b5563",
+                    color: filterZone === z ? "#ffffff" : "rgba(255,255,255,0.55)",
                     padding: "0.28rem 0.55rem",
                     fontSize: "0.7rem",
                     fontWeight: filterZone === z ? 700 : 400,
@@ -916,7 +916,7 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
                     background: active ? `${c}22` : "rgba(14,18,158,0.75)",
                     border: `1px solid ${active ? c : "rgba(255,255,255,0.07)"}`,
                     borderRadius: "8px",
-                    color: active ? c : "#9ca3af",
+                    color: active ? c : "rgba(255,255,255,0.72)",
                     padding: "0.28rem 0.6rem",
                     fontSize: "0.72rem",
                     fontWeight: active ? 700 : 400,
@@ -940,7 +940,7 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
                     background: active ? "rgba(255,255,255,0.15)" : "rgba(14,18,158,0.75)",
                     border: `1px solid ${active ? "rgba(255,255,255,0.32)" : "rgba(255,255,255,0.07)"}`,
                     borderRadius: "7px",
-                    color: active ? "#ffffff" : "#9ca3af",
+                    color: active ? "#ffffff" : "rgba(255,255,255,0.72)",
                     padding: "0.25rem 0.55rem",
                     fontSize: "0.7rem",
                     fontWeight: active ? 700 : 400,
@@ -959,7 +959,7 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
               {/* Quick city chips */}
               <div style={{ display: "flex", gap: "0.28rem", flexWrap: "wrap", marginBottom: "0.4rem" }}>
                 {[
-                  { label: "🌐 Все",    value: null,                          color: "#6b7280", coords: null as [number,number]|null, zoom: 5  },
+                  { label: "🌐 Все",    value: null,                          color: "rgba(255,255,255,0.65)", coords: null as [number,number]|null, zoom: 5  },
                   { label: "🏙 Москва", value: "г. Москва и Новая Москва",    color: "#3b82f6", coords: [55.75, 37.62] as [number,number], zoom: 11 },
                   { label: "🌊 Крым",   value: "Севастополь",                 color: "#a855f7", coords: [44.60, 33.52] as [number,number], zoom: 10 },
                   { label: "⚓ Питер",  value: "г. Санкт-Петербург",          color: "#06b6d4", coords: [59.95, 30.32] as [number,number], zoom: 11 },
@@ -974,7 +974,7 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
                         flexShrink: 0, padding: "0.18rem 0.45rem",
                         background: active ? `${color}18` : "rgba(14,18,158,0.75)",
                         border: `1px solid ${active ? color + "60" : "rgba(255,255,255,0.07)"}`,
-                        borderRadius: "6px", color: active ? color : "#9ca3af",
+                        borderRadius: "6px", color: active ? color : "rgba(255,255,255,0.72)",
                         fontSize: "0.6rem", fontWeight: active ? 700 : 400, cursor: "pointer",
                       }}
                     >{label}</button>
@@ -984,7 +984,7 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
               <select
                 value={filterRegion ?? ""}
                 onChange={(e) => setFilter("filterRegion", e.target.value || null)}
-                style={{ width: "100%", background: "rgba(14,18,158,0.75)", border: `1px solid ${filterRegion ? "#a855f744" : "rgba(255,255,255,0.07)"}`, borderRadius: "8px", color: filterRegion ? "#e2e8f0" : "#9ca3af", padding: "0.3rem 0.5rem", fontSize: "0.7rem", outline: "none", cursor: "pointer" }}
+                style={{ width: "100%", background: "rgba(14,18,158,0.75)", border: `1px solid ${filterRegion ? "#a855f744" : "rgba(255,255,255,0.07)"}`, borderRadius: "8px", color: filterRegion ? "#e2e8f0" : "rgba(255,255,255,0.72)", padding: "0.3rem 0.5rem", fontSize: "0.7rem", outline: "none", cursor: "pointer" }}
               >
                 <option value="">Все регионы</option>
                 {uniqueRegions.map((r) => <option key={r} value={r}>{r.slice(0, 30)}</option>)}
@@ -1005,7 +1005,7 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
                       background: active ? "rgba(255,255,255,0.15)" : "rgba(14,18,158,0.75)",
                       border: `1px solid ${active ? "rgba(255,255,255,0.32)" : "rgba(255,255,255,0.07)"}`,
                       borderRadius: "7px",
-                      color: active ? "#ffffff" : "#9ca3af",
+                      color: active ? "#ffffff" : "rgba(255,255,255,0.72)",
                       padding: "0.22rem 0.5rem",
                       fontSize: "0.68rem",
                       fontWeight: active ? 700 : 400,
@@ -1016,7 +1016,7 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
                     }}
                   >
                     {brand}
-                    <span style={{ fontFamily: "'JetBrains Mono',monospace", color: active ? "rgba(255,255,255,0.55)" : "#374151", fontSize: "0.58rem" }}>{cnt}</span>
+                    <span style={{ fontFamily: "'JetBrains Mono',monospace", color: active ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.45)", fontSize: "0.58rem" }}>{cnt}</span>
                   </button>
                 );
               })}
@@ -1039,7 +1039,7 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
             <select
               value={topNetworks.includes(filterNetwork ?? "") ? "" : (filterNetwork ?? "")}
               onChange={(e) => setFilter("filterNetwork", e.target.value || null)}
-              style={{ width: "100%", background: "rgba(14,18,158,0.75)", border: `1px solid ${filterNetwork && !topNetworks.includes(filterNetwork) ? "rgba(255,255,255,0.28)" : "rgba(255,255,255,0.07)"}`, borderRadius: "8px", color: filterNetwork && !topNetworks.includes(filterNetwork) ? "#e2e8f0" : "#9ca3af", padding: "0.3rem 0.5rem", fontSize: "0.7rem", outline: "none", cursor: "pointer", marginBottom: "0.5rem" }}
+              style={{ width: "100%", background: "rgba(14,18,158,0.75)", border: `1px solid ${filterNetwork && !topNetworks.includes(filterNetwork) ? "rgba(255,255,255,0.28)" : "rgba(255,255,255,0.07)"}`, borderRadius: "8px", color: filterNetwork && !topNetworks.includes(filterNetwork) ? "#e2e8f0" : "rgba(255,255,255,0.72)", padding: "0.3rem 0.5rem", fontSize: "0.7rem", outline: "none", cursor: "pointer", marginBottom: "0.5rem" }}
             >
               <option value="">Другая сеть...</option>
               {uniqueNetworks.filter((n) => !topNetworks.includes(n)).map((n) => (
@@ -1097,7 +1097,7 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
             {legend.map(([c,l,n]) => (
               <div key={c} style={{ display: "flex", alignItems: "center", gap: "5px" }}>
                 <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: c, boxShadow: `0 0 5px ${c}88`, flexShrink: 0 }} />
-                <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.42rem", color: "#6b7280" }}>{l}</span>
+                <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.42rem", color: "rgba(255,255,255,0.65)" }}>{l}</span>
                 {n > 0 && <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.4rem", color: c, opacity: 0.8 }}>{n}</span>}
               </div>
             ))}
@@ -1145,7 +1145,7 @@ export function MapTab({ visible, initialStationId, navVisible = true, onNavTogg
                   {r.name}
                   <br />
                   <span style={{ color, fontFamily: "monospace" }}>{Math.round(r.avgPct)}%</span>
-                  <span style={{ color: "#9ca3af", fontWeight: 400 }}> наличие</span>
+                  <span style={{ color: "rgba(255,255,255,0.72)", fontWeight: 400 }}> наличие</span>
                 </div>
               </Tooltip>
             </Rectangle>

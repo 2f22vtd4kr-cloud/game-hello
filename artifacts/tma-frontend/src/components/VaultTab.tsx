@@ -13,12 +13,12 @@ import { jsPDF } from "jspdf";
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   active: { label: "Активен", color: "#22c55e" },
-  used: { label: "Использован", color: "#6b7280" },
+  used: { label: "Использован", color: "rgba(255,255,255,0.65)" },
   expired: { label: "Истёк", color: "#ef4444" },
 };
 
 function expiryInfo(expiresAt: string | null | undefined): { color: string; label: string; pct: number; daysLeft: number } {
-  if (!expiresAt) return { color: "#6b7280", label: "Срок неизвестен", pct: 50, daysLeft: 0 };
+  if (!expiresAt) return { color: "rgba(255,255,255,0.65)", label: "Срок неизвестен", pct: 50, daysLeft: 0 };
   const now = Date.now();
   const exp = new Date(expiresAt).getTime();
   const totalMs = 90 * 24 * 3600 * 1000;
@@ -155,8 +155,8 @@ function QRModal({ hash, onClose, expiresAt, networkName, fuelType, volume, pric
               </div>
               <div style={{ color: "#a855f7", fontSize: "0.62rem", fontFamily: "'JetBrains Mono',monospace", marginTop: "2px" }}>
                 {fuelType && <span style={{ fontWeight: 700 }}>{fuelType}</span>}
-                {volume && <span style={{ color: "#6b7280" }}> · {volume}л</span>}
-                {price && price > 0 && <span style={{ color: "#4b5563" }}> · ₽{price.toLocaleString("ru")}</span>}
+                {volume && <span style={{ color: "rgba(255,255,255,0.65)" }}> · {volume}л</span>}
+                {price && price > 0 && <span style={{ color: "rgba(255,255,255,0.55)" }}> · ₽{price.toLocaleString("ru")}</span>}
               </div>
               <div style={{
                 marginTop: "0.4rem",
@@ -177,7 +177,7 @@ function QRModal({ hash, onClose, expiresAt, networkName, fuelType, volume, pric
               Предъявите QR контролёру
             </p>
           )}
-          <p style={{ color: "#4b5563", fontSize: "0.62rem", margin: "0.2rem 0 0" }}>
+          <p style={{ color: "rgba(255,255,255,0.55)", fontSize: "0.62rem", margin: "0.2rem 0 0" }}>
             {now.toLocaleDateString("ru", { day: "2-digit", month: "long", year: "numeric" })} · {now.toLocaleTimeString("ru", { hour: "2-digit", minute: "2-digit" })}
           </p>
         </div>
@@ -229,14 +229,14 @@ function QRModal({ hash, onClose, expiresAt, networkName, fuelType, volume, pric
             transition: "border-color 0.2s",
           }}
         >
-          <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.62rem", color: "#4b5563", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.62rem", color: "rgba(255,255,255,0.55)", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {hash}
           </span>
-          <span style={{ fontSize: "0.7rem", color: copied ? "#22c55e" : "#6b7280", flexShrink: 0 }}>
+          <span style={{ fontSize: "0.7rem", color: copied ? "#22c55e" : "rgba(255,255,255,0.65)", flexShrink: 0 }}>
             {copied ? "✓" : "⎘"}
           </span>
         </div>
-        <p style={{ color: "#374151", fontSize: "0.55rem", margin: "0.3rem 0 0.5rem" }}>
+        <p style={{ color: "rgba(255,255,255,0.45)", fontSize: "0.55rem", margin: "0.3rem 0 0.5rem" }}>
           {copied ? "✓ Скопировано!" : "Нажмите на код для копирования"}
         </p>
 
@@ -244,13 +244,13 @@ function QRModal({ hash, onClose, expiresAt, networkName, fuelType, volume, pric
         {expiresAt && (
           <div style={{ marginBottom: "0.75rem", background: "#0b0b0f", border: `1px solid ${expiry.color}30`, borderRadius: "10px", padding: "0.5rem 0.75rem" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.3rem" }}>
-              <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.48rem", color: "#374151", letterSpacing: "0.1em" }}>СРОК ДЕЙСТВИЯ</span>
+              <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.48rem", color: "rgba(255,255,255,0.45)", letterSpacing: "0.1em" }}>СРОК ДЕЙСТВИЯ</span>
               <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.54rem", color: expiry.color, fontWeight: 700 }}>{expiry.label}</span>
             </div>
             <div style={{ height: "5px", background: "#111118", borderRadius: "3px", overflow: "hidden" }}>
               <div style={{ width: `${expiry.pct}%`, height: "100%", background: expiry.color, borderRadius: "3px", boxShadow: `0 0 6px ${expiry.color}`, transition: "width 0.5s" }} />
             </div>
-            <p style={{ margin: "0.3rem 0 0", color: "#374151", fontSize: "0.44rem", fontFamily: "'JetBrains Mono',monospace", lineHeight: 1.4 }}>
+            <p style={{ margin: "0.3rem 0 0", color: "rgba(255,255,255,0.45)", fontSize: "0.44rem", fontFamily: "'JetBrains Mono',monospace", lineHeight: 1.4 }}>
               ⚠ Точный срок действия может измениться с момента получения талона
             </p>
           </div>
@@ -305,7 +305,7 @@ const FUEL_ACCENT: Record<string, string> = {
 
 function PurchaseCard({ purchase, accentColor }: { purchase: Purchase; accentColor?: string }) {
   const [showQr, setShowQr] = useState(false);
-  const st = STATUS_LABELS[purchase.status] ?? { label: purchase.status, color: "#6b7280" };
+  const st = STATUS_LABELS[purchase.status] ?? { label: purchase.status, color: "rgba(255,255,255,0.65)" };
   const date = new Date(purchase.created_at).toLocaleDateString("ru-RU", {
     day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit",
   });
@@ -361,19 +361,19 @@ function PurchaseCard({ purchase, accentColor }: { purchase: Purchase; accentCol
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.4rem" }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: "flex", alignItems: "baseline", gap: "0.4rem", flexWrap: "wrap" }}>
-              <span style={{ color: isActive ? "#e2e8f0" : "#6b7280", fontWeight: 700, fontSize: "0.88rem" }}>
+              <span style={{ color: isActive ? "#e2e8f0" : "rgba(255,255,255,0.65)", fontWeight: 700, fontSize: "0.88rem" }}>
                 {FUEL_LABELS[purchase.fuel_type] ?? purchase.fuel_type}
               </span>
               <span style={{ fontFamily: "'JetBrains Mono',monospace", color: fuelColor, fontSize: "0.82rem", fontWeight: 800 }}>
                 {purchase.volume}л
               </span>
               {purchase.price > 0 && (
-                <span style={{ fontFamily: "'JetBrains Mono',monospace", color: isActive ? "#e2e8f0" : "#4b5563", fontSize: "0.72rem", fontWeight: 600 }}>
+                <span style={{ fontFamily: "'JetBrains Mono',monospace", color: isActive ? "#e2e8f0" : "rgba(255,255,255,0.55)", fontSize: "0.72rem", fontWeight: 600 }}>
                   ₽{purchase.price.toLocaleString("ru")}
                 </span>
               )}
             </div>
-            <p style={{ margin: "0.15rem 0 0", color: "#4b5563", fontSize: "0.65rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            <p style={{ margin: "0.15rem 0 0", color: "rgba(255,255,255,0.55)", fontSize: "0.65rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               ⛽ {purchase.station_name ?? "АЗС"} · {purchase.region ?? ""}
             </p>
           </div>
@@ -413,7 +413,7 @@ function PurchaseCard({ purchase, accentColor }: { purchase: Purchase; accentCol
                 </span>
               );
             })()}
-            <span style={{ color: "#374151", fontSize: "0.6rem" }}>{date}</span>
+            <span style={{ color: "rgba(255,255,255,0.45)", fontSize: "0.6rem" }}>{date}</span>
           </div>
         </div>
       </motion.div>
@@ -491,7 +491,7 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
   const tierColorHdr = tierIdxHdr >= 5 ? "#f59e0b" : tierIdxHdr >= 3 ? "#E8622A" : "#A855F7";
 
   if (!user) return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", background: "linear-gradient(160deg,#0B0C4A,#060730)", color: "#6b7280" }}>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", background: "linear-gradient(160deg,#0B0C4A,#060730)", color: "rgba(255,255,255,0.65)" }}>
       Загрузка…
     </div>
   );
@@ -591,7 +591,7 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
               <span style={{ fontSize: "1.1rem", lineHeight: 1, marginLeft: "4px" }}>{icon}</span>
               <div>
                 <div style={{ fontFamily: "'JetBrains Mono',monospace", color, fontSize: "0.75rem", fontWeight: 800, lineHeight: 1 }}>{value}</div>
-                <div style={{ color: "#4b5563", fontSize: "0.47rem", marginTop: "2px" }}>{label}</div>
+                <div style={{ color: "rgba(255,255,255,0.55)", fontSize: "0.47rem", marginTop: "2px" }}>{label}</div>
               </div>
             </div>
           ))}
@@ -612,7 +612,7 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
         return (
           <div style={{ padding: "0 12px 10px" }}>
             <div className="glass-panel" style={{ padding: "10px 12px" }}>
-              <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.42rem", letterSpacing: "0.14em", marginBottom: "6px" }}>РАСПРЕДЕЛЕНИЕ ТОПЛИВА · ОБЪЁМ</div>
+              <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "rgba(255,255,255,0.45)", fontSize: "0.42rem", letterSpacing: "0.14em", marginBottom: "6px" }}>РАСПРЕДЕЛЕНИЕ ТОПЛИВА · ОБЪЁМ</div>
               <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
                 {fuels.map(([fuel, vol]) => {
                   const color = FUEL_COLORS[fuel] ?? "#6b7280";
@@ -623,7 +623,7 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
                       <div style={{ flex: 1, height: "5px", background: "#1a1a24", borderRadius: "3px", overflow: "hidden" }}>
                         <div style={{ width: `${pct}%`, height: "100%", background: `linear-gradient(90deg,${color}88,${color})`, borderRadius: "3px", transition: "width 0.6s ease" }} />
                       </div>
-                      <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.58rem", color: "#6b7280", width: "36px", textAlign: "right", flexShrink: 0 }}>{vol.toLocaleString("ru")}л</span>
+                      <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.58rem", color: "rgba(255,255,255,0.65)", width: "36px", textAlign: "right", flexShrink: 0 }}>{vol.toLocaleString("ru")}л</span>
                     </div>
                   );
                 })}
@@ -662,7 +662,7 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
               {/* User row */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.6rem" }}>
                 <div>
-                  <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.43rem", letterSpacing: "0.14em", marginBottom: "0.18rem" }}>ПРОФИЛЬ ОПЕРАТОРА · XP</div>
+                  <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "rgba(255,255,255,0.45)", fontSize: "0.43rem", letterSpacing: "0.14em", marginBottom: "0.18rem" }}>ПРОФИЛЬ ОПЕРАТОРА · XP</div>
                   <p style={{ margin: "0 0 0.15rem", color: "#e2e8f0", fontWeight: 700, fontSize: "1rem" }}>
                     {user.username ? `@${user.username}` : `Пользователь #${user.id}`}
                   </p>
@@ -683,17 +683,17 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
                   }}>
                     {user.xp.toLocaleString("ru")}
                   </p>
-                  <p style={{ margin: 0, color: "#4b5563", fontSize: "0.62rem", letterSpacing: "0.04em", textTransform: "uppercase" }}>XP</p>
+                  <p style={{ margin: 0, color: "rgba(255,255,255,0.55)", fontSize: "0.62rem", letterSpacing: "0.04em", textTransform: "uppercase" }}>XP</p>
                 </div>
               </div>
 
               {/* XP progress bar */}
               <div style={{ marginBottom: "0.35rem" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.2rem" }}>
-                  <span style={{ color: "#4b5563", fontSize: "0.62rem" }}>
+                  <span style={{ color: "rgba(255,255,255,0.55)", fontSize: "0.62rem" }}>
                     {currentTier?.level ?? "—"}
                   </span>
-                  <span style={{ color: "#4b5563", fontSize: "0.62rem" }}>
+                  <span style={{ color: "rgba(255,255,255,0.55)", fontSize: "0.62rem" }}>
                     {nextTier ? nextTier.level : "MAX"}
                   </span>
                 </div>
@@ -705,7 +705,7 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
                   }} />
                 </div>
                 {nextTier && (
-                  <p style={{ margin: "0.2rem 0 0", color: "#374151", fontSize: "0.6rem" }}>
+                  <p style={{ margin: "0.2rem 0 0", color: "rgba(255,255,255,0.45)", fontSize: "0.6rem" }}>
                     До «{nextTier.level}»: <span style={{ color: tierColor }}>{(nextTier.min - user.xp).toLocaleString("ru")} XP</span>
                   </p>
                 )}
@@ -717,26 +717,26 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
                   <p style={{ margin: 0, fontFamily: "'JetBrains Mono',monospace", fontSize: "1rem", fontWeight: 700, color: "#a855f7" }}>
                     {active.length}
                   </p>
-                  <p style={{ margin: 0, color: "#374151", fontSize: "0.58rem" }}>ваучеров</p>
+                  <p style={{ margin: 0, color: "rgba(255,255,255,0.45)", fontSize: "0.58rem" }}>ваучеров</p>
                 </div>
                 <div style={{ flex: 1, background: "#0b0b0f", borderRadius: "8px", padding: "0.4rem", textAlign: "center" }}>
                   <p style={{ margin: 0, fontFamily: "'JetBrains Mono',monospace", fontSize: "1rem", fontWeight: 700, color: "#22c55e" }}>
                     {purchases.length}
                   </p>
-                  <p style={{ margin: 0, color: "#374151", fontSize: "0.58rem" }}>покупок</p>
+                  <p style={{ margin: 0, color: "rgba(255,255,255,0.45)", fontSize: "0.58rem" }}>покупок</p>
                 </div>
                 <div style={{ flex: 1, background: "#0b0b0f", borderRadius: "8px", padding: "0.4rem", textAlign: "center" }}>
                   <p style={{ margin: 0, fontFamily: "'JetBrains Mono',monospace", fontSize: "1rem", fontWeight: 700, color: "#f59e0b" }}>
                     {purchases.reduce((s, p) => s + (p.volume ?? 0), 0)}л
                   </p>
-                  <p style={{ margin: 0, color: "#374151", fontSize: "0.58rem" }}>топлива</p>
+                  <p style={{ margin: 0, color: "rgba(255,255,255,0.45)", fontSize: "0.58rem" }}>топлива</p>
                 </div>
                 {user.neurocredits > 0 && (
                   <div style={{ flex: 1, background: "#0b0b0f", borderRadius: "8px", padding: "0.4rem", textAlign: "center" }}>
                     <p style={{ margin: 0, fontFamily: "'JetBrains Mono',monospace", fontSize: "1rem", fontWeight: 700, color: "#db2777" }}>
                       {user.neurocredits}
                     </p>
-                    <p style={{ margin: 0, color: "#374151", fontSize: "0.58rem" }}>NC</p>
+                    <p style={{ margin: 0, color: "rgba(255,255,255,0.45)", fontSize: "0.58rem" }}>NC</p>
                   </div>
                 )}
                 {user.checkin_streak && user.checkin_streak > 0 ? (
@@ -744,7 +744,7 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
                     <p style={{ margin: 0, fontFamily: "'JetBrains Mono',monospace", fontSize: "1rem", fontWeight: 700, color: "#f59e0b" }}>
                       {user.checkin_streak}🔥
                     </p>
-                    <p style={{ margin: 0, color: "#374151", fontSize: "0.58rem" }}>стрик</p>
+                    <p style={{ margin: 0, color: "rgba(255,255,255,0.45)", fontSize: "0.58rem" }}>стрик</p>
                   </div>
                 ) : null}
               </div>
@@ -766,7 +766,7 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
                   <span style={{ fontFamily: "'JetBrains Mono', monospace", color: "#a855f7", fontSize: "0.78rem", letterSpacing: "0.06em" }}>
                     {referral.code}
                   </span>
-                  <span style={{ color: "#4b5563", fontSize: "0.65rem" }}>
+                  <span style={{ color: "rgba(255,255,255,0.55)", fontSize: "0.65rem" }}>
                     реф. код · {referral.uses} приглашений
                   </span>
                 </div>
@@ -827,17 +827,17 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
         return (
           <div style={{ margin: "0 1rem 0.75rem", background: "linear-gradient(135deg,#0d0d18,#110a18)", border: "1px solid #a855f722", borderRadius: "14px", padding: "0.75rem", position: "relative", overflow: "hidden" }}>
             <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: "linear-gradient(90deg,transparent,#a855f7,#db2777,transparent)" }} />
-            <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.4rem", letterSpacing: "0.14em", marginBottom: "0.45rem" }}>СТАТИСТИКА РАСХОДА · ВСЕГО</div>
+            <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "rgba(255,255,255,0.45)", fontSize: "0.4rem", letterSpacing: "0.14em", marginBottom: "0.45rem" }}>СТАТИСТИКА РАСХОДА · ВСЕГО</div>
             <div style={{ display: "flex", gap: "0.4rem" }}>
               {[
                 { label: "Топлива", value: `${totalVolume}л`, color: "#22c55e" },
                 { label: "Потрачено", value: `${totalSpent.toLocaleString("ru")}`, color: "#a855f7", suffix: " ₽" },
                 { label: "Покупок", value: purchases.length, color: "#3b82f6" },
-                topFuel ? { label: "Любимое", value: topFuel[0], color: FUEL_COLORS[topFuel[0]] ?? "#6b7280" } : null,
+                topFuel ? { label: "Любимое", value: topFuel[0], color: FUEL_COLORS[topFuel[0]] ?? "rgba(255,255,255,0.65)" } : null,
               ].filter(Boolean).map((item) => item && (
                 <div key={item.label} style={{ flex: 1, textAlign: "center", background: "#0b0b0f", borderRadius: "8px", padding: "0.4rem 0.2rem" }}>
                   <div style={{ fontFamily: "'JetBrains Mono',monospace", color: item.color, fontSize: "0.85rem", fontWeight: 800, lineHeight: 1 }}>{item.value}{item.suffix ?? ""}</div>
-                  <div style={{ color: "#374151", fontSize: "0.52rem", marginTop: "2px" }}>{item.label}</div>
+                  <div style={{ color: "rgba(255,255,255,0.45)", fontSize: "0.52rem", marginTop: "2px" }}>{item.label}</div>
                 </div>
               ))}
             </div>
@@ -911,7 +911,7 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
                       })()}
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
-                      <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.4rem", color: "#374151", letterSpacing: "0.1em" }}>ДЕЙСТВУЕТ НА ВСЕХ АЗС</span>
+                      <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.4rem", color: "rgba(255,255,255,0.45)", letterSpacing: "0.1em" }}>ДЕЙСТВУЕТ НА ВСЕХ АЗС</span>
                       <div style={{ background: `${netColor}18`, border: `1px solid ${netColor}44`, borderRadius: "4px", padding: "0.04rem 0.3rem", fontFamily: "'JetBrains Mono',monospace", fontSize: "0.52rem", color: netColor, fontWeight: 700 }}>
                         {vouchers.length} шт
                       </div>
@@ -968,7 +968,7 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
       {history.length > 0 && (
         <div style={{ padding: "0 1rem 0.5rem" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.1rem", marginTop: "0.5rem" }}>
-            <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.43rem", letterSpacing: "0.14em" }}>АРХИВ ОРДЕРОВ · ИСТОРИЯ</div>
+            <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "rgba(255,255,255,0.45)", fontSize: "0.43rem", letterSpacing: "0.14em" }}>АРХИВ ОРДЕРОВ · ИСТОРИЯ</div>
             <button
               onClick={() => {
                 const rows = [
@@ -991,7 +991,7 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
               }}
               style={{
                 background: "rgba(168,85,247,0.1)", border: "1px solid #a855f722",
-                borderRadius: "6px", color: "#6b7280", fontSize: "0.6rem",
+                borderRadius: "6px", color: "rgba(255,255,255,0.65)", fontSize: "0.6rem",
                 padding: "0.15rem 0.45rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.25rem",
               }}
             >
@@ -999,13 +999,13 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
             </button>
           </div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.5rem" }}>
-            <p style={{ color: "#374151", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.08em", margin: 0, fontFamily: "'JetBrains Mono',monospace" }}>
+            <p style={{ color: "rgba(255,255,255,0.45)", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.08em", margin: 0, fontFamily: "'JetBrains Mono',monospace" }}>
               История · {history.length}
             </p>
             <div style={{ display: "flex", gap: "0.25rem" }}>
               {([
-                { key: "all",     label: "Все",      color: "#4b5563" },
-                { key: "used",    label: "Исп.",     color: "#6b7280" },
+                { key: "all",     label: "Все",      color: "rgba(255,255,255,0.55)" },
+                { key: "used",    label: "Исп.",     color: "rgba(255,255,255,0.65)" },
                 { key: "expired", label: "Истёк.",   color: "#ef4444" },
               ] as const).map(({ key, label, color }) => (
                 <button
@@ -1014,7 +1014,7 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
                   style={{
                     background: historyFilter === key ? `${color}18` : "none",
                     border: `1px solid ${historyFilter === key ? color + "55" : "#22222f"}`,
-                    borderRadius: "6px", color: historyFilter === key ? color : "#374151",
+                    borderRadius: "6px", color: historyFilter === key ? color : "rgba(255,255,255,0.45)",
                     fontSize: "0.55rem", fontWeight: historyFilter === key ? 700 : 400,
                     padding: "0.1rem 0.4rem", cursor: "pointer",
                     fontFamily: "'JetBrains Mono',monospace",
@@ -1027,7 +1027,7 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
             </div>
           </div>
           {history.length === 0 ? (
-            <p style={{ color: "#374151", fontSize: "0.65rem", textAlign: "center", padding: "0.75rem 0", fontFamily: "'JetBrains Mono',monospace" }}>— нет записей —</p>
+            <p style={{ color: "rgba(255,255,255,0.45)", fontSize: "0.65rem", textAlign: "center", padding: "0.75rem 0", fontFamily: "'JetBrains Mono',monospace" }}>— нет записей —</p>
           ) : (
             history.map((p) => <PurchaseCard key={p.id} purchase={p} />)
           )}
@@ -1039,7 +1039,7 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
         <div style={{ padding: "0 1rem 0.75rem" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
             <div>
-              <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.46rem", letterSpacing: "0.14em", marginBottom: "0.1rem" }}>МОНИТОРИНГ АЗС · АКТИВНЫЕ</div>
+              <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "rgba(255,255,255,0.45)", fontSize: "0.46rem", letterSpacing: "0.14em", marginBottom: "0.1rem" }}>МОНИТОРИНГ АЗС · АКТИВНЫЕ</div>
               <p style={{ margin: 0, color: "#a855f7", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>
                 🔔 Подписки · {subscriptions.length} АЗС
               </p>
@@ -1095,7 +1095,7 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
                   <p style={{ margin: 0, color: "#e2e8f0", fontSize: "0.78rem", fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                     {sub.station_name}
                   </p>
-                  <p style={{ margin: 0, color: "#6b7280", fontSize: "0.62rem" }}>
+                  <p style={{ margin: 0, color: "rgba(255,255,255,0.65)", fontSize: "0.62rem" }}>
                     {sub.station_region}{sub.fuel_type ? ` · ${sub.fuel_type}` : ""}
                   </p>
                 </div>
@@ -1136,7 +1136,7 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
         <div style={{ padding: "0 1rem 0.75rem" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
             <div>
-              <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.46rem", letterSpacing: "0.14em", marginBottom: "0.1rem" }}>МОИ ЗАМЕТКИ · АЗС</div>
+              <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "rgba(255,255,255,0.45)", fontSize: "0.46rem", letterSpacing: "0.14em", marginBottom: "0.1rem" }}>МОИ ЗАМЕТКИ · АЗС</div>
               <p style={{ margin: 0, color: "#db2777", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>
                 📝 Заметки · {stationNotes.length} АЗС
               </p>
@@ -1173,10 +1173,10 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
                   <p style={{ margin: "0 0 0.15rem", color: "#e2e8f0", fontSize: "0.78rem", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     ⛽ {note.station_name}
                   </p>
-                  <p style={{ margin: "0 0 0.35rem", color: "#6b7280", fontSize: "0.62rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  <p style={{ margin: "0 0 0.35rem", color: "rgba(255,255,255,0.65)", fontSize: "0.62rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {note.station_region}
                   </p>
-                  <p style={{ margin: 0, color: "#9ca3af", fontSize: "0.7rem", lineHeight: 1.4, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                  <p style={{ margin: 0, color: "rgba(255,255,255,0.72)", fontSize: "0.7rem", lineHeight: 1.4, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
                     {note.body}
                   </p>
                 </div>
@@ -1191,7 +1191,7 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
                 >✕</button>
               </div>
               {note.updated_at && (
-                <p style={{ margin: "0.3rem 0 0", color: "#374151", fontSize: "0.55rem" }}>
+                <p style={{ margin: "0.3rem 0 0", color: "rgba(255,255,255,0.45)", fontSize: "0.55rem" }}>
                   📅 {new Date(note.updated_at).toLocaleDateString("ru", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
                 </p>
               )}
@@ -1203,7 +1203,7 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
       {/* Favorite stations */}
       {favoriteStations.length > 0 && (
         <div style={{ padding: "0 1rem 0.75rem" }}>
-          <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.43rem", letterSpacing: "0.14em", marginBottom: "0.1rem" }}>ИЗБРАННЫЕ АЗС · БЫСТРЫЙ ДОСТУП</div>
+          <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "rgba(255,255,255,0.45)", fontSize: "0.43rem", letterSpacing: "0.14em", marginBottom: "0.1rem" }}>ИЗБРАННЫЕ АЗС · БЫСТРЫЙ ДОСТУП</div>
           <p style={{ color: "#f59e0b", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 0.5rem", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>
             ⭐ Избранные АЗС · {favoriteStations.length}
           </p>
@@ -1236,19 +1236,19 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
                     </div>
                     <button
                       onClick={() => toggleStationFavorite(id)}
-                      style={{ background: "none", border: "none", cursor: "pointer", color: "#374151", fontSize: "0.55rem", padding: 0 }}
+                      style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.45)", fontSize: "0.55rem", padding: 0 }}
                     >✕</button>
                   </div>
                   <p style={{ margin: "0.1rem 0 0", color: "#e2e8f0", fontSize: "0.65rem", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {st ? st.name : `АЗС #${id}`}
                   </p>
                   {st?.network && (
-                    <p style={{ margin: "0.1rem 0 0", color: "#374151", fontSize: "0.55rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{st.network}</p>
+                    <p style={{ margin: "0.1rem 0 0", color: "rgba(255,255,255,0.45)", fontSize: "0.55rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{st.network}</p>
                   )}
                   {st && (
                     <button
                       onClick={(e) => { e.stopPropagation(); onNavigate?.("map"); }}
-                      style={{ marginTop: "0.25rem", background: "none", border: "1px solid #22222f", borderRadius: "5px", color: "#4b5563", fontSize: "0.48rem", padding: "2px 6px", cursor: "pointer", width: "100%" }}
+                      style={{ marginTop: "0.25rem", background: "none", border: "1px solid #22222f", borderRadius: "5px", color: "rgba(255,255,255,0.55)", fontSize: "0.48rem", padding: "2px 6px", cursor: "pointer", width: "100%" }}
                     >🗺 На карте</button>
                   )}
                 </motion.div>
@@ -1261,7 +1261,7 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
       {/* Favorite regions */}
       {favoriteRegions.length > 0 && (
         <div style={{ padding: "0 1rem 0.75rem" }}>
-          <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.43rem", letterSpacing: "0.14em", marginBottom: "0.1rem" }}>ИЗБРАННЫЕ РЕГИОНЫ · МОНИТОРИНГ</div>
+          <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "rgba(255,255,255,0.45)", fontSize: "0.43rem", letterSpacing: "0.14em", marginBottom: "0.1rem" }}>ИЗБРАННЫЕ РЕГИОНЫ · МОНИТОРИНГ</div>
           <p style={{ color: "#eab308", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 0.5rem", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>
             ⭐ Мониторинг · {favoriteRegions.length} регионов
           </p>
@@ -1295,7 +1295,7 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
                 </div>
                 <div>
                   <p style={{ margin: 0, color: "#e2e8f0", fontSize: "0.82rem", fontWeight: 600 }}>{region}</p>
-                  <p style={{ margin: "0.1rem 0 0", color: "#4b5563", fontSize: "0.62rem", fontFamily: "'JetBrains Mono',monospace" }}>
+                  <p style={{ margin: "0.1rem 0 0", color: "rgba(255,255,255,0.55)", fontSize: "0.62rem", fontFamily: "'JetBrains Mono',monospace" }}>
                     МОНИТОРИНГ · LIVE
                   </p>
                 </div>
@@ -1312,20 +1312,20 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
                   return (
                     <div style={{ textAlign: "right" }}>
                       <div style={{ fontFamily: "'JetBrains Mono',monospace", color: dotColor, fontSize: "0.88rem", fontWeight: 700, lineHeight: 1 }}>{avgPct}%</div>
-                      <div style={{ color: "#374151", fontSize: "0.5rem", marginTop: "1px" }}>{regionStations.length} АЗС</div>
+                      <div style={{ color: "rgba(255,255,255,0.45)", fontSize: "0.5rem", marginTop: "1px" }}>{regionStations.length} АЗС</div>
                     </div>
                   );
                 })()}
                 <button
                   onClick={() => onNavigate?.("map")}
                   title="Карта"
-                  style={{ background: "none", border: "1px solid #1e1e2a", borderRadius: "6px", color: "#4b5563", fontSize: "0.7rem", padding: "0.25rem 0.4rem", cursor: "pointer", flexShrink: 0 }}
+                  style={{ background: "none", border: "1px solid #1e1e2a", borderRadius: "6px", color: "rgba(255,255,255,0.55)", fontSize: "0.7rem", padding: "0.25rem 0.4rem", cursor: "pointer", flexShrink: 0 }}
                 >🗺</button>
                 <button
                   onClick={() => removeFav(region)}
                   style={{
                     background: "none", border: "1px solid #22222f",
-                    borderRadius: "8px", color: "#6b7280",
+                    borderRadius: "8px", color: "rgba(255,255,255,0.65)",
                     fontSize: "0.72rem", padding: "0.3rem 0.5rem",
                     cursor: "pointer", flexShrink: 0,
                   }}
@@ -1343,7 +1343,7 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
         <div style={{ padding: "0 1rem 0.75rem" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
             <div>
-              <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.43rem", letterSpacing: "0.14em", marginBottom: "0.1rem" }}>ДОСТИЖЕНИЯ СИСТЕМЫ · РАЗБЛОКИРОВАНО</div>
+              <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "rgba(255,255,255,0.45)", fontSize: "0.43rem", letterSpacing: "0.14em", marginBottom: "0.1rem" }}>ДОСТИЖЕНИЯ СИСТЕМЫ · РАЗБЛОКИРОВАНО</div>
               <p style={{ margin: 0, color: "#f59e0b", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>
                 🏆 Достижения · {achievements.filter(a => a.unlocked).length}/{achievements.length}
               </p>
@@ -1417,10 +1417,10 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
                   {ach.icon}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ margin: 0, color: ach.unlocked ? "#e2e8f0" : "#4b5563", fontSize: "0.75rem", fontWeight: 700 }}>
+                  <p style={{ margin: 0, color: ach.unlocked ? "#e2e8f0" : "rgba(255,255,255,0.55)", fontSize: "0.75rem", fontWeight: 700 }}>
                     {ach.label}
                   </p>
-                  <p style={{ margin: 0, color: ach.unlocked ? "#a855f7" : "#374151", fontSize: "0.62rem" }}>
+                  <p style={{ margin: 0, color: ach.unlocked ? "#a855f7" : "rgba(255,255,255,0.45)", fontSize: "0.62rem" }}>
                     +{ach.xp_bonus} XP {!ach.unlocked && "· заблокировано"}
                   </p>
                 </div>
@@ -1438,7 +1438,7 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
           </div>
 
           {!showAllAch && achievements.filter(a => a.unlocked).length === 0 && (
-            <p style={{ color: "#4b5563", fontSize: "0.75rem", textAlign: "center", padding: "0.5rem 0" }}>
+            <p style={{ color: "rgba(255,255,255,0.55)", fontSize: "0.75rem", textAlign: "center", padding: "0.5rem 0" }}>
               Выполняйте действия в приложении, чтобы разблокировать достижения.
             </p>
           )}
@@ -1450,7 +1450,7 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
         <div style={{ padding: "0 1rem 0.75rem" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.45rem" }}>
             <div>
-              <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "#374151", fontSize: "0.43rem", letterSpacing: "0.14em", marginBottom: "0.1rem" }}>НЕЙРОКРЕДИТЫ · ТРАНЗАКЦИИ</div>
+              <div style={{ fontFamily: "'JetBrains Mono',monospace", color: "rgba(255,255,255,0.45)", fontSize: "0.43rem", letterSpacing: "0.14em", marginBottom: "0.1rem" }}>НЕЙРОКРЕДИТЫ · ТРАНЗАКЦИИ</div>
               <p style={{ margin: 0, color: "#db2777", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>
                 ⬡ НейроКредиты · история
               </p>
@@ -1485,8 +1485,8 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
                       <div style={{ position: "absolute", left: 0, top: "20%", bottom: "20%", width: "2px", background: "#db2777", borderRadius: "0 2px 2px 0", boxShadow: "0 0 4px #db277766" }} />
                     )}
                     <div style={{ paddingLeft: tx.delta > 0 ? "0.4rem" : 0 }}>
-                      <p style={{ margin: 0, color: "#d1d5db", fontSize: "0.73rem" }}>{tx.reason}</p>
-                      {t && <p style={{ margin: 0, color: "#374151", fontSize: "0.6rem" }}>{t}</p>}
+                      <p style={{ margin: 0, color: "rgba(255,255,255,0.82)", fontSize: "0.73rem" }}>{tx.reason}</p>
+                      {t && <p style={{ margin: 0, color: "rgba(255,255,255,0.45)", fontSize: "0.6rem" }}>{t}</p>}
                     </div>
                     <p style={{ margin: 0, fontFamily: "'JetBrains Mono',monospace", fontSize: "0.82rem", fontWeight: 700, color: tx.delta >= 0 ? "#db2777" : "#ef4444", flexShrink: 0 }}>
                       {tx.delta >= 0 ? "+" : ""}{tx.delta} NC
@@ -1513,7 +1513,7 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
           </div>
           <div>
             <p style={{ margin: 0, color: "#e2e8f0", fontSize: "0.9rem", fontWeight: 700 }}>Сейф пуст</p>
-            <p style={{ margin: "0.3rem 0 0", color: "#4b5563", fontSize: "0.75rem", lineHeight: 1.5 }}>
+            <p style={{ margin: "0.3rem 0 0", color: "rgba(255,255,255,0.55)", fontSize: "0.75rem", lineHeight: 1.5 }}>
               Оформите первый ваучер в каталоге,<br />чтобы начать копить XP и историю операций.
             </p>
           </div>
@@ -1533,7 +1533,7 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
           <div style={{
             background: "#0d0d18", border: "1px solid #a855f722", borderRadius: "10px",
             padding: "0.5rem 1rem", fontSize: "0.68rem",
-            fontFamily: "'JetBrains Mono',monospace", color: "#4b5563", letterSpacing: "0.06em",
+            fontFamily: "'JetBrains Mono',monospace", color: "rgba(255,255,255,0.55)", letterSpacing: "0.06em",
           }}>
             VAULT_STATUS · EMPTY · AWAITING_FIRST_VOUCHER
           </div>
