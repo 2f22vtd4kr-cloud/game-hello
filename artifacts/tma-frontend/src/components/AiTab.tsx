@@ -256,10 +256,14 @@ function ChatBubble({
                   WebkitBackdropFilter: "blur(20px)",
                   border: `1px solid ${C.border}`,
                   color: C.textMain,
+                  wordBreak: "break-word",
+                  overflowWrap: "break-word",
                 }
               : {
                   background: `linear-gradient(135deg, ${C.coral}, #c94f1e)`,
                   color: "#fff",
+                  wordBreak: "break-word",
+                  overflowWrap: "break-word",
                 }
           }
         >
@@ -374,7 +378,7 @@ export function AiTab({ onNavigate }: Props) {
         green_stations:  greenCount,
         user_id:         uid,
         total_stations:  stations.length,
-        region:          "Севастополь",
+        region:          "Россия и новые территории",
         daily_used:      dailyUsed,
         daily_max:       dailyMax,
         empire_coins:    empireCoins,
