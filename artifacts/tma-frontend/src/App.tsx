@@ -181,8 +181,8 @@ export default function App() {
       tg.expand();
 
       try {
-        tg.setHeaderColor("#050507");
-        tg.setBackgroundColor("#050507");
+        tg.setHeaderColor("#1318B0");
+        tg.setBackgroundColor("#1318B0");
       } catch {
         // older SDK versions throw on unknown colour strings — safe to ignore
       }

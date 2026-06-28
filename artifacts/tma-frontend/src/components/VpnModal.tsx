@@ -228,8 +228,7 @@ export function VpnModal({ onClose, isTroubleshooter = false, onSessionChange }:
           maxHeight: "88vh",
           overflowY: "auto",
           position: "relative",
-          touchAction: "none",
-          overflow: "hidden",
+          touchAction: "pan-y",
         }}
       >
         {/* Starfield */}

@@ -153,23 +153,71 @@ function CatalogStrip({ color, style = {} }: { color: string; style?: React.CSSP
   }} />;
 }
 
-function NetworkLogo({ net }: { net: Net }) {
-  const [err, setErr] = useState(false);
-  const url = `https://www.google.com/s2/favicons?domain=${net.domain}&sz=64`;
-  const initials = net.name.length <= 3 ? net.name : net.name.slice(0, 2);
+const NETWORK_SVGS: Record<string, React.ReactNode> = {
+  "Лукойл": (
+    <svg viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: 38, height: 38 }}>
+      <rect width="38" height="38" rx="10" fill="#C8102E"/>
+      <rect x="6" y="27" width="26" height="2.5" rx="1.25" fill="rgba(255,255,255,0.25)"/>
+      <path d="M19 7c-1.2 2.8-4 5-3.5 8.5.3 2 1.8 3.5 3.5 4.2-1.5-1.8-1.2-4.2 0-6 0 2.2 1.2 4.5 3 5.8 1.2-1.5 1.5-3.5.8-5.3 1.2 1.5 1.5 3.5.8 5.5 1.2-1 2.2-3 1.7-5.5-.8-3.8-3.5-5.8-4.3-7.2z" fill="white"/>
+      <text x="19" y="34" textAnchor="middle" fill="rgba(255,255,255,0.9)" fontSize="6" fontWeight="800" fontFamily="'Arial Black',Arial,sans-serif" letterSpacing="0.8">LUKOIL</text>
+    </svg>
+  ),
+  "Роснефть": (
+    <svg viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: 38, height: 38 }}>
+      <rect width="38" height="38" rx="10" fill="#003087"/>
+      <rect x="9" y="9" width="3" height="20" rx="1.5" fill="white"/>
+      <rect x="14" y="9" width="3" height="20" rx="1.5" fill="white" opacity="0.8"/>
+      <rect x="19" y="9" width="3" height="20" rx="1.5" fill="white" opacity="0.6"/>
+      <rect x="24" y="9" width="3" height="20" rx="1.5" fill="white" opacity="0.4"/>
+      <rect x="9" y="9" width="22" height="3" rx="1.5" fill="white"/>
+      <rect x="9" y="26" width="22" height="3" rx="1.5" fill="white"/>
+    </svg>
+  ),
+  "Газпромнефть": (
+    <svg viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: 38, height: 38 }}>
+      <rect width="38" height="38" rx="10" fill="#0044CC"/>
+      <path d="M19 7c-2 3-5 5.5-4.5 10 .3 2.5 2 4.5 4.5 5.5-2-2.5-1.5-5.5 0-7.5 0 3 1.5 5.8 3.8 7.5 1.5-2 2-4.5 1-7-1 2-2.5 3.5-2 5.5 2-1.5 3.5-4 3-6.5-.8-4.2-3.8-6.5-5.8-7.5z" fill="white"/>
+      <text x="19" y="34" textAnchor="middle" fill="rgba(255,255,255,0.85)" fontSize="5.5" fontWeight="800" fontFamily="'Arial Black',Arial,sans-serif" letterSpacing="0.3">G-DRIVE</text>
+    </svg>
+  ),
+  "Башнефть": (
+    <svg viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: 38, height: 38 }}>
+      <rect width="38" height="38" rx="10" fill="#5B21B6"/>
+      <path d="M8 28 Q19 10 30 28" stroke="white" strokeWidth="3" fill="none" strokeLinecap="round"/>
+      <path d="M12 28 Q19 15 26 28" stroke="rgba(255,255,255,0.45)" strokeWidth="2" fill="none" strokeLinecap="round"/>
+      <rect x="7" y="27" width="24" height="3" rx="1.5" fill="white"/>
+      <text x="19" y="22" textAnchor="middle" fill="white" fontSize="7" fontWeight="900" fontFamily="'Arial Black',Arial,sans-serif">БН</text>
+    </svg>
+  ),
+  "Татнефть": (
+    <svg viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: 38, height: 38 }}>
+      <rect width="38" height="38" rx="10" fill="#047857"/>
+      <path d="M7 27 Q19 8 31 27" stroke="white" strokeWidth="3.5" fill="none" strokeLinecap="round"/>
+      <rect x="7" y="26.5" width="24" height="3" rx="1.5" fill="white"/>
+      <circle cx="19" cy="15" r="3.5" fill="white"/>
+      <text x="19" y="36" textAnchor="middle" fill="rgba(255,255,255,0.85)" fontSize="5.5" fontWeight="800" fontFamily="'Arial Black',Arial,sans-serif" letterSpacing="0.5">ТАНЕКО</text>
+    </svg>
+  ),
+  "ННК": (
+    <svg viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: 38, height: 38 }}>
+      <rect width="38" height="38" rx="10" fill="#B45309"/>
+      <rect x="8" y="28" width="22" height="2.5" rx="1.25" fill="rgba(255,255,255,0.3)"/>
+      <text x="19" y="21" textAnchor="middle" dominantBaseline="middle" fill="white" fontSize="13" fontWeight="900" fontFamily="'Arial Black',Arial,sans-serif" letterSpacing="-0.5">ННК</text>
+      <text x="19" y="33" textAnchor="middle" fill="rgba(255,255,255,0.7)" fontSize="5" fontWeight="700" fontFamily="Arial,sans-serif" letterSpacing="0.8">NEO</text>
+    </svg>
+  ),
+};
 
-  if (!err) {
+function NetworkLogo({ net }: { net: Net }) {
+  const svg = NETWORK_SVGS[net.name];
+  if (svg) {
     return (
       <div className="ct-net-logo" style={{ background: `${net.color}18`, border: `1.5px solid ${net.color}44` }}>
-        <img
-          src={url}
-          alt={net.name}
-          onError={() => setErr(true)}
-          style={{ width: 34, height: 34, objectFit: "contain" }}
-        />
+        {svg}
       </div>
     );
   }
+  const initials = net.name.length <= 3 ? net.name : net.name.slice(0, 2);
   return (
     <div className="ct-net-logo-fallback" style={{ background: `linear-gradient(135deg,${net.color}cc,${net.color}88)` }}>
       {initials}
