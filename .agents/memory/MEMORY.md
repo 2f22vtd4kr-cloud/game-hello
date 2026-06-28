@@ -15,3 +15,4 @@
 - [sed class name collision](sed-classname-collision.md) — running sed 's/Station/GasStation/g' on code that already has GasStation creates GasGasStation. Always grep-verify after bulk sed replacements.
 - [Premium redesign mockups](redesign-mockups.md) — 7 canvas screens; LoadingScreen graduated, MapTab cobalt-starfield ready for graduation; restore canvas with `.agents/canvas-restore.js` (one code_execution paste, uses REPLIT_DOMAINS auto).
 - [No underscore UI labels](no-underscore-labels.md) — never render СЛОВО_СЛОВО gray micro-labels or "требуется реакция" / "кризис_дефицита" text anywhere in mockups or production UI.
+- [Cobalt design system](cobalt-design-system.md) — full handoff: palette, banned colors, tile filter trick, starfield placement, BottomNav analytics restore, what's done, what's next.
