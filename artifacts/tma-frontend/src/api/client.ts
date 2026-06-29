@@ -262,6 +262,23 @@ export interface AdminStats {
   generated_at: string;
 }
 export const fetchAdminStats = () => req<AdminStats>("/admin/stats");
+
+export interface VisitorInfo {
+  telegram_id: number;
+  username: string;
+  first_seen: string;
+  last_seen: string;
+  has_purchased: boolean;
+}
+export interface AdminVisitorStats {
+  visitors: VisitorInfo[];
+  unique_1h: number;
+  unique_6h: number;
+  unique_24h: number;
+  unique_7d: number;
+}
+export const fetchAdminVisitors = () => req<AdminVisitorStats>("/admin/visitors");
+
 export const adminTriggerJob = (job: string) =>
   req<{ ok: boolean; job: string }>(`/admin/trigger/${job}`, { method: "POST" });
 export const adminResetCrisis = (region?: string) =>

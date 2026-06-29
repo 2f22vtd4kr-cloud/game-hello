@@ -368,3 +368,11 @@ class MarketPriceAlert(Base):
         UniqueConstraint("user_id", "fuel_type", name="uq_alert_user_fuel"),
         Index("ix_alert_active", "active"),
     )
+
+
+class UserVisit(Base):
+    __tablename__ = "user_visits"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(BigInteger, nullable=False, index=True)
+    visited_at = Column(DateTime(timezone=True), default=_now, index=True)

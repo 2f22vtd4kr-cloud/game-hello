@@ -31,7 +31,7 @@ from tma_backend.models import (
     PurchaseHistory, ReferralCode, StationReport, Subscription, User,
     UserAchievement, UserCheckin, VpnSession,
     FuelPriceEvent, NewsEvent, CreditTransaction, PremiumSubscription, RssCacheEntry,
-    MarketPriceAlert,
+    MarketPriceAlert, UserVisit,
 )
 from tma_backend.cards import draw_cards, RARITY_COLORS
 from tma_backend.payment import provider
@@ -1535,6 +1535,15 @@ def report_station(
 def get_user(user_id: int, username: Optional[str] = None,
              db: Session = Depends(get_db)):
     user = _get_or_create_user(db, user_id, username)
+    # Track visit — throttle to once per 5 min per user to avoid flooding
+    cutoff = _now() - timedelta(minutes=5)
+    recent = db.query(UserVisit).filter(
+        UserVisit.user_id == user_id,
+        UserVisit.visited_at >= cutoff,
+    ).first()
+    if not recent:
+        db.add(UserVisit(user_id=user_id))
+        db.commit()
     return user
 
 
@@ -4088,6 +4097,65 @@ def get_admin_stats(db: Session = Depends(get_db)):
         "scheduler_running": scheduler.running,
         "db_size_mb": round(db_size_mb, 3),
         "generated_at": _now().isoformat(),
+    }
+
+
+@app.get("/api/admin/visitors")
+def get_admin_visitors(db: Session = Depends(get_db)):
+    """Visitor analytics for the admin panel."""
+    from sqlalchemy import text as _text
+
+    owner_id = int(os.getenv("ADMIN_ID", "0"))
+    now = _now()
+
+    def _unique(cutoff: datetime) -> int:
+        q = (
+            "SELECT COUNT(DISTINCT user_id) FROM user_visits "
+            "WHERE visited_at >= :cutoff AND (:oid = 0 OR user_id != :oid)"
+        )
+        return db.execute(_text(q), {"cutoff": cutoff, "oid": owner_id}).scalar() or 0
+
+    rows = db.execute(_text("""
+        SELECT
+            uv.user_id,
+            u.username,
+            MIN(uv.visited_at) AS first_seen,
+            MAX(uv.visited_at) AS last_seen,
+            CASE WHEN EXISTS(
+                SELECT 1 FROM purchase_history ph WHERE ph.user_id = uv.user_id
+            ) THEN 1 ELSE 0 END AS has_purchased
+        FROM user_visits uv
+        LEFT JOIN users u ON u.id = uv.user_id
+        WHERE (:oid = 0 OR uv.user_id != :oid)
+        GROUP BY uv.user_id, u.username
+        ORDER BY last_seen DESC
+        LIMIT 200
+    """), {"oid": owner_id}).fetchall()
+
+    def _iso(v):
+        if v is None:
+            return None
+        if hasattr(v, "isoformat"):
+            return v.isoformat()
+        return str(v)
+
+    visitors = [
+        {
+            "telegram_id": row[0],
+            "username": row[1] or f"id{row[0]}",
+            "first_seen": _iso(row[2]),
+            "last_seen": _iso(row[3]),
+            "has_purchased": bool(row[4]),
+        }
+        for row in rows
+    ]
+
+    return {
+        "visitors": visitors,
+        "unique_1h":  _unique(now - timedelta(hours=1)),
+        "unique_6h":  _unique(now - timedelta(hours=6)),
+        "unique_24h": _unique(now - timedelta(hours=24)),
+        "unique_7d":  _unique(now - timedelta(days=7)),
     }
 
 

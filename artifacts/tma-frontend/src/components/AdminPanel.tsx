@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { fetchAdminStats, adminTriggerJob, adminResetCrisis, adminReseedDb } from "@/api/client";
-import type { AdminStats } from "@/api/client";
+import { fetchAdminStats, fetchAdminVisitors, adminTriggerJob, adminResetCrisis, adminReseedDb } from "@/api/client";
+import type { AdminStats, AdminVisitorStats } from "@/api/client";
 
 interface Props {
   onClose: () => void;
@@ -9,9 +9,11 @@ interface Props {
 
 export function AdminPanel({ onClose }: Props) {
   const [stats, setStats] = useState<AdminStats | null>(null);
+  const [visitors, setVisitors] = useState<AdminVisitorStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [visitorsLoading, setVisitorsLoading] = useState(false);
   const [actionLog, setActionLog] = useState<{ msg: string; ok: boolean; ts: number }[]>([]);
-  const [activeSection, setActiveSection] = useState<"overview" | "jobs" | "crisis" | "db">("overview");
+  const [activeSection, setActiveSection] = useState<"overview" | "visitors" | "jobs" | "crisis" | "db">("overview");
 
   const log = (msg: string, ok = true) => {
     setActionLog((prev) => [{ msg, ok, ts: Date.now() }, ...prev].slice(0, 20));
@@ -24,7 +26,20 @@ export function AdminPanel({ onClose }: Props) {
       .catch(() => { setLoading(false); log("Ошибка загрузки статистики", false); });
   };
 
+  const loadVisitors = () => {
+    setVisitorsLoading(true);
+    fetchAdminVisitors()
+      .then((v) => { setVisitors(v); setVisitorsLoading(false); })
+      .catch(() => { setVisitorsLoading(false); log("Ошибка загрузки посетителей", false); });
+  };
+
   useEffect(() => { loadStats(); }, []);
+
+  useEffect(() => {
+    if (activeSection === "visitors" && !visitors) {
+      loadVisitors();
+    }
+  }, [activeSection]);
 
   const triggerJob = async (job: string, label: string) => {
     try {
@@ -64,10 +79,21 @@ export function AdminPanel({ onClose }: Props) {
 
   const SECTIONS = [
     { id: "overview" as const, label: "Обзор", icon: "📡" },
+    { id: "visitors" as const, label: "Аудитория", icon: "👥" },
     { id: "jobs" as const, label: "Задачи", icon: "⚙️" },
     { id: "crisis" as const, label: "Кризис", icon: "🚨" },
-    { id: "db" as const, label: "База данных", icon: "🗄️" },
+    { id: "db" as const, label: "БД", icon: "🗄️" },
   ];
+
+  const fmtTime = (iso: string) => {
+    const d = new Date(iso);
+    const now = Date.now();
+    const diff = now - d.getTime();
+    if (diff < 60_000) return "сейчас";
+    if (diff < 3_600_000) return `${Math.floor(diff / 60_000)} мин назад`;
+    if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)} ч назад`;
+    return `${Math.floor(diff / 86_400_000)} дн назад`;
+  };
 
   return (
     <motion.div
@@ -129,7 +155,7 @@ export function AdminPanel({ onClose }: Props) {
           </div>
           <div style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}>
             <button
-              onClick={loadStats}
+              onClick={() => { loadStats(); if (activeSection === "visitors") loadVisitors(); }}
               style={{ background: "none", border: "1px solid #1e1e2a", borderRadius: "8px", color: "#6b7280", padding: "0.35rem 0.6rem", fontSize: "0.75rem", cursor: "pointer" }}
             >
               ↻
@@ -144,18 +170,19 @@ export function AdminPanel({ onClose }: Props) {
         </div>
 
         {/* Section tabs */}
-        <div style={{ display: "flex", borderBottom: "1px solid #1e1e2a", flexShrink: 0 }}>
+        <div style={{ display: "flex", borderBottom: "1px solid #1e1e2a", flexShrink: 0, overflowX: "auto" }}>
           {SECTIONS.map((s) => (
             <button
               key={s.id}
               onClick={() => setActiveSection(s.id)}
               style={{
-                flex: 1,
-                padding: "0.6rem 0.25rem",
+                flex: "0 0 auto",
+                minWidth: "60px",
+                padding: "0.6rem 0.5rem",
                 background: "none", border: "none",
                 borderBottom: activeSection === s.id ? "2px solid #E8622A" : "2px solid transparent",
                 color: activeSection === s.id ? "#E8622A" : "#4b5563",
-                fontSize: "0.58rem",
+                fontSize: "0.55rem",
                 fontWeight: 600,
                 cursor: "pointer",
                 display: "flex", flexDirection: "column", alignItems: "center", gap: "2px",
@@ -169,8 +196,8 @@ export function AdminPanel({ onClose }: Props) {
         </div>
 
         {/* Content */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "1rem 1.25rem 2rem" }}>
-          {loading && (
+        <div style={{ flex: 1, overflowY: "auto", padding: "1rem 1.25rem 2rem", touchAction: "pan-y" }}>
+          {loading && activeSection !== "visitors" && (
             <div style={{ textAlign: "center", padding: "3rem", color: "#4b5563" }}>
               <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} style={{ display: "inline-block", fontSize: "1.5rem", marginBottom: "0.5rem" }}>⚙️</motion.div>
               <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.65rem" }}>ЗАГРУЗКА...</div>
@@ -232,6 +259,116 @@ export function AdminPanel({ onClose }: Props) {
                         )}
                       </div>
                     )}
+                  </>
+                )}
+              </motion.div>
+            )}
+
+            {activeSection === "visitors" && (
+              <motion.div key="visitors" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                {visitorsLoading && (
+                  <div style={{ textAlign: "center", padding: "2rem", color: "#4b5563" }}>
+                    <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} style={{ display: "inline-block", fontSize: "1.2rem", marginBottom: "0.4rem" }}>⚙️</motion.div>
+                    <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.6rem" }}>ЗАГРУЗКА АУДИТОРИИ...</div>
+                  </div>
+                )}
+
+                {!visitorsLoading && visitors && (
+                  <>
+                    {/* Unique counters */}
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
+                      {[
+                        { label: "За час", value: visitors.unique_1h, color: "#22c55e" },
+                        { label: "За 6 часов", value: visitors.unique_6h, color: "#06b6d4" },
+                        { label: "За сутки", value: visitors.unique_24h, color: "#E8622A" },
+                        { label: "За неделю", value: visitors.unique_7d, color: "#a78bfa" },
+                      ].map((m) => (
+                        <div key={m.label} style={{
+                          background: "rgba(255,255,255,0.03)",
+                          border: "1px solid #1e1e2a",
+                          borderRadius: "12px",
+                          padding: "0.65rem 0.75rem",
+                        }}>
+                          <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "1.6rem", fontWeight: 800, color: m.color, lineHeight: 1 }}>{m.value}</div>
+                          <div style={{ fontSize: "0.58rem", color: "#6b7280", marginTop: "0.25rem" }}>уник. пользователей</div>
+                          <div style={{ fontSize: "0.62rem", color: "#9ca3af", fontWeight: 600 }}>{m.label}</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Visitor list */}
+                    <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid #1e1e2a", borderRadius: "12px", overflow: "hidden" }}>
+                      <div style={{ padding: "0.6rem 0.75rem", borderBottom: "1px solid #1e1e2a", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.55rem", color: "#6b7280", letterSpacing: "0.1em" }}>ПОСЕТИТЕЛИ ({visitors.visitors.length})</span>
+                        <button
+                          onClick={loadVisitors}
+                          style={{ background: "none", border: "1px solid #1e1e2a", borderRadius: "6px", color: "#6b7280", padding: "0.2rem 0.45rem", fontSize: "0.65rem", cursor: "pointer" }}
+                        >
+                          ↻
+                        </button>
+                      </div>
+
+                      {visitors.visitors.length === 0 && (
+                        <div style={{ padding: "2rem", textAlign: "center", color: "#374151", fontFamily: "'JetBrains Mono',monospace", fontSize: "0.62rem" }}>
+                          Нет данных о посетителях
+                        </div>
+                      )}
+
+                      {visitors.visitors.map((v, i) => (
+                        <div
+                          key={v.telegram_id}
+                          style={{
+                            padding: "0.6rem 0.75rem",
+                            borderBottom: i < visitors.visitors.length - 1 ? "1px solid #0e0e18" : "none",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "0.6rem",
+                          }}
+                        >
+                          {/* Avatar circle */}
+                          <div style={{
+                            width: "30px", height: "30px", borderRadius: "50%", flexShrink: 0,
+                            background: v.has_purchased
+                              ? "linear-gradient(135deg,#E8622A33,#E8622A55)"
+                              : "rgba(255,255,255,0.05)",
+                            border: v.has_purchased ? "1px solid #E8622A55" : "1px solid #1e1e2a",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            fontSize: "0.7rem", fontWeight: 700, color: v.has_purchased ? "#E8622A" : "#4b5563",
+                            fontFamily: "'JetBrains Mono',monospace",
+                          }}>
+                            {v.username.slice(0, 2).toUpperCase()}
+                          </div>
+
+                          {/* Info */}
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                              <span style={{ fontSize: "0.73rem", fontWeight: 600, color: "#e2e8f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                {v.username.startsWith("id") ? v.username : `@${v.username}`}
+                              </span>
+                              <span style={{
+                                fontSize: "0.5rem", fontWeight: 700, padding: "0.1rem 0.35rem",
+                                borderRadius: "4px",
+                                background: v.has_purchased ? "rgba(232,98,42,0.15)" : "rgba(255,255,255,0.04)",
+                                color: v.has_purchased ? "#E8622A" : "#4b5563",
+                                border: v.has_purchased ? "1px solid #E8622A30" : "1px solid #1e1e2a",
+                                whiteSpace: "nowrap", flexShrink: 0,
+                                fontFamily: "'JetBrains Mono',monospace",
+                              }}>
+                                {v.has_purchased ? "💳 покупал" : "без покупок"}
+                              </span>
+                            </div>
+                            <div style={{ fontSize: "0.58rem", color: "#4b5563", marginTop: "0.1rem" }}>
+                              был {fmtTime(v.last_seen)} · с {fmtTime(v.first_seen)}
+                            </div>
+                          </div>
+
+                          {/* Telegram ID */}
+                          <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.52rem", color: "#374151", flexShrink: 0 }}>
+                            {v.telegram_id}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </>
                 )}
               </motion.div>
