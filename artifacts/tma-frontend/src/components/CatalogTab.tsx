@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createNetworkStarsInvoice, createNetworkCryptoBotInvoice, adminFreePurchase } from "@/api/client";
 import { useUserStore } from "@/stores/useUserStore";

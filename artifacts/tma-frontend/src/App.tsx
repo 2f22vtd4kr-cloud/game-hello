@@ -487,7 +487,8 @@ export default function App() {
           position: "fixed",
           bottom: "calc(env(safe-area-inset-bottom, 0px) + 80px)",
           left: calcOpen ? "33%" : "50%",
-          display: catalogSuccess ? "none" : undefined,
+          display: catalogSuccess ? "none" : "flex",
+          alignItems: "center", justifyContent: "center", gap: "4px",
           transform: "translateX(-50%)",
           transition: "left 0.25s cubic-bezier(0.25,0.46,0.45,0.94)",
           zIndex: 10001,
@@ -496,7 +497,6 @@ export default function App() {
           borderRadius: "999px",
           padding: "3px 12px",
           cursor: "pointer",
-          display: "flex", alignItems: "center", justifyContent: "center", gap: "4px",
           backdropFilter: "blur(12px)",
         }}
       >
