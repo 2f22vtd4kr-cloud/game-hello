@@ -116,6 +116,19 @@ const CSS = `
 .ct-savings-txt { color:rgba(255,255,255,0.5); flex:1; line-height:1.3; }
 .ct-savings-amt { color:#22c55e; font-weight:800; font-size:14px; white-space:nowrap; }
 .ct-pay-row { display:flex; gap:10px; margin:auto 16px 0; padding-top:20px; }
+.ct-voucher-preview { margin:14px 16px 0; border-radius:20px; overflow:hidden; position:relative; }
+.ct-voucher-inner { padding:16px; display:flex; gap:14px; align-items:stretch; }
+.ct-voucher-left { flex:1; min-width:0; display:flex; flex-direction:column; gap:8px; }
+.ct-voucher-tag { font-size:9px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; opacity:0.6; color:#fff; }
+.ct-voucher-network { font-size:18px; font-weight:900; color:#fff; letter-spacing:-0.3px; }
+.ct-voucher-meta { display:flex; gap:6px; flex-wrap:wrap; }
+.ct-voucher-chip { font-size:11px; font-weight:700; background:rgba(255,255,255,0.12); border-radius:8px; padding:3px 9px; color:#fff; }
+.ct-voucher-desc { font-size:11px; color:rgba(255,255,255,0.55); line-height:1.45; margin-top:4px; }
+.ct-voucher-qr { width:68px; flex-shrink:0; display:flex; flex-direction:column; align-items:center; gap:6px; }
+.ct-voucher-qr-box { width:68px; height:68px; border-radius:10px; background:rgba(255,255,255,0.9); display:flex; align-items:center; justify-content:center; overflow:hidden; filter:blur(5px); position:relative; }
+.ct-voucher-qr-grid { display:grid; grid-template-columns:repeat(7,8px); grid-template-rows:repeat(7,8px); gap:1px; }
+.ct-voucher-qr-cell { border-radius:1px; }
+.ct-voucher-qr-label { font-size:8px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:rgba(255,255,255,0.5); }
 .ct-pay { flex:1; display:flex; align-items:center; justify-content:center; gap:8px; padding:18px; border-radius:20px; border:none; font-size:15px; font-weight:800; cursor:pointer; transition:all 0.2s; -webkit-tap-highlight-color:transparent; }
 .ct-pay:active { transform:scale(0.97); }
 .ct-pay:disabled { opacity:0.5; cursor:not-allowed; }
@@ -355,6 +368,37 @@ export function CatalogTab(_props?: { initialStationId?: number; onCalcOpenChang
             <span className="ct-savings-txt">Экономия за 3 месяца при росте рынка +8%:</span>
             <span className="ct-savings-amt">+{savings3mo.toFixed(0)} ₽</span>
           </div>
+
+          {/* Voucher preview */}
+          <div className="ct-voucher-preview" style={{ background: `linear-gradient(135deg, ${sel.network.color}cc, ${sel.network.color}88)`, border: `1px solid ${sel.network.color}55`, boxShadow: `0 4px 24px ${sel.network.color}30` }}>
+            <div style={{ position: "absolute", inset: 0, background: "repeating-linear-gradient(45deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 1px, transparent 1px, transparent 12px)", pointerEvents: "none", borderRadius: "20px" }} />
+            <div className="ct-voucher-inner">
+              <div className="ct-voucher-left">
+                <span className="ct-voucher-tag">🎫 Цифровой топливный талон</span>
+                <span className="ct-voucher-network">{sel.network.name}</span>
+                <div className="ct-voucher-meta">
+                  <span className="ct-voucher-chip">{sel.fuel.label}</span>
+                  <span className="ct-voucher-chip">{sel.volume} л</span>
+                  <span className="ct-voucher-chip">{total.toFixed(0)} ₽</span>
+                </div>
+                <p className="ct-voucher-desc">
+                  После оплаты QR-код появится в Хранилище. Покажи его оператору на кассе — он сканирует и отпускает топливо. Талон действует 90 дней.
+                </p>
+              </div>
+              <div className="ct-voucher-qr">
+                <div className="ct-voucher-qr-box">
+                  {/* Fake QR pattern, blurred via CSS */}
+                  <div className="ct-voucher-qr-grid">
+                    {[1,1,1,1,1,1,1, 1,0,0,0,0,0,1, 1,0,1,0,1,0,1, 1,0,0,1,0,0,1, 1,0,1,0,1,0,1, 1,0,0,0,0,0,1, 1,1,1,1,1,1,1].map((v, i) => (
+                      <div key={i} className="ct-voucher-qr-cell" style={{ background: v ? "#000" : "#fff" }} />
+                    ))}
+                  </div>
+                </div>
+                <span className="ct-voucher-qr-label">QR-код</span>
+              </div>
+            </div>
+          </div>
+
           <div className="ct-pay-row">
             <button className="ct-pay ct-pay-stars" disabled={purchasing} onClick={() => handlePay("stars")}>
               {purchasing ? "…" : <><span>⭐</span> {stars} Stars</>}
