@@ -311,28 +311,7 @@ function QRModal({ hash, onClose, expiresAt, networkName, fuelType, volume, pric
           </div>
         )}
 
-        {/* Action buttons grid */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", marginBottom: "0.75rem" }}>
-          {[
-            { icon: "📷", label: "Сохранить PNG", onClick: handleSavePng },
-            { icon: "📄", label: "Скачать PDF",   onClick: handleSavePdf },
-            { icon: "📋", label: "Скопировать",   onClick: handleCopy    },
-            { icon: "📤", label: "В Telegram",    onClick: handleShareTg },
-          ].map(({ icon, label, onClick }) => (
-            <button key={label} onClick={onClick} disabled={saving}
-              style={{
-                background: "rgba(232,98,42,0.1)", border: "1px solid rgba(232,98,42,0.25)",
-                borderRadius: "10px", padding: "0.5rem 0.35rem",
-                color: "#c4b5fd", fontSize: "0.65rem", fontWeight: 600,
-                cursor: saving ? "wait" : "pointer",
-                display: "flex", alignItems: "center", justifyContent: "center", gap: "4px",
-                opacity: saving ? 0.6 : 1, transition: "background 0.15s",
-              }}
-            >
-              <span style={{ fontSize: "0.8rem" }}>{icon}</span>{label}
-            </button>
-          ))}
-        </div>
+
 
         <button
           onClick={onClose}
