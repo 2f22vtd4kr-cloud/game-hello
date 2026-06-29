@@ -1,4 +1,5 @@
-import React, { useState, useCallback, useMemo, useEffect } from "react";
+import React, { useState, useCallback, useMemo, useEffect, useRef } from "react";
+import QRCode from "qrcode";
 import { motion, AnimatePresence } from "framer-motion";
 import { createNetworkStarsInvoice, createNetworkCryptoBotInvoice, adminFreePurchase } from "@/api/client";
 import { useUserStore } from "@/stores/useUserStore";
@@ -236,6 +237,16 @@ export function CatalogTab(_props?: { initialStationId?: number; onCalcOpenChang
   const [sel, setSel] = useState<Sel>({ network: null, fuel: null, volume: 40 });
   const [expandedNet, setExpandedNet] = useState<string | null>(null);
   const [purchasing, setPurchasing] = useState(false);
+  const [qrPreviewUrl, setQrPreviewUrl] = useState<string>("");
+  const qrGenRef = useRef(false);
+  useEffect(() => {
+    if (qrGenRef.current) return;
+    qrGenRef.current = true;
+    QRCode.toDataURL("TOPLIVOPREVIEW2026", {
+      width: 68, margin: 1,
+      color: { dark: "#000000", light: "#ffffff" },
+    }).then(setQrPreviewUrl).catch(() => {});
+  }, []);
 
   const price = sel.network && sel.fuel
     ? (sel.network.prices[sel.fuel.key as keyof typeof sel.network.prices] ?? 0)
@@ -450,12 +461,9 @@ export function CatalogTab(_props?: { initialStationId?: number; onCalcOpenChang
               </div>
               <div className="ct-voucher-qr">
                 <div className="ct-voucher-qr-box">
-                  {/* Fake QR pattern, blurred via CSS */}
-                  <div className="ct-voucher-qr-grid">
-                    {[1,1,1,1,1,1,1, 1,0,0,0,0,0,1, 1,0,1,0,1,0,1, 1,0,0,1,0,0,1, 1,0,1,0,1,0,1, 1,0,0,0,0,0,1, 1,1,1,1,1,1,1].map((v, i) => (
-                      <div key={i} className="ct-voucher-qr-cell" style={{ background: v ? "#000" : "#fff" }} />
-                    ))}
-                  </div>
+                  {qrPreviewUrl && (
+                    <img src={qrPreviewUrl} alt="QR" style={{ width: 68, height: 68, display: "block" }} />
+                  )}
                 </div>
                 <span className="ct-voucher-qr-label">QR-код</span>
               </div>
