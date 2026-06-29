@@ -104,6 +104,7 @@ export default function App() {
   const [vpnActive, setVpnActive] = useState(false);
   const [vpnTroubleshooter, setVpnTroubleshooter] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
+  const [showMapHint, setShowMapHint] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
   const [showWallet, setShowWallet] = useState(false);
@@ -278,6 +279,8 @@ export default function App() {
   const handleSplashDone = () => {
     localStorage.setItem(SPLASH_KEY, "1");
     setShowSplash(false);
+    setShowMapHint(true);
+    setTimeout(() => setShowMapHint(false), 3500);
     if (!localStorage.getItem(ONBOARDING_KEY)) {
       setShowOnboarding(true);
     }
@@ -326,6 +329,52 @@ export default function App() {
 
       <AnimatePresence>
         {showSplash && <IntroSplash onDone={handleSplashDone} />}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showMapHint && (
+          <motion.div
+            key="map-hint"
+            initial={{ opacity: 0, y: 24, scale: 0.92 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -16, scale: 0.95 }}
+            transition={{ duration: 0.35, ease: "easeOut" }}
+            style={{
+              position: "fixed",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              zIndex: 9999,
+              pointerEvents: "none",
+              background: "rgba(13,14,80,0.93)",
+              border: "1px solid rgba(255,255,255,0.18)",
+              borderRadius: "20px",
+              padding: "0.75rem 1.4rem",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.55rem",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(232,98,42,0.15)",
+              backdropFilter: "blur(16px)",
+              WebkitBackdropFilter: "blur(16px)",
+            }}
+          >
+            <motion.span
+              animate={{ scale: [1, 1.25, 1] }}
+              transition={{ repeat: Infinity, duration: 1.1, ease: "easeInOut" }}
+              style={{ fontSize: "1.3rem", lineHeight: 1 }}
+            >🤏</motion.span>
+            <span style={{
+              color: "#fff",
+              fontSize: "0.88rem",
+              fontWeight: 600,
+              letterSpacing: "0.01em",
+              lineHeight: 1.3,
+            }}>
+              Подожди — сейчас подгрузим<br />
+              <span style={{ color: "#E8622A" }}>АЗС на карте</span>
+            </span>
+          </motion.div>
+        )}
       </AnimatePresence>
 
       <AnimatePresence>
