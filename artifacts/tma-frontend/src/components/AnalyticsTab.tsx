@@ -1356,9 +1356,9 @@ export function AnalyticsTab({ onNavigate }: Props) {
 
       {/* Overview: donut + region monitor */}
       <div style={{ padding: "0 1rem 0.75rem" }}>
-      <div style={{ display: "flex", gap: "0.75rem", alignItems: "stretch" }}>
+      <div style={{ display: "flex", gap: "0.75rem", alignItems: "stretch", overflow: "hidden" }}>
         <FuelMixDonut regions={regions} />
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <RegionMonitor regions={regions} />
           <div style={{ marginTop: "0.5rem" }}>
             <button

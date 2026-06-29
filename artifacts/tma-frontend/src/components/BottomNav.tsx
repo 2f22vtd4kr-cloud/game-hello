@@ -13,8 +13,8 @@ interface Props {
 
 const TABS: { id: TabId; Icon: LucideIcon; label: string }[] = [
   { id: "map",       Icon: Map,       label: "Карта"       },
-  { id: "analytics", Icon: BarChart2, label: "Аналитика"   },
   { id: "catalog",   Icon: Ticket,    label: "Талоны"      },
+  { id: "analytics", Icon: BarChart2, label: "Аналитика"   },
 ];
 
 const NAV_CSS = `
