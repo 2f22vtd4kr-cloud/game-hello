@@ -101,6 +101,7 @@ export default function App() {
   const [initialStationId, setInitialStationId] = useState<number | undefined>();
   const [initialPurchaseId, setInitialPurchaseId] = useState<number | undefined>();
   const [navVisible, setNavVisible] = useState(true);
+  const [catalogSuccess, setCatalogSuccess] = useState(false);
   const [showVpn, setShowVpn] = useState(false);
   const [vpnActive, setVpnActive] = useState(false);
   const [vpnTroubleshooter, setVpnTroubleshooter] = useState(false);
@@ -252,6 +253,13 @@ export default function App() {
     const openWallet = () => setShowWallet(true);
     window.addEventListener("tma-open-wallet", openWallet);
     return () => window.removeEventListener("tma-open-wallet", openWallet);
+  }, []);
+
+  // ── Catalog success mode — hide all UI except Карман ────────────
+  useEffect(() => {
+    const onSuccess = (e: Event) => setCatalogSuccess((e as CustomEvent<boolean>).detail);
+    window.addEventListener("tma-catalog-success", onSuccess);
+    return () => window.removeEventListener("tma-catalog-success", onSuccess);
   }, []);
 
   // ── Telegram BackButton ─────────────────────────────────────────
@@ -463,7 +471,7 @@ export default function App() {
           border: "none",
           animation: vpnActive ? "vpnGlow 2s ease-in-out infinite" : "none",
           cursor: "pointer",
-          display: "flex", alignItems: "center", justifyContent: "center",
+          display: catalogSuccess ? "none" : "flex", alignItems: "center", justifyContent: "center",
           boxShadow: "0 2px 12px rgba(0,0,0,0.35)",
           transition: "background 0.4s",
         }}
@@ -471,7 +479,7 @@ export default function App() {
         <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.62rem", fontWeight: 800, color: "#ffffff", letterSpacing: "0.04em" }}>VPN</span>
       </button>
 
-      {/* Universal nav hide/show pill — visible on all tabs */}
+      {/* Universal nav hide/show pill — visible on all tabs, hidden on success */}
       <button
         onClick={() => setNavVisible((v) => !v)}
         title={navVisible ? "Скрыть навигацию" : "Показать навигацию"}
@@ -479,6 +487,7 @@ export default function App() {
           position: "fixed",
           bottom: "calc(env(safe-area-inset-bottom, 0px) + 80px)",
           left: calcOpen ? "33%" : "50%",
+          display: catalogSuccess ? "none" : undefined,
           transform: "translateX(-50%)",
           transition: "left 0.25s cubic-bezier(0.25,0.46,0.45,0.94)",
           zIndex: 10001,
@@ -643,7 +652,7 @@ export default function App() {
       <BottomNav
         active={activeTab}
         onChange={handleTabChange}
-        visible={navVisible}
+        visible={navVisible && !catalogSuccess}
         badges={{
           ...(crisisCount > 0 || activeNetworkVoucherCount > 0
             ? { catalog: (crisisCount > 0 ? crisisCount : 0) + activeNetworkVoucherCount }

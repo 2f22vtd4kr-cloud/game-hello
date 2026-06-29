@@ -225,6 +225,7 @@ export function CatalogTab(_props?: { initialStationId?: number; onCalcOpenChang
   const isAdmin = _props?.isAdmin ?? false;
   const adminPass = _props?.adminPass ?? "";
   const user = useUserStore((s) => s.user);
+  const refresh = useUserStore((s) => s.refresh);
   const { add: toast } = useToast();
   const fetchVault = useVaultStore((s) => s.fetch);
 
@@ -324,6 +325,14 @@ export function CatalogTab(_props?: { initialStationId?: number; onCalcOpenChang
       setPurchasing(false);
     }
   }, [user, sel, adminPass, purchasing, toast, fetchVault]);
+
+  useEffect(() => {
+    const isSuccess = step === "success";
+    window.dispatchEvent(new CustomEvent("tma-catalog-success", { detail: isSuccess }));
+    if (isSuccess) {
+      void refresh();
+    }
+  }, [step, refresh]);
 
   const reset = () => {
     setSel({ network: null, fuel: null, volume: 40 });

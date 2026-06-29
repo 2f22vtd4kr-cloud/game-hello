@@ -1630,7 +1630,7 @@ def purchase_voucher(body: PurchaseIn, db: Session = Depends(get_db)):
         db.add(tracker)
 
     old_level = user.level
-    user.xp += 20
+    user.xp += 50
     user.level = _xp_to_level(user.xp)
     _notify_levelup(user, old_level)
     _check_achievements(user, db)
@@ -1845,10 +1845,11 @@ async def cryptobot_webhook(request: Request, db: Session = Depends(get_db)):
     # Award XP for a real payment
     user = db.query(User).filter(User.telegram_id == purchase.user_id).first()
     if user:
-        old_level = user.xp
-        user.xp += 20
+        old_level = user.level
+        user.xp += 50
         user.level = _xp_to_level(user.xp)
         _notify_levelup(user, old_level)
+        _check_achievements(user, db)
     db.commit()
     logger.info(
         "cryptobot_webhook: purchase %d activated (user=%d, %s %dL)",
@@ -1885,10 +1886,11 @@ def purchase_network_voucher(body: NetworkVoucherIn, db: Session = Depends(get_d
         expires_at=_now() + timedelta(days=90),
     )
     db.add(purchase)
-    old_level = user.xp
-    user.xp += 20
+    old_level = user.level
+    user.xp += 50
     user.level = _xp_to_level(user.xp)
     _notify_levelup(user, old_level)
+    _check_achievements(user, db)
     db.commit()
     db.refresh(purchase)
     return PurchaseResultOut(
@@ -1958,9 +1960,10 @@ def record_stars_purchase(body: StarsPurchaseIn, db: Session = Depends(get_db)):
         ))
 
     old_level = user.level
-    user.xp += 20
+    user.xp += 50
     user.level = _xp_to_level(user.xp)
     _notify_levelup(user, old_level)
+    _check_achievements(user, db)
 
     db.commit()
     logger.info(
@@ -2021,9 +2024,10 @@ def record_network_stars_purchase(body: NetworkStarsPurchaseIn, db: Session = De
         ))
 
     old_level = user.level
-    user.xp += 20
+    user.xp += 50
     user.level = _xp_to_level(user.xp)
     _notify_levelup(user, old_level)
+    _check_achievements(user, db)
 
     db.commit()
     logger.info(
@@ -4197,9 +4201,10 @@ def admin_free_purchase(payload: dict, db: Session = Depends(get_db)):
     db.add(purchase)
 
     old_level = user.level
-    user.xp += 20
+    user.xp += 50
     user.level = _xp_to_level(user.xp)
     _notify_levelup(user, old_level)
+    _check_achievements(user, db)
 
     db.commit()
     logger.info("Admin free purchase: user=%d, %dл %s, network=%s, qr=%s", user_id, volume, fuel_type, network, qr)

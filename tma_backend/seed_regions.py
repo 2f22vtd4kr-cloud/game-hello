@@ -220,13 +220,13 @@ DAILY_LIMITS = {
 }
 
 XP_TIERS = [
-    {"min": 0,       "max": 9999,   "level": "Новичок"},
-    {"min": 10000,   "max": 49999,  "level": "Разведчик"},
-    {"min": 50000,   "max": 149999, "level": "Снабженец"},
-    {"min": 150000,  "max": 299999, "level": "Оператор"},
-    {"min": 300000,  "max": 499999, "level": "Диспетчер"},
-    {"min": 500000,  "max": 799999, "level": "Директор"},
-    {"min": 800000,  "max": None,   "level": "Легенда Тавриды"},
+    {"min": 0,      "max": 999,    "level": "Новичок"},
+    {"min": 1000,   "max": 4999,   "level": "Разведчик"},
+    {"min": 5000,   "max": 14999,  "level": "Снабженец"},
+    {"min": 15000,  "max": 34999,  "level": "Оператор"},
+    {"min": 35000,  "max": 59999,  "level": "Диспетчер"},
+    {"min": 60000,  "max": 99999,  "level": "Директор"},
+    {"min": 100000, "max": None,   "level": "Легенда Тавриды"},
 ]
 
 # Real named stations injected deterministically before procedural fill

@@ -324,11 +324,11 @@ export interface ReferralInfo {
 }
 
 export const XP_TIER_THRESHOLDS = [
-  { min: 0,       max: 9999,   level: "🚶 Пешеход" },
-  { min: 10000,   max: 49999,  level: "🚲 Самокатчик" },
-  { min: 50000,   max: 149999, level: "🛵 Мопедист" },
-  { min: 150000,  max: 299999, level: "🚗 Извозчик" },
-  { min: 300000,  max: 499999, level: "🚛 Дальнобойщик" },
-  { min: 500000,  max: 799999, level: "⚡ Бензиновый Барон" },
-  { min: 800000,  max: null,   level: "👑 Владелец НПЗ" },
+  { min: 0,      max: 999,    level: "🚶 Пешеход" },
+  { min: 1000,   max: 4999,   level: "🚲 Самокатчик" },
+  { min: 5000,   max: 14999,  level: "🛵 Мопедист" },
+  { min: 15000,  max: 34999,  level: "🚗 Извозчик" },
+  { min: 35000,  max: 59999,  level: "🚛 Дальнобойщик" },
+  { min: 60000,  max: 99999,  level: "⚡ Бензиновый Барон" },
+  { min: 100000, max: null,   level: "👑 Владелец НПЗ" },
 ];
