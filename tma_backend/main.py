@@ -1779,6 +1779,11 @@ def create_network_cryptobot_invoice(body: NetworkVoucherIn, db: Session = Depen
     }
 
 
+@app.get("/api/cryptobot-webhook")
+async def cryptobot_webhook_verify():
+    return {"status": "ok", "endpoint": "cryptobot-webhook"}
+
+
 @app.post("/api/cryptobot-webhook")
 async def cryptobot_webhook(request: Request, db: Session = Depends(get_db)):
     """
