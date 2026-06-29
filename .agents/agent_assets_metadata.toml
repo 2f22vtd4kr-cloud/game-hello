@@ -36,3 +36,9 @@ id = "k1IudwkKfH8FVPWTUQWFr"
 uri = "file://screenshots/voucher_preview.jpg"
 type = "image"
 title = "Цифровой талон на топливо — вид после оплаты"
+
+[[outputs]]
+id = "Yt4SIOHm_Nr08eWr2otRF"
+uri = "file://screenshots/success_screen.jpg"
+type = "image"
+title = "Талон активирован! — экран после оплаты"
