@@ -781,9 +781,8 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
         <div style={{ margin: "0 1rem 0.75rem", display: "flex", gap: "0.4rem" }}>
           {[
             { icon: "🎫", label: "Каталог", tab: "catalog" as const, color: "#E8622A" },
-            { icon: "🎮", label: "Игры", tab: "games" as const, color: "#E8622A" },
             { icon: "🗺️", label: "Карта", tab: "map" as const, color: "#22c55e" },
-            { icon: "📰", label: "Новости", tab: "news" as const, color: "#f59e0b" },
+            { icon: "📊", label: "Аналитика", tab: "analytics" as const, color: "#38bdf8" },
           ].map(({ icon, label, tab, color }) => (
             <button
               key={tab}

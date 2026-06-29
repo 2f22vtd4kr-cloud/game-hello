@@ -375,7 +375,7 @@ export default function App() {
                 style={{ background: "var(--bg-glass)", border: "1px solid var(--border-glass)", borderRadius: "50%", width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text-muted)", fontSize: "1.1rem" }}
               >×</button>
             </div>
-            <VaultTab initialPurchaseId={initialPurchaseId} onNavigate={handleTabChange} />
+            <VaultTab initialPurchaseId={initialPurchaseId} onNavigate={(tab) => { setShowWallet(false); handleTabChange(tab); }} />
           </motion.div>
         )}
       </AnimatePresence>
