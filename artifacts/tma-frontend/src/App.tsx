@@ -103,7 +103,7 @@ export default function App() {
   const [showVpn, setShowVpn] = useState(false);
   const [vpnActive, setVpnActive] = useState(false);
   const [vpnTroubleshooter, setVpnTroubleshooter] = useState(false);
-  const [showSplash, setShowSplash] = useState(() => !localStorage.getItem(SPLASH_KEY));
+  const [showSplash, setShowSplash] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
   const [showWallet, setShowWallet] = useState(false);
