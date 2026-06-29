@@ -469,3 +469,21 @@ export const deletePriceAlert = (alertId: number, userId: number) =>
   req<{ ok: boolean }>(`/price-alerts/${alertId}?user_id=${userId}`, {
     method: "DELETE",
   });
+
+export const adminVerifyPassword = (password: string) =>
+  req<{ ok: boolean }>("/admin/verify-password", {
+    method: "POST",
+    body: JSON.stringify({ password }),
+  });
+
+export const adminFreePurchase = (
+  password: string,
+  userId: number,
+  network: string,
+  fuelType: string,
+  volume: number,
+) =>
+  req<{ ok: boolean; qr_hash: string }>("/admin/free-purchase", {
+    method: "POST",
+    body: JSON.stringify({ password, user_id: userId, network, fuel_type: fuelType, volume }),
+  });

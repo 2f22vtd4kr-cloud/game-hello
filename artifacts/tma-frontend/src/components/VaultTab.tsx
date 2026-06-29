@@ -514,7 +514,7 @@ export function VaultTab({ initialPurchaseId, onNavigate }: VaultTabProps) {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "12px" }}>
           <div>
             <h2 style={{ margin: 0, color: "#fff", fontSize: "2rem", fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1, textShadow: "0 0 30px rgba(232,98,42,0.4)" }}>
-              Хранилище
+              Карман
             </h2>
             <p style={{ margin: "4px 0 0", color: "rgba(255,255,255,0.4)", fontSize: "0.65rem" }}>
               {active.length} активных · {totalLiters > 0 ? `⛽ ${totalLiters.toLocaleString("ru")}л` : "пусто"}

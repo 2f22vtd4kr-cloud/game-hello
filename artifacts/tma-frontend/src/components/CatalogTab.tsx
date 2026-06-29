@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { createNetworkStarsInvoice, createNetworkCryptoBotInvoice } from "@/api/client";
+import { createNetworkStarsInvoice, createNetworkCryptoBotInvoice, adminFreePurchase } from "@/api/client";
 import { useUserStore } from "@/stores/useUserStore";
 import { useVaultStore } from "@/stores/useVaultStore";
 import { useToast } from "@/components/Toast";
@@ -135,12 +135,16 @@ const CSS = `
 .ct-pay:disabled { opacity:0.5; cursor:not-allowed; }
 .ct-pay-stars { background:linear-gradient(135deg,#f59e0b,#d97706); color:#fff; box-shadow:0 8px 32px rgba(245,158,11,0.4); }
 .ct-pay-crypto { background:rgba(59,130,246,0.15); color:#60a5fa; border:1.5px solid rgba(59,130,246,0.3) !important; }
-.ct-success { min-height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px 24px; gap:16px; animation:ctReveal 0.5s cubic-bezier(0.34,1.56,0.64,1); position:relative; z-index:1; }
-.ct-success-icon { width:80px; height:80px; border-radius:50%; background:rgba(34,197,94,0.12); border:2px solid rgba(34,197,94,0.3); display:flex; align-items:center; justify-content:center; font-size:36px; }
-.ct-success-title { font-size:26px; font-weight:800; letter-spacing:-0.5px; color:#e2e8f0; margin:0; }
-.ct-success-sub { font-size:15px; color:rgba(255,255,255,0.4); margin:0; }
-.ct-success-freeze { font-size:13px; color:#E8622A; background:rgba(232,98,42,0.1); border:1px solid rgba(232,98,42,0.25); border-radius:12px; padding:10px 18px; font-weight:600; }
-.ct-success-back { margin-top:8px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:14px; color:rgba(255,255,255,0.6); font-size:15px; font-weight:600; padding:14px 28px; cursor:pointer; }
+@keyframes ctColRise { from { clip-path:inset(0 0 100% 0); opacity:0; } to { clip-path:inset(0 0 0% 0); opacity:1; } }
+@keyframes ctBtnFadeIn { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+.ct-success { position:fixed; inset:0; z-index:99000; display:flex; flex-direction:row; background:#08080F; overflow:hidden; }
+.ct-success-col { position:relative; flex:1; height:100%; display:flex; align-items:center; justify-content:center; overflow:hidden; animation:ctColRise 0.7s cubic-bezier(0.16,1,0.3,1) both; }
+.ct-success-col-text { position:relative; writing-mode:vertical-lr; transform:rotate(180deg); font-size:clamp(36px,9.5vw,55px); font-weight:900; text-transform:uppercase; letter-spacing:-0.03em; line-height:1; user-select:none; }
+.ct-success-col-sep { position:absolute; top:0; bottom:0; right:0; width:1px; background:rgba(255,255,255,0.06); }
+.ct-success-bottom { position:absolute; bottom:calc(env(safe-area-inset-bottom,0px) + 40px); left:0; right:0; display:flex; justify-content:center; padding:0 24px; z-index:100001; pointer-events:auto; }
+.ct-success-btn { background:#E8622A; border:none; border-radius:16px; color:#fff; font-size:1.1rem; font-weight:800; padding:1rem 0; width:100%; cursor:pointer; letter-spacing:-0.01em; animation:ctBtnFadeIn 0.5s ease 2.0s both; box-shadow:0 0 30px rgba(232,98,42,0.45); -webkit-tap-highlight-color:transparent; }
+.ct-success-caption { position:absolute; bottom:calc(env(safe-area-inset-bottom,0px) + 14px); left:20px; z-index:100001; font-family:monospace; font-size:10px; letter-spacing:0.2em; text-transform:uppercase; color:rgba(255,255,255,0.22); }
+.ct-pay-admin { background:rgba(34,197,94,0.12) !important; color:#22c55e !important; border:1.5px solid rgba(34,197,94,0.35) !important; border-radius:14px; }
 `;
 
 function CatalogStars({ n = 90 }: { n?: number }) {
@@ -217,7 +221,9 @@ function NetworkLogo({ net }: { net: Net }) {
   );
 }
 
-export function CatalogTab(_props?: { initialStationId?: number; onCalcOpenChange?: (open: boolean) => void }) {
+export function CatalogTab(_props?: { initialStationId?: number; onCalcOpenChange?: (open: boolean) => void; isAdmin?: boolean; adminPass?: string }) {
+  const isAdmin = _props?.isAdmin ?? false;
+  const adminPass = _props?.adminPass ?? "";
   const user = useUserStore((s) => s.user);
   const { add: toast } = useToast();
   const fetchVault = useVaultStore((s) => s.fetch);
@@ -265,7 +271,7 @@ export function CatalogTab(_props?: { initialStationId?: number; onCalcOpenChang
           tg.openInvoice(inv.invoice_link, (status: string) => {
             if (status === "paid") {
               notify("success");
-              toast(`⭐ Оплата ${inv.stars_amount} Stars принята! Талон в Хранилище.`, "success");
+              toast(`⭐ Оплата ${inv.stars_amount} Stars принята! Талон в Кармане.`, "success");
               fetchVault(user.id);
               setStep("success");
             } else if (status === "cancelled") {
@@ -300,6 +306,24 @@ export function CatalogTab(_props?: { initialStationId?: number; onCalcOpenChang
       setPurchasing(false);
     }
   }, [user, sel, purchasing, toast, fetchVault]);
+
+  const handleFreePurchase = useCallback(async () => {
+    if (!user || !sel.network || !sel.fuel || purchasing) return;
+    setPurchasing(true);
+    impact("heavy");
+    try {
+      await adminFreePurchase(adminPass, user.id, sel.network.name, sel.fuel.key, sel.volume);
+      notify("success");
+      toast("✅ Талон выдан бесплатно", "success");
+      fetchVault(user.id);
+      setStep("success");
+    } catch (e: unknown) {
+      notify("error");
+      toast(String(e), "error");
+    } finally {
+      setPurchasing(false);
+    }
+  }, [user, sel, adminPass, purchasing, toast, fetchVault]);
 
   const reset = () => {
     setSel({ network: null, fuel: null, volume: 40 });
@@ -337,15 +361,38 @@ export function CatalogTab(_props?: { initialStationId?: number; onCalcOpenChang
       <CatalogStrip color="#E8622A" style={{ top: 0, zIndex: 2 }} />
 
       {/* ── Success ─────────────────────────────────────────────── */}
-      {step === "success" && (
-        <div className="ct-success">
-          <div className="ct-success-icon" style={{ boxShadow: `0 0 60px ${sel.network?.color ?? "#22c55e"}55` }}>✅</div>
-          <h2 className="ct-success-title">Талон активирован!</h2>
-          <p className="ct-success-sub">QR-код в разделе «Хранилище»</p>
-          <div className="ct-success-freeze">🔒 Цена зафиксирована на 90 дней</div>
-          <button className="ct-success-back" onClick={reset}>Купить ещё</button>
-        </div>
-      )}
+      {step === "success" && (() => {
+        const netColor = sel.network?.color ?? "#E8622A";
+        const cols = [
+          { text: "АХ*ЕННО!", solid: true,  delay: 0.00 },
+          { text: "ВАШ",      solid: false, delay: 0.08 },
+          { text: "ТАЛОНЧИК", solid: true,  delay: 0.16 },
+          { text: "ЖДЁТ ВАС", solid: false, delay: 0.24 },
+          { text: "В КАРМАНЕ!", solid: true, delay: 0.32 },
+        ];
+        return (
+          <div className="ct-success">
+            {cols.map((col, i) => (
+              <div key={i} className="ct-success-col" style={{ animationDelay: `${col.delay}s` }}>
+                <div style={{ position: "absolute", inset: 0, background: netColor, opacity: col.solid ? 1 : 0.22 }} />
+                <div className="ct-success-col-text" style={{ color: "#ffffff", textShadow: !col.solid ? `0 0 40px ${netColor}aa` : "none" }}>
+                  {col.text}
+                </div>
+                <div className="ct-success-col-sep" />
+              </div>
+            ))}
+            <div className="ct-success-caption">Матрица Снабжения</div>
+            <div className="ct-success-bottom">
+              <button
+                className="ct-success-btn"
+                onClick={() => { reset(); window.dispatchEvent(new CustomEvent("tma-open-wallet")); }}
+              >
+                🎟️ Карман
+              </button>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ── Confirm ─────────────────────────────────────────────── */}
       {step === "confirm" && sel.network && sel.fuel && (
@@ -383,7 +430,7 @@ export function CatalogTab(_props?: { initialStationId?: number; onCalcOpenChang
                   <span className="ct-voucher-chip">{total.toFixed(0)} ₽</span>
                 </div>
                 <p className="ct-voucher-desc">
-                  После оплаты QR-код появится в Хранилище. Покажи его оператору на кассе — он сканирует и отпускает топливо. Талон действует 90 дней.
+                  После оплаты QR-код появится в Кармане. Покажи его оператору на кассе — он сканирует и отпускает топливо. Талон действует 90 дней.
                 </p>
               </div>
               <div className="ct-voucher-qr">
@@ -408,6 +455,16 @@ export function CatalogTab(_props?: { initialStationId?: number; onCalcOpenChang
               {purchasing ? "…" : <><span>💎</span> {(total / 92).toFixed(2)} USDT</>}
             </button>
           </div>
+          {isAdmin && (
+            <button
+              className="ct-pay ct-pay-admin"
+              style={{ margin: "10px 16px 0", width: "calc(100% - 32px)" }}
+              disabled={purchasing}
+              onClick={handleFreePurchase}
+            >
+              {purchasing ? "…" : "🆓 Бесплатно (admin)"}
+            </button>
+          )}
         </div>
       )}
 

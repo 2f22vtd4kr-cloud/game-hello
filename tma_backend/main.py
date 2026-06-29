@@ -4150,6 +4150,57 @@ async def admin_reseed_db(db: Session = Depends(get_db)):
     return {"ok": True, "message": "Reseed complete"}
 
 
+@app.post("/api/admin/verify-password")
+def admin_verify_password(payload: dict):
+    """Verify admin mode password (used by AdminPasswordGate in the TMA)."""
+    admin_pass = os.getenv("ADMIN_MODE_PASS", "")
+    if not admin_pass:
+        raise HTTPException(status_code=503, detail="Admin mode not configured")
+    if payload.get("password") != admin_pass:
+        raise HTTPException(status_code=401, detail="Wrong password")
+    return {"ok": True}
+
+
+@app.post("/api/admin/free-purchase")
+def admin_free_purchase(payload: dict, db: Session = Depends(get_db)):
+    """Issue a free fuel voucher for the admin. Verifies ADMIN_MODE_PASS."""
+    from tma_backend.payment import generate_qr_hash
+    admin_pass = os.getenv("ADMIN_MODE_PASS", "")
+    if not admin_pass or payload.get("password") != admin_pass:
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+    user_id = int(payload.get("user_id", 0))
+    network = str(payload.get("network", ""))
+    fuel_type = str(payload.get("fuel_type", "АИ-95"))
+    volume = int(payload.get("volume", 40))
+
+    user = _get_or_create_user(db, user_id)
+    station_name = f"Любая АЗС сети {network}"
+    qr = generate_qr_hash(user_id, fuel_type, volume)
+    purchase = PurchaseHistory(
+        user_id=user_id,
+        fuel_type=fuel_type,
+        volume=volume,
+        price=0,
+        currency="ADMIN",
+        status="active",
+        qr_hash=qr,
+        station_name=station_name,
+        region="Севастополь",
+        expires_at=_now() + timedelta(days=90),
+    )
+    db.add(purchase)
+
+    old_level = user.level
+    user.xp += 20
+    user.level = _xp_to_level(user.xp)
+    _notify_levelup(user, old_level)
+
+    db.commit()
+    logger.info("Admin free purchase: user=%d, %dл %s, network=%s, qr=%s", user_id, volume, fuel_type, network, qr)
+    return {"ok": True, "qr_hash": qr}
+
+
 # ── Empire idle game ─────────────────────────────────────────────────────────
 
 _EMPIRE_BUILDINGS: dict = {

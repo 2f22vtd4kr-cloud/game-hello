@@ -27,6 +27,7 @@ import { VaultTab } from "@/components/VaultTab";
 import { VpnModal } from "@/components/VpnModal";
 import { IntroSplash } from "@/components/IntroSplash";
 import { AdminPanel } from "@/components/AdminPanel";
+import { AdminPasswordGate } from "@/components/AdminPasswordGate";
 import { OnboardingTour } from "@/components/OnboardingTour";
 import { useUserStore } from "@/stores/useUserStore";
 import { useStationStore } from "@/stores/useStationStore";
@@ -107,6 +108,8 @@ export default function App() {
   const [showMapHint, setShowMapHint] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
+  const [adminPass, setAdminPass] = useState("");
   const [showWallet, setShowWallet] = useState(false);
   const [showAiBanner, setShowAiBanner] = useState(false);
   const [calcOpen, setCalcOpen] = useState(false);
@@ -242,6 +245,13 @@ export default function App() {
       }
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── Wallet event bridge ─────────────────────────────────────────
+  useEffect(() => {
+    const openWallet = () => setShowWallet(true);
+    window.addEventListener("tma-open-wallet", openWallet);
+    return () => window.removeEventListener("tma-open-wallet", openWallet);
   }, []);
 
   // ── Telegram BackButton ─────────────────────────────────────────
@@ -384,7 +394,15 @@ export default function App() {
       </AnimatePresence>
 
       <AnimatePresence>
-        {showAdmin && <AdminPanel onClose={() => setShowAdmin(false)} />}
+        {showAdmin && isAdminAuthenticated && <AdminPanel onClose={() => setShowAdmin(false)} />}
+      </AnimatePresence>
+      <AnimatePresence>
+        {showAdmin && !isAdminAuthenticated && (
+          <AdminPasswordGate
+            onAuth={(pass) => { setIsAdminAuthenticated(true); setAdminPass(pass); }}
+            onCancel={() => setShowAdmin(false)}
+          />
+        )}
       </AnimatePresence>
 
       <AnimatePresence>
@@ -418,7 +436,7 @@ export default function App() {
             }}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 16px 4px" }}>
-              <h2 style={{ fontSize: "1rem", fontWeight: 700, color: "var(--text-primary)", margin: 0 }}>💼 Мой кошелёк</h2>
+              <h2 style={{ fontSize: "1rem", fontWeight: 700, color: "var(--text-primary)", margin: 0 }}>🎟️ Карман</h2>
               <button
                 onClick={() => setShowWallet(false)}
                 style={{ background: "var(--bg-glass)", border: "1px solid var(--border-glass)", borderRadius: "50%", width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text-muted)", fontSize: "1.1rem" }}
@@ -439,20 +457,18 @@ export default function App() {
           bottom: "calc(env(safe-area-inset-bottom, 0px) + 80px)",
           left: "12px",
           zIndex: 9500,
-          width: "38px", height: "38px",
-          borderRadius: "50%",
-          background: "rgba(8,8,20,0.88)",
-          border: vpnActive ? "1px solid #22c55e88" : "1px solid #1e1e2a",
+          width: "44px", height: "44px",
+          borderRadius: "10px",
+          background: vpnActive ? "#22c55e" : "#E8622A",
+          border: "none",
           animation: vpnActive ? "vpnGlow 2s ease-in-out infinite" : "none",
           cursor: "pointer",
-          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-          fontSize: "1rem",
-          gap: "1px",
-          transition: "border-color 0.4s",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          boxShadow: "0 2px 12px rgba(0,0,0,0.35)",
+          transition: "background 0.4s",
         }}
       >
-        <span style={{ fontSize: "1rem", lineHeight: 1 }}>🎉</span>
-        <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.38rem", color: vpnActive ? "#22c55e" : "#6b7280", letterSpacing: "0.04em", lineHeight: 1 }}>VPN</span>
+        <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.62rem", fontWeight: 800, color: "#ffffff", letterSpacing: "0.04em" }}>VPN</span>
       </button>
 
       {/* Universal nav hide/show pill — visible on all tabs */}
@@ -508,23 +524,19 @@ export default function App() {
               <motion.button
                 onClick={() => setShowWallet(true)}
                 whileTap={{ scale: 0.9 }}
-                title="Мой кошелёк"
+                title="Карман"
                 style={{
-                  width: "38px", height: "38px",
-                  borderRadius: "50%",
-                  background: activeCount > 0
-                    ? "linear-gradient(135deg, #E8622A, #f59e0b)"
-                    : "linear-gradient(135deg, #fbbf24, #f59e0b)",
-                  border: "none",
-                  boxShadow: activeCount > 0
-                    ? "0 0 16px rgba(232,98,42,0.55)"
-                    : "0 0 14px rgba(251,191,36,0.45)",
+                  width: "44px", height: "44px",
+                  borderRadius: "10px",
+                  background: "linear-gradient(160deg, #1E22DC, #1318B0)",
+                  border: "1px solid rgba(100,120,255,0.3)",
+                  boxShadow: "0 2px 12px rgba(0,0,0,0.35), 0 0 20px rgba(30,34,220,0.35)",
                   cursor: "pointer",
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: "1rem",
+                  fontSize: "1.2rem",
                 }}
               >
-                💼
+                🎟️
               </motion.button>
             </>
           );
@@ -621,7 +633,7 @@ export default function App() {
               style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, overflowY: "auto", overflowX: "hidden" }}
             >
               {activeTab === "analytics" && <AnalyticsTab />}
-              {activeTab === "catalog"   && <CatalogTab initialStationId={initialStationId} onCalcOpenChange={setCalcOpen} />}
+              {activeTab === "catalog"   && <CatalogTab initialStationId={initialStationId} onCalcOpenChange={setCalcOpen} isAdmin={isAdminAuthenticated} adminPass={adminPass} />}
               {activeTab === "news"      && <NewsTab onNavigate={handleTabChange} />}
             </motion.div>
           )}

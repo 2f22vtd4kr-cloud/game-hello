@@ -2,7 +2,7 @@ import os
 import logging
 import httpx
 from dotenv import load_dotenv
-from telegram import Update
+from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
 from telegram.ext import Application, CommandHandler, MessageHandler, PreCheckoutQueryHandler, ContextTypes, filters
 
 load_dotenv()
@@ -16,8 +16,16 @@ logger = logging.getLogger(__name__)
 BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 INTERNAL_API_SECRET = os.getenv("INTERNAL_API_SECRET", "tma_internal_dev_2026")
 TMA_BACKEND_URL = os.getenv("TMA_BACKEND_URL", "http://localhost:8000")
+ADMIN_ID = int(os.getenv("ADMIN_ID", "0"))
 
 STAR_RUB_RATE = 1.84  # 1 Star ≈ 1.84 RUB
+
+
+def _tma_url() -> str:
+    domain = os.getenv("REPLIT_DOMAINS", "").split(",")[0].strip()
+    if domain:
+        return f"https://{domain}"
+    return os.getenv("TMA_URL", "https://t.me")
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -104,7 +112,7 @@ async def successful_payment(update: Update, context: ContextTypes.DEFAULT_TYPE)
             logger.info("Stars purchase recorded: user_id=%d %s", user_id, label)
             await update.message.reply_text(
                 f"✅ Оплата прошла! {label} активирован.\n"
-                f"Открой 🗄 Хранилище в приложении — там твой QR-код."
+                f"Открой 🎟️ Карман в приложении — там твой QR-код."
             )
         else:
             logger.error("record-stars-purchase returned %d: %s", resp.status_code, resp.text)
@@ -116,8 +124,25 @@ async def successful_payment(update: Update, context: ContextTypes.DEFAULT_TYPE)
         logger.exception("Failed to call record-stars-purchase: %s", exc)
         await update.message.reply_text(
             "⚠️ Оплата получена, но сервер временно недоступен. "
-            "Ваучер появится в Хранилище в течение нескольких минут."
+            "Ваучер появится в Кармане в течение нескольких минут."
         )
+
+
+async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Open the mini-app in admin mode. Only works for the bot owner (ADMIN_ID)."""
+    user_id = update.effective_user.id if update.effective_user else 0
+    if ADMIN_ID == 0 or user_id != ADMIN_ID:
+        return
+    tma = _tma_url()
+    await update.message.reply_text(
+        "🛡️ Режим администратора",
+        reply_markup=InlineKeyboardMarkup([[
+            InlineKeyboardButton(
+                "Открыть (admin)",
+                web_app=WebAppInfo(url=f"{tma}/?admin=1"),
+            )
+        ]]),
+    )
 
 
 async def pre_checkout_query(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -153,6 +178,7 @@ def main() -> None:
         .build()
     )
     app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("admin", admin_command))
     app.add_handler(PreCheckoutQueryHandler(pre_checkout_query))
     app.add_handler(MessageHandler(filters.SUCCESSFUL_PAYMENT, successful_payment))
     logger.info("Бот запущен.")
